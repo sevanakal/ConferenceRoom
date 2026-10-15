@@ -7,25 +7,36 @@ using ConferenceRoom.Infrastructure;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
 using ConferenceRoom.Web.Api;
+using ConferenceRoom.Web.Auth;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.WebEncoders;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ---- Servisler ----
-builder.Services.AddRazorPages();
+// /yonetim altındaki her sayfa yönetim girişi ister; giriş sayfasının kendisi hariç.
+builder.Services.AddRazorPages(o =>
+{
+    o.Conventions.AuthorizeFolder("/Yonetim", AuthPolicies.Staff);
+    o.Conventions.AllowAnonymousToPage("/Yonetim/Giris");
+});
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 builder.Services.AddJsonLocalization();                       // tüm metinler ConferenceRoom.Localization/Resources/*.json
 builder.Services.AddInfrastructure(builder.Configuration);    // MySQL + EF Core
+builder.Services.AddAppAuthentication(builder.Configuration); // iki ayrı giriş (yönetim / izleyici), yetkiler (bkz. Auth/)
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
 
 var app = builder.Build();
 
 // ---- Veritabanı ----
 // Docker kurulumunda açılışta migration'lar otomatik uygulanır (docker-compose.yml: Database__MigrateOnStartup=true).
+// Ayarlarda Admin:Email/Admin:Password varsa ve hiç yönetim kullanıcısı yoksa ilk yönetici hesabı açılır.
 if (app.Configuration.GetValue<bool>("Database:MigrateOnStartup"))
+{
     await DatabaseMigrator.MigrateAsync(app.Services);
+    await AdminBootstrapper.EnsureAsync(app.Services, app.Configuration);
+}
 
 // ---- İstek hattı ----
 if (!app.Environment.IsDevelopment())
@@ -50,7 +61,9 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapRazorPages();
 app.MapHealthChecks("/health");

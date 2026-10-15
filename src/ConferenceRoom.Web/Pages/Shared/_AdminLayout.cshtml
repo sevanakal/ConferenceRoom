@@ -1,0 +1,44 @@
+@*
+    Yönetim paneli şablonu: üst çubukta logo, kullanıcı adı, dil seçici ve çıkış düğmesi.
+    Bu şablonu kullanan sayfalar /yonetim altındadır ve Program.cs'teki kural gereği yalnızca
+    yönetim girişi yapmış kullanıcılar tarafından açılabilir (User burada yönetim kullanıcısıdır).
+    Stil: wwwroot/css/admin.css
+*@
+@using System.Globalization
+@inject ConferenceRoom.Localization.LanguageCatalog Catalog
+@{
+    var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+}
+<!DOCTYPE html>
+<html lang="@currentCulture">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] · @T["app.name"]</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/admin.css" asp-append-version="true" />
+</head>
+<body class="admin-page">
+    <header class="admin-bar">
+        <a class="admin-brand" href="/yonetim"><partial name="_BrandMark" /><span>@T["app.name"]</span><small>@T["admin.title"]</small></a>
+        <div class="admin-bar__end">
+            <nav class="language-switch" aria-label="@T["nav.language"]">
+                @foreach (var language in Catalog.Languages)
+                {
+                    <a href="/language/@language.Culture?returnUrl=@Uri.EscapeDataString(returnUrl)"
+                       aria-current="@(language.Culture == currentCulture ? "true" : null)"
+                       lang="@language.Culture">@language.Name</a>
+                }
+            </nav>
+            <span class="admin-user">@User.Identity?.Name</span>
+            <form method="post" asp-page="/Yonetim/Cikis">
+                <button type="submit" class="btn-ghost">@T["nav.logout"]</button>
+            </form>
+        </div>
+    </header>
+    <main class="admin-main" id="main">
+        @RenderBody()
+    </main>
+</body>
+</html>

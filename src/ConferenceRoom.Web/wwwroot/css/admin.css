@@ -1,0 +1,44 @@
+/*
+  Yönetim paneli (Pages/Shared/_AdminLayout.cshtml): üst çubuk ve bölüm kartları.
+  Renkler site.css'teki --color-* değişkenlerinden gelir.
+*/
+.admin-page { min-height: 100dvh; }
+.admin-bar {
+    position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    min-height: 60px; padding: 8px max(16px, calc((100% - var(--container)) / 2));
+    background: var(--color-surface); border-bottom: 1px solid var(--color-border);
+}
+.admin-brand { display: flex; align-items: center; gap: 10px; color: var(--color-text); text-decoration: none; font-weight: 600; }
+.admin-brand .brand-mark { width: 26px; height: 26px; color: var(--color-accent); }
+.admin-brand small { color: var(--color-muted); font-weight: 400; padding-left: 10px; border-left: 1px solid var(--color-border); }
+.admin-bar__end { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+.admin-bar__end form { margin: 0; }
+.admin-user { font-size: .9rem; color: var(--color-muted); }
+
+.admin-main { max-width: var(--container); margin-inline: auto; padding: 32px 16px 48px; display: grid; gap: 24px; }
+.admin-hero h1 { margin: 0 0 6px; font-size: 1.7rem; letter-spacing: -.01em; }
+.admin-hero p { margin: 0; color: var(--color-muted); }
+.role-list { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 12px !important; }
+.role-chip { padding: 2px 10px; border-radius: 999px; background: color-mix(in srgb, var(--color-accent) 10%, transparent); color: var(--color-accent); font-size: .85rem; font-weight: 600; }
+
+.section-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 16px; }
+.section-card {
+    display: grid; gap: 8px; align-content: start; padding: 20px;
+    background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px;
+}
+.section-card svg { width: 30px; height: 30px; fill: none; stroke: var(--color-accent); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.section-card h2 { margin: 4px 0 0; font-size: 1.05rem; }
+.section-card p { margin: 0; color: var(--color-muted); font-size: .92rem; }
+.section-card__foot { display: flex; gap: 6px; margin-top: 8px; }
+.section-card[data-allowed="false"] { background: transparent; border-style: dashed; }
+.section-card[data-allowed="false"] svg { stroke: var(--color-muted); }
+.section-card[data-allowed="false"] h2 { color: var(--color-muted); }
+.pill { padding: 2px 10px; border-radius: 999px; font-size: .78rem; font-weight: 600; }
+.pill-ok { background: color-mix(in srgb, var(--color-ok) 14%, transparent); color: var(--color-ok); }
+.pill-locked { background: var(--color-bg); color: var(--color-muted); }
+.pill-soft { background: var(--color-bg); color: var(--color-muted); font-weight: 400; }
+
+.admin-empty { justify-items: center; text-align: center; display: grid; gap: 10px; padding: 64px 16px; }
+.admin-empty svg { width: 44px; height: 44px; fill: none; stroke: var(--color-muted); stroke-width: 1.6; }
+.admin-empty h1 { margin: 0; font-size: 1.4rem; }
+.admin-empty p { margin: 0 0 8px; color: var(--color-muted); max-width: 52ch; }

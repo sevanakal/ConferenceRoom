@@ -1,12 +1,17 @@
 {
-  "_language": { "name": "English", "direction": "ltr" },
+  "_language": {
+    "name": "English",
+    "direction": "ltr"
+  },
   "app": {
     "name": "Conference Hall",
     "tagline": "Hall, event and booking management"
   },
   "nav": {
     "home": "Home",
-    "language": "Language"
+    "language": "Language",
+    "login": "Sign in",
+    "logout": "Sign out"
   },
   "home": {
     "title": "Welcome",
@@ -21,6 +26,94 @@
     "title": "Something went wrong",
     "message": "An unexpected error occurred while processing your request. Please try again later.",
     "requestId": "Request ID"
+  },
+  "auth": {
+    "email": "Email",
+    "password": "Password",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password",
+    "rememberMe": "Remember me",
+    "invalidLogin": "Incorrect email or password.",
+    "required": "This field is required.",
+    "emailInvalid": "Enter a valid email address.",
+    "secure": "Your connection is encrypted; your password is never stored in plain text."
+  },
+  "staffLogin": {
+    "badge": "Admin panel",
+    "title": "Admin sign in",
+    "subtitle": "Sign in with your organisation account to manage halls, events and sales.",
+    "submit": "Sign in to the panel",
+    "forgot": "If you forgot your password, contact your organisation's administrator.",
+    "visualTitle": "Plan your hall down to the centimetre.",
+    "visualText": "Floor-plan editor, events, prices and sales in one panel. Everyone sees only the sections they are allowed to."
+  },
+  "customerLogin": {
+    "badge": "Tickets",
+    "title": "Welcome back",
+    "subtitle": "Sign in to see your tickets and pick your seat in seconds.",
+    "submit": "Sign in",
+    "noAccount": "No account yet?",
+    "register": "Sign up now",
+    "visualTitle": "The best seat is waiting for you.",
+    "visualText": "See the hall on the floor plan, choose your place; your ticket is ready in seconds."
+  },
+  "register": {
+    "title": "Create an account",
+    "subtitle": "Sign up in a minute and grab your seat quickly at the next event.",
+    "fullName": "Full name",
+    "phone": "Phone (optional)",
+    "passwordHint": "At least {0} characters.",
+    "consent": "I agree to my personal data being processed for ticketing (KVKK).",
+    "submit": "Sign up",
+    "haveAccount": "Already have an account?",
+    "login": "Sign in",
+    "emailTaken": "An account with this email already exists.",
+    "passwordShort": "The password must be at least {0} characters.",
+    "consentRequired": "Tick the box to continue."
+  },
+  "admin": {
+    "title": "Admin panel",
+    "welcome": "Welcome, {0}",
+    "intro": "Sections granted to your role are shown as open. Sections will become available one by one.",
+    "roles": "Your roles",
+    "allowed": "Allowed",
+    "locked": "Not allowed",
+    "soon": "Coming soon",
+    "deniedTitle": "You don't have access to this section",
+    "deniedText": "Your role does not include the permission this section needs. Ask your organisation's administrator for access.",
+    "backToPanel": "Back to the panel"
+  },
+  "permission": {
+    "halls": {
+      "manage": {
+        "name": "Halls and floor plans",
+        "description": "Add halls, draw and edit floor plans."
+      }
+    },
+    "events": {
+      "manage": {
+        "name": "Events",
+        "description": "Create events and link them to a hall and plan version."
+      }
+    },
+    "pricing": {
+      "manage": {
+        "name": "Prices and categories",
+        "description": "Ticket prices, price groups and seat categories."
+      }
+    },
+    "sales": {
+      "view": {
+        "name": "Sales",
+        "description": "View sold tickets and bookings."
+      }
+    },
+    "users": {
+      "manage": {
+        "name": "Users and roles",
+        "description": "Add admin users and grant permissions to roles."
+      }
+    }
   },
   "footer": {
     "license": "Open source, MIT licence"

@@ -33,6 +33,9 @@ services:
     environment:
       ConnectionStrings__Default: "Server=db;Port=3306;Database=conferenceroom;User=konferans;Password=${MYSQL_PASSWORD:-gelistirme}"
       Database__MigrateOnStartup: "true"
+      # İlk yönetici hesabı (yalnızca hiç yönetim kullanıcısı yokken oluşturulur). Canlıda mutlaka değiştirin.
+      Admin__Email: ${ADMIN_EMAIL:-admin@konferans.local}
+      Admin__Password: ${ADMIN_PASSWORD:-Yonetici.2026}
     ports:
       - "8080:8080"
 
