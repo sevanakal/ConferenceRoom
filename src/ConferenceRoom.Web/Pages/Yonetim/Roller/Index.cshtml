@@ -1,0 +1,63 @@
+@page "/yonetim/roller"
+@model ConferenceRoom.Web.Pages.Yonetim.Roller.IndexModel
+@using ConferenceRoom.Domain.Accounts
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["roles.title"];
+    ViewData["AdminNav"] = "roles";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["roles.title"]</h1>
+        <p>@T["roles.intro"]</p>
+    </div>
+    <a class="btn-primary btn-inline" href="/yonetim/roller/duzenle">@T["roles.new"]</a>
+</header>
+
+<partial name="_Flash" model="Model.Flash" />
+
+<div class="table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th scope="col">@T["roles.name"]</th>
+                <th scope="col">@T["roles.permissions"]</th>
+                <th scope="col" class="num">@T["roles.userCount"]</th>
+                <th scope="col"><span class="visually-hidden">@T["admin.edit"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var role in Model.Roles)
+            {
+                <tr>
+                    <td>
+                        <a class="row-title" href="/yonetim/roller/duzenle/@role.Id">@role.Name</a>
+                        @if (role.IsSystem)
+                        {
+                            <span class="pill pill-soft">@T["roles.system"]</span>
+                        }
+                        @if (!string.IsNullOrEmpty(role.Description))
+                        {
+                            <div class="row-sub">@role.Description</div>
+                        }
+                    </td>
+                    <td>
+                        @if (role.Permissions.Count == 0)
+                        {
+                            <span class="muted">@T["roles.noPermissions"]</span>
+                        }
+                        <span class="chips">
+                            @* Yetkiler panelde göründükleri sırayla *@
+                            @foreach (var permission in Permissions.All.Where(role.Permissions.Contains))
+                            {
+                                <span class="chip">@T[$"permission.{permission}.name"]</span>
+                            }
+                        </span>
+                    </td>
+                    <td class="num">@role.UserCount</td>
+                    <td class="actions"><a href="/yonetim/roller/duzenle/@role.Id">@T["admin.edit"]</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

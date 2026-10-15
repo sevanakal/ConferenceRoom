@@ -1,4 +1,3 @@
-using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Web.Auth;
 using Microsoft.AspNetCore.Authentication;
@@ -38,10 +37,8 @@ public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
         }
 
         var email = PasswordService.NormalizeEmail(Input.Email);
-        var user = await db.StaffUsers
-            .Include(u => u.Roles).ThenInclude(r => r.Role!).ThenInclude(r => r.Permissions)
-            .AsSplitQuery()
-            .FirstOrDefaultAsync(u => u.OrganizationId == Organization.DefaultId && u.Email == email && u.IsActive, cancellationToken);
+        var user = await db.StaffUsers.WithPermissions()
+            .FirstOrDefaultAsync(u => u.Email == email && u.IsActive, cancellationToken);
 
         // Kullanıcı yoksa da şifre doğrulaması yapılır (süre farkından e-postanın kayıtlı olup olmadığı anlaşılmasın).
         if (!passwords.Verify(user?.PasswordHash, Input.Password) || user is null)

@@ -1,0 +1,63 @@
+@page "/yonetim/kullanicilar"
+@model ConferenceRoom.Web.Pages.Yonetim.Kullanicilar.IndexModel
+@using System.Security.Claims
+@using ConferenceRoom.Web.Common
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["users.title"];
+    ViewData["AdminNav"] = "users";
+    var me = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+<header class="page-head">
+    <div>
+        <h1>@T["users.title"]</h1>
+        <p>@T["users.intro"]</p>
+    </div>
+    <a class="btn-primary btn-inline" href="/yonetim/kullanicilar/duzenle">@T["users.new"]</a>
+</header>
+
+<partial name="_Flash" model="Model.Flash" />
+
+<div class="table-wrap">
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th scope="col">@T["users.fullName"]</th>
+                <th scope="col">@T["users.roles"]</th>
+                <th scope="col">@T["users.status"]</th>
+                <th scope="col">@T["users.lastLogin"]</th>
+                <th scope="col"><span class="visually-hidden">@T["admin.edit"]</span></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr data-active="@(user.IsActive ? "true" : "false")">
+                    <td>
+                        <a class="row-title" href="/yonetim/kullanicilar/duzenle/@user.Id">@user.FullName</a>
+                        @if (me == user.Id.ToString())
+                        {
+                            <span class="pill pill-soft">@T["admin.you"]</span>
+                        }
+                        <div class="row-sub">@user.Email</div>
+                    </td>
+                    <td>
+                        @if (user.Roles.Count == 0)
+                        {
+                            <span class="muted">@T["users.noRoles"]</span>
+                        }
+                        <span class="chips">
+                            @foreach (var role in user.Roles)
+                            {
+                                <span class="chip">@role</span>
+                            }
+                        </span>
+                    </td>
+                    <td><span class="status @(user.IsActive ? "status-on" : "status-off")">@(user.IsActive ? T["users.active"] : T["users.inactive"])</span></td>
+                    <td class="muted">@(user.LastLoginAtUtc is { } last ? DisplayTime.Format(last) : T["users.never"])</td>
+                    <td class="actions"><a href="/yonetim/kullanicilar/duzenle/@user.Id">@T["admin.edit"]</a></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

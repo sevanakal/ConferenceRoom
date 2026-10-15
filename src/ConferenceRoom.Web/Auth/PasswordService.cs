@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity;
 
 namespace ConferenceRoom.Web.Auth;
@@ -6,7 +7,7 @@ namespace ConferenceRoom.Web.Auth;
 /// Şifre özeti üretme ve doğrulama. ASP.NET Core'un PasswordHasher sınıfını (PBKDF2, tuzlu) kullanır;
 /// ASP.NET Identity'nin geri kalanına (tablolar, UserManager) ihtiyaç duymadan.
 /// </summary>
-public sealed class PasswordService
+public sealed partial class PasswordService
 {
     /// <summary>Kayıt ve şifre değiştirmede istenen en kısa şifre uzunluğu.</summary>
     public const int MinimumLength = 8;
@@ -29,4 +30,10 @@ public sealed class PasswordService
 
     /// <summary>E-postalar tek biçimde saklanır ve aranır: boşluksuz, küçük harf.</summary>
     public static string NormalizeEmail(string email) => email.Trim().ToLowerInvariant();
+
+    /// <summary>E-posta biçimi kabaca doğru mu (ad@alan.uzantı). Gerçek doğrulama ileride e-posta onayıyla yapılır.</summary>
+    public static bool IsValidEmail(string email) => EmailPattern().IsMatch(email);
+
+    [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")]
+    private static partial Regex EmailPattern();
 }

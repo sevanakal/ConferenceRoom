@@ -1,0 +1,6 @@
+@* Kaydetme/silme sonrası liste sayfasının üstünde gösterilen kısa bilgi. Model: dil anahtarı ya da null. *@
+@model string?
+@if (!string.IsNullOrEmpty(Model))
+{
+    <div class="flash" role="status">@T[Model]</div>
+}

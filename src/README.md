@@ -57,7 +57,9 @@ Sayfada `@T["bolum.anahtar"]` ile kullanın. Bir dilde unutulan anahtarı testle
 
 **Yeni yetki eklemek:** `ConferenceRoom.Domain/Accounts/Permissions.cs` içine sabit ve `All` listesine ekleyin,
 dil dosyalarına `permission.<kod>.name` / `.description` yazın. Sayfayı yetkiye bağlamak için:
-`[Authorize(Policy = "Yetki:<kod>")]` (ya da `AuthPolicies.Permission(Permissions.X)`).
+`[Authorize(Policy = "Yetki:<kod>")]` (ya da `AuthPolicies.Permission(Permissions.X)`), bir klasörün tamamı için
+`Program.cs` içinde `AuthorizeFolder`. Bölüm kullanıma açılınca panel kartına (`Pages/Yonetim/Index.cshtml`) ve
+bölüm menüsüne (`Pages/Shared/_AdminLayout.cshtml`) adresini ekleyin.
 
 **Veritabanında değişiklik:** varlığı `Domain` içinde değiştirin, eşlemesini `Infrastructure/Persistence/Configurations` içinde yapın, sonra:
 
@@ -74,6 +76,7 @@ dotnet ef migrations add DegisiklikAdi -p ConferenceRoom.Infrastructure -s Confe
 | `/giris`, `/kayit` | Bilet alan izleyicinin girişi ve kaydı |
 | `/yonetim/giris` | Yönetim paneli girişi (ayrı sayfa, ayrı çerez) |
 | `/yonetim` | Yönetim paneli: rolün yetkili olduğu bölümler |
+| `/yonetim/kullanicilar`, `/yonetim/roller` | Yönetim kullanıcıları ve roller ("Kullanıcılar ve roller" yetkisi) |
 | `/health` | Sağlık kontrolü (veritabanı dahil) |
 | `/api/languages` | Kullanılabilir diller |
 | `/api/languages/{dil}` | Bir dilin tüm metinleri (mobil uygulama için) |

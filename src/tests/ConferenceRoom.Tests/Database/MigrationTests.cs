@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ConferenceRoom.Tests.Database;
 
 /// <summary>Migration'ların gerçek MySQL üzerinde baştan sona uygulanabildiğini doğrular.</summary>
+[Collection(MySqlCollection.Name)]
 public class MigrationTests
 {
     [MySqlFact]
