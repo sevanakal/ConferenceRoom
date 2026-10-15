@@ -11,6 +11,7 @@ namespace ConferenceRoom.Tests.Auth;
 /// Kullanıcı ve rol yönetimi (gerçek MySQL): rol/kullanıcı kaydı, panelin kilitlenmesini önleyen kurallar,
 /// yetki değişikliğinin ve pasif yapmanın açık oturuma hemen yansıması.
 /// </summary>
+[Collection(MySqlCollection.Name)]
 public class UserRoleManagementTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWebAppFactory>
 {
     [MySqlFact]

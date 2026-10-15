@@ -11,6 +11,7 @@ namespace ConferenceRoom.Tests.Auth;
 /// Gerçek MySQL üzerinde uçtan uca giriş: yönetim girişi, rol yetkileri, izleyici kaydı ve iki tarafın ayrılığı.
 /// Formlar tarayıcı gibi gönderilir (önce sayfa açılır, sahtecilik önleme anahtarı formdan alınır).
 /// </summary>
+[Collection(MySqlCollection.Name)]
 public class LoginFlowTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWebAppFactory>
 {
     [MySqlFact]
