@@ -25,12 +25,15 @@ Arayüz dili Türkçe; kullanıcı ile yazışma Türkçe.
 | Lisans | MIT (depoda `LICENSE`). |
 | Tasarım | Grafik tasarım Sevan'da. Kod tarafı renkleri ve yazı tiplerini CSS değişkenlerinden okur ki tasarım kolayca değiştirilsin. |
 | Salon krokisi | Projenin en önemli parçası. Photoshop tarzı 2B editör: koltuk sıraları, kavisli sıralar, bloklar, katlar (balkon), hizalama, gruplama, numaralama, ekstra sandalye. Kroki her değiştiğinde yeni sürüm olarak saklanır; etkinlik o anki sürüme bağlanır, böylece sonradan eklenen sandalye geçmiş etkinlikleri bozmaz. |
+| Bilet satışı | İzleyici krokiden koltuk seçer. Fiyat koltuk kategorisinden gelir (blok/kat bazında); protokol koltukları satışa kapalı. Seçilen koltuk 10 dakika ayrılır; ayırma ileride sunucuda tutulacak. Gerçek ödeme henüz yok; ücretsiz ve bağışlı etkinlik de desteklenecek. |
 
 ## Depo yapısı
 
 ```
 salon-kroki-editoru/   Kroki editörünün bağımsız prototipi (tek HTML dosyası). Sevan'ın onayladığı hâli.
                        Ana projeye taşınana kadar referans olarak burada durur. Bkz. salon-kroki-editoru/README.md
+koltuk-secimi/         İzleyicinin krokiden koltuk seçip bilet aldığı ekranın prototipi (tek HTML dosyası).
+                       Editörün kroki verisini okur; fiyat ve satılmış koltuklar örnek. Bkz. koltuk-secimi/README.md
 src/                   ASP.NET Core çözümü (ConferenceRoom.slnx). Bkz. src/README.md
   ConferenceRoom.Domain          varlıklar; hiçbir projeye bağımlı değil
   ConferenceRoom.Infrastructure  EF Core, MySQL, migration'lar (Persistence/)
