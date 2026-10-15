@@ -1,0 +1,13 @@
+@page
+@model ErrorModel
+@{
+    ViewData["Title"] = T["error.title"];
+}
+<section class="card">
+    <h1>@T["error.title"]</h1>
+    <p>@T["error.message"]</p>
+    @if (Model.ShowRequestId)
+    {
+        <p class="muted">@T["error.requestId"]: <code>@Model.RequestId</code></p>
+    }
+</section>

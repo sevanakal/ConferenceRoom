@@ -1,0 +1,16 @@
+<!--
+  Tüm projelerde ortak derleme ayarları. Bir projeye özel ayar gerekmedikçe
+  .csproj dosyalarına bu ayarlar tekrar yazılmaz.
+-->
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- Uyarılar hata sayılır: kod temiz kalsın, uyarılar birikmesin. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- XML yorumu olmayan public üyeler için uyarı verme (yorumları elle, gerektiği yerde yazıyoruz). -->
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+</Project>

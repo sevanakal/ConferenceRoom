@@ -1,0 +1,40 @@
+# Uygulamayı MySQL ile birlikte tek komutla çalıştırır (src klasöründe):
+#   docker compose up --build
+# Ardından tarayıcıda: http://localhost:8080
+# Veritabanı verileri "mysql-data" biriminde kalır; silmek için: docker compose down -v
+#
+# Şifreler yalnızca yerel geliştirme içindir. Canlı sunucuda .env dosyası ya da gizli değişkenlerle değiştirilmelidir.
+
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-kok_gelistirme}
+      MYSQL_DATABASE: conferenceroom
+      MYSQL_USER: konferans
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gelistirme}
+    # Türkçe sıralama (ı/i, ş, ğ...) için Türkçe karşılaştırma kuralı.
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_tr_0900_ai_ci"]
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  web:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: "Server=db;Port=3306;Database=conferenceroom;User=konferans;Password=${MYSQL_PASSWORD:-gelistirme}"
+      Database__MigrateOnStartup: "true"
+    ports:
+      - "8080:8080"
+
+volumes:
+  mysql-data:

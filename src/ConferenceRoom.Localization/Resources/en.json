@@ -1,0 +1,28 @@
+{
+  "_language": { "name": "English", "direction": "ltr" },
+  "app": {
+    "name": "Conference Hall",
+    "tagline": "Hall, event and booking management"
+  },
+  "nav": {
+    "home": "Home",
+    "language": "Language"
+  },
+  "home": {
+    "title": "Welcome",
+    "intro": "This is the first skeleton of the conference hall management system. Hall plans, events and bookings will be added step by step.",
+    "statusTitle": "System status",
+    "database": "Database",
+    "databaseOk": "Connected",
+    "databaseFail": "Could not connect",
+    "organization": "Organisation"
+  },
+  "error": {
+    "title": "Something went wrong",
+    "message": "An unexpected error occurred while processing your request. Please try again later.",
+    "requestId": "Request ID"
+  },
+  "footer": {
+    "license": "Open source, MIT licence"
+  }
+}

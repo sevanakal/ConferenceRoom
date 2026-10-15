@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/tests/">
+    <Project Path="tests/ConferenceRoom.Tests/ConferenceRoom.Tests.csproj" />
+  </Folder>
+  <Project Path="ConferenceRoom.Domain/ConferenceRoom.Domain.csproj" />
+  <Project Path="ConferenceRoom.Infrastructure/ConferenceRoom.Infrastructure.csproj" />
+  <Project Path="ConferenceRoom.Localization/ConferenceRoom.Localization.csproj" />
+  <Project Path="ConferenceRoom.Web/ConferenceRoom.Web.csproj" />
+</Solution>

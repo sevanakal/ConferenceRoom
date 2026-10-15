@@ -1,0 +1,24 @@
+# Kod biçimi kuralları. Visual Studio, Rider ve VS Code bu dosyayı otomatik okur.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+trim_trailing_whitespace = true
+
+[*.{json,yml,yaml,props,csproj,slnx,xml,html,css,js}]
+indent_size = 2
+
+[*.md]
+trim_trailing_whitespace = false
+
+[*.cs]
+csharp_style_namespace_declarations = file_scoped:warning
+dotnet_sort_system_directives_first = true
+
+# EF Core tarafından üretilen migration dosyaları elle düzenlenmez.
+[**/Migrations/*.cs]
+generated_code = true

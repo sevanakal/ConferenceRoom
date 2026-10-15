@@ -1,0 +1,3 @@
+<!-- Alan modeli: varlıklar ve iş kuralları. Hiçbir altyapıya (veritabanı, web) bağımlı değildir. -->
+<Project Sdk="Microsoft.NET.Sdk">
+</Project>
