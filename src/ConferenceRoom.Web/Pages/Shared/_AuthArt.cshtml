@@ -1,0 +1,127 @@
+@*
+    Giriş sayfalarının sol tarafındaki görsel: koltuk sıraları kavisli bir salon çizimi (SVG, kodla üretilir).
+    Dış resim dosyası yoktur; renkler auth.css içindeki --art-* değişkenlerinden gelir.
+    Model: "staff" (yönetim: plan kâğıdı, seçili blok ve tutamaçlar, editörü anımsatır)
+           "customer" (izleyici: sahne ışıkları, satılmış koltuklar, seçilmiş üç koltuk ve bilet)
+*@
+@model string
+@using System.Globalization
+@{
+    var staff = Model == "staff";
+    string F(double v) => v.ToString("0.#", CultureInfo.InvariantCulture);
+
+    // ---- Koltuk geometrisi: merkezi sahnenin arkasında olan yaylar üzerinde sıralar ----
+    // açı 0 = tam karşı; her sıra yarıçapı 30 birim büyür; bloklar arasında koridor bırakılır.
+    const double cx = 320, cy = -60, seatStep = 25;
+    var blocks = new[] { (-0.64, -0.3), (-0.24, 0.24), (0.3, 0.64) };
+    var seats = new List<(double X, double Y, double Rot, int Block, int Row, double A, int Index, int Count)>();
+    for (var row = 0; row < 8; row++)
+    {
+        var r = 230 + row * 28;
+        for (var b = 0; b < blocks.Length; b++)
+        {
+            var (from, to) = blocks[b];
+            var step = seatStep / r;
+            var count = (int)Math.Floor((to - from) / step) + 1;
+            var start = (from + to) / 2 - (count - 1) * step / 2;
+            for (var i = 0; i < count; i++)
+            {
+                var a = start + i * step;
+                seats.Add((cx + r * Math.Sin(a), cy + r * Math.Cos(a), -a * 180 / Math.PI, b, row, a, i, count));
+            }
+        }
+    }
+
+    // Satılmış koltuklar için sabit bir desen (her açılışta aynı görünsün diye rastgele değil).
+    bool Sold(int block, int row, double a) => ((row * 7 + (int)Math.Round(a * 40) * 13 + block * 5) % 9 + 9) % 9 < (block == 1 ? 5 : 3);
+    // İzleyici görselinde seçilmiş üç yan yana koltuk: orta blok, 3. sıranın ortası.
+    bool Picked(int block, int row, int i, int count) => block == 1 && row == 2 && Math.Abs(i - count / 2) <= 1;
+
+    // Yönetim görselinde seçili blok (sağ blok, ilk 5 sıra) ve onu saran seçim kutusu.
+    var selected = seats.Where(s => s.Block == 2 && s.Row < 5).ToList();
+    double sx0 = selected.Min(s => s.X) - 16, sx1 = selected.Max(s => s.X) + 16;
+    double sy0 = selected.Min(s => s.Y) - 16, sy1 = selected.Max(s => s.Y) + 16;
+}
+<svg class="auth-art" viewBox="0 0 640 560" role="presentation" aria-hidden="true" focusable="false" preserveAspectRatio="xMidYMid meet">
+    <defs>
+        <pattern id="art-grid-minor" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M20 0H0V20" fill="none" class="art-grid-minor" />
+        </pattern>
+        <pattern id="art-grid" width="100" height="100" patternUnits="userSpaceOnUse">
+            <rect width="100" height="100" fill="url(#art-grid-minor)" />
+            <path d="M100 0H0V100" fill="none" class="art-grid-major" />
+        </pattern>
+        <linearGradient id="art-beam" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" class="art-beam-top" />
+            <stop offset="1" class="art-beam-bottom" />
+        </linearGradient>
+        <radialGradient id="art-glow" cx="0.5" cy="0.5" r="0.5">
+            <stop offset="0" class="art-glow-in" />
+            <stop offset="1" class="art-glow-out" />
+        </radialGradient>
+    </defs>
+
+    @if (staff)
+    {
+        <!-- Plan kâğıdı ızgarası ve salon duvarları -->
+        <rect x="0" y="0" width="640" height="560" fill="url(#art-grid)" />
+        <rect x="40" y="20" width="560" height="500" rx="4" class="art-wall" />
+        <!-- Ölçü çizgisi -->
+        <g class="art-dim">
+            <path d="M40 540H600M40 533V547M600 533V547" />
+        </g>
+    }
+    else
+    {
+        <!-- Sahne ışıkları -->
+        <path d="M150 -10 L120 120 L290 120 Z" fill="url(#art-beam)" class="art-beam" />
+        <path d="M490 -10 L350 120 L520 120 Z" fill="url(#art-beam)" class="art-beam" />
+        <ellipse cx="320" cy="95" rx="230" ry="70" fill="url(#art-glow)" />
+    }
+
+    <!-- Sahne -->
+    <rect x="200" y="40" width="240" height="66" rx="8" class="art-stage" />
+    <rect x="225" y="100" width="190" height="6" rx="3" class="art-stage-edge" />
+
+    <!-- Koltuklar -->
+    <g class="art-seats">
+        @foreach (var s in seats)
+        {
+            var cls = staff
+                ? (s.Block == 2 && s.Row < 5 ? "seat seat-selected" : "seat")
+                : Picked(s.Block, s.Row, s.Index, s.Count) ? "seat seat-picked" : Sold(s.Block, s.Row, s.A) ? "seat seat-sold" : "seat";
+            <rect x="-9" y="-7.5" width="18" height="15" rx="4" class="@cls" transform="translate(@F(s.X) @F(s.Y)) rotate(@F(s.Rot))" />
+        }
+    </g>
+
+    @if (staff)
+    {
+        <!-- Seçim kutusu, tutamaçlar ve fare imleci: editörde bir bloğun seçildiği an -->
+        <g class="art-selection">
+            <rect x="@F(sx0)" y="@F(sy0)" width="@F(sx1 - sx0)" height="@F(sy1 - sy0)" class="art-sel-box" />
+            @foreach (var (hx, hy) in new[] { (sx0, sy0), ((sx0 + sx1) / 2, sy0), (sx1, sy0), (sx1, (sy0 + sy1) / 2), (sx1, sy1), ((sx0 + sx1) / 2, sy1), (sx0, sy1), (sx0, (sy0 + sy1) / 2) })
+            {
+                <rect x="@F(hx - 5)" y="@F(hy - 5)" width="10" height="10" rx="2" class="art-sel-handle" />
+            }
+            <circle cx="@F((sx0 + sx1) / 2)" cy="@F(sy0 - 26)" r="6" class="art-sel-handle" />
+            <path d="@($"M{F((sx0 + sx1) / 2)} {F(sy0 - 20)}V{F(sy0)}")" class="art-sel-line" />
+        </g>
+        <path class="art-cursor" transform="translate(@F(sx1 - 6) @F(sy1 - 4))" d="M0 0 L0 22 L6 16 L10 26 L14 24 L10 14 L18 14 Z" />
+    }
+    else
+    {
+        <!-- Seçilen koltukların işaretleri ve bilet -->
+        @foreach (var s in seats.Where(s => Picked(s.Block, s.Row, s.Index, s.Count)))
+        {
+            <path d="M-4 0 L-1 3 L4 -3" class="art-check" transform="translate(@F(s.X) @F(s.Y)) rotate(@F(s.Rot))" />
+        }
+        <g class="art-ticket" transform="translate(400 410) rotate(-8)">
+            <path d="M0 8a8 8 0 0 1 8-8h134a8 8 0 0 1 8 8v22a10 10 0 0 0 0 20v22a8 8 0 0 1-8 8H8a8 8 0 0 1-8-8V50a10 10 0 0 0 0-20Z" />
+            <path d="M108 8V72" class="art-ticket-perf" />
+            <rect x="16" y="18" width="70" height="8" rx="4" class="art-ticket-line" />
+            <rect x="16" y="34" width="48" height="6" rx="3" class="art-ticket-line art-ticket-line--soft" />
+            <rect x="16" y="52" width="58" height="10" rx="3" class="art-ticket-line" />
+            <rect x="118" y="24" width="20" height="32" rx="3" class="art-ticket-line art-ticket-line--soft" />
+        </g>
+    }
+</svg>

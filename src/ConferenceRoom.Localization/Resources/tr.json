@@ -1,12 +1,17 @@
 {
-  "_language": { "name": "Türkçe", "direction": "ltr" },
+  "_language": {
+    "name": "Türkçe",
+    "direction": "ltr"
+  },
   "app": {
     "name": "Konferans Salonu",
     "tagline": "Salon, etkinlik ve rezervasyon yönetimi"
   },
   "nav": {
     "home": "Ana sayfa",
-    "language": "Dil"
+    "language": "Dil",
+    "login": "Giriş yap",
+    "logout": "Çıkış yap"
   },
   "home": {
     "title": "Hoş geldiniz",
@@ -21,6 +26,94 @@
     "title": "Bir hata oluştu",
     "message": "İsteğiniz işlenirken beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
     "requestId": "İstek numarası"
+  },
+  "auth": {
+    "email": "E-posta",
+    "password": "Şifre",
+    "showPassword": "Şifreyi göster",
+    "hidePassword": "Şifreyi gizle",
+    "rememberMe": "Beni hatırla",
+    "invalidLogin": "E-posta ya da şifre hatalı.",
+    "required": "Bu alan zorunludur.",
+    "emailInvalid": "Geçerli bir e-posta adresi yazın.",
+    "secure": "Bağlantınız şifrelidir; şifreniz hiçbir yerde açık olarak saklanmaz."
+  },
+  "staffLogin": {
+    "badge": "Yönetim paneli",
+    "title": "Yönetim girişi",
+    "subtitle": "Salonları, etkinlikleri ve satışları yönetmek için kurum hesabınızla giriş yapın.",
+    "submit": "Panele giriş yap",
+    "forgot": "Şifrenizi unuttuysanız kurumunuzun yöneticisine başvurun.",
+    "visualTitle": "Salonunuzu santimetresine kadar planlayın.",
+    "visualText": "Kroki editörü, etkinlikler, fiyatlar ve satışlar tek panelde. Herkes yalnızca yetkili olduğu bölümü görür."
+  },
+  "customerLogin": {
+    "badge": "Bilet",
+    "title": "Tekrar hoş geldiniz",
+    "subtitle": "Biletlerinizi görmek ve koltuğunuzu hızlıca seçmek için hesabınıza giriş yapın.",
+    "submit": "Giriş yap",
+    "noAccount": "Hesabınız yok mu?",
+    "register": "Hemen kayıt olun",
+    "visualTitle": "En iyi koltuk sizi bekliyor.",
+    "visualText": "Salonu krokiden görün, yerinizi seçin; biletiniz saniyeler içinde hazır."
+  },
+  "register": {
+    "title": "Hesap oluşturun",
+    "subtitle": "Bir dakikada kayıt olun, bir sonraki etkinlikte koltuğunuzu hızla seçin.",
+    "fullName": "Ad soyad",
+    "phone": "Telefon (isteğe bağlı)",
+    "passwordHint": "En az {0} karakter.",
+    "consent": "Kişisel verilerimin bilet işlemleri için işlenmesini kabul ediyorum (KVKK).",
+    "submit": "Kayıt ol",
+    "haveAccount": "Zaten hesabınız var mı?",
+    "login": "Giriş yapın",
+    "emailTaken": "Bu e-posta adresiyle zaten bir hesap var.",
+    "passwordShort": "Şifre en az {0} karakter olmalı.",
+    "consentRequired": "Devam etmek için onay kutusunu işaretleyin."
+  },
+  "admin": {
+    "title": "Yönetim paneli",
+    "welcome": "Hoş geldiniz, {0}",
+    "intro": "Rolünüze tanımlı bölümler açık görünür. Bölümler sırayla kullanıma açılacak.",
+    "roles": "Rolleriniz",
+    "allowed": "Yetkiniz var",
+    "locked": "Yetkiniz yok",
+    "soon": "Yakında",
+    "deniedTitle": "Bu bölüme erişim yetkiniz yok",
+    "deniedText": "Bu bölüm için gereken yetki rolünüzde tanımlı değil. Kurumunuzun yöneticisinden yetki isteyebilirsiniz.",
+    "backToPanel": "Panele dön"
+  },
+  "permission": {
+    "halls": {
+      "manage": {
+        "name": "Salonlar ve krokiler",
+        "description": "Salon ekleme, kroki çizme ve düzenleme."
+      }
+    },
+    "events": {
+      "manage": {
+        "name": "Etkinlikler",
+        "description": "Etkinlik oluşturma, salona ve kroki sürümüne bağlama."
+      }
+    },
+    "pricing": {
+      "manage": {
+        "name": "Fiyatlar ve kategoriler",
+        "description": "Bilet fiyatları, fiyat grupları ve koltuk kategorileri."
+      }
+    },
+    "sales": {
+      "view": {
+        "name": "Satışlar",
+        "description": "Satılan biletleri ve rezervasyonları görüntüleme."
+      }
+    },
+    "users": {
+      "manage": {
+        "name": "Kullanıcılar ve roller",
+        "description": "Yönetim kullanıcıları ekleme, rollere yetki verme."
+      }
+    }
   },
   "footer": {
     "license": "Açık kaynak, MIT lisansı"

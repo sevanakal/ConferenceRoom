@@ -1,0 +1,146 @@
+/*
+  Giriş ve kayıt sayfaları (Pages/Shared/_AuthLayout.cshtml).
+  Yerleşim: solda görsel (koyu zemin üzerinde salon çizimi), sağda form. 900 px'ten dar ekranda
+  görsel üstte ince bir şerit olur, form altında tam genişlik kalır.
+  Renkler aşağıdaki değişkenlerde; iki taraf (yönetim / izleyici) yalnızca bu değişkenlerle ayrışır.
+  Değişkenler site.css'teki genel değişkenleri (--color-*) kullanır, onların yerine geçmez.
+*/
+
+/* ---- Görsel renkleri: yönetim (plan kâğıdı) ---- */
+.auth-page[data-variant="staff"] {
+    --auth-visual-bg: radial-gradient(120% 80% at 20% 0%, #1B3557 0%, #0D1B2E 55%, #08111D 100%);
+    --btn-bg: #1F4F8F;
+    --art-grid-minor: rgba(130, 180, 240, .07);
+    --art-grid-major: rgba(130, 180, 240, .16);
+    --art-wall: rgba(160, 200, 245, .55);
+    --art-stage: #22446F;
+    --art-stage-edge: #6FA8E8;
+    --art-seat: rgba(111, 168, 232, .16);
+    --art-seat-line: rgba(140, 190, 245, .75);
+    --art-selected: #E0566F;
+    --art-handle: #FFFFFF;
+    --art-cursor: #FFFFFF;
+}
+
+/* ---- Görsel renkleri: izleyici (sahne ışıkları) ---- */
+.auth-page[data-variant="customer"] {
+    --auth-visual-bg: radial-gradient(110% 70% at 50% 0%, #6B1A30 0%, #3A0D1C 50%, #1B0710 100%);
+    --btn-bg: var(--color-accent);
+    --art-beam-top: rgba(255, 236, 205, .42);
+    --art-beam-bottom: rgba(255, 236, 205, 0);
+    --art-glow-in: rgba(255, 214, 160, .35);
+    --art-glow-out: rgba(255, 214, 160, 0);
+    --art-stage: #F3E2CE;
+    --art-stage-edge: #F6C453;
+    --art-seat: rgba(255, 255, 255, .24);
+    --art-seat-line: transparent;
+    --art-sold: rgba(255, 255, 255, .07);
+    --art-picked: #F6C453;
+    --art-check: #3A0D1C;
+    --art-ticket: #F6C453;
+    --art-ticket-ink: rgba(58, 13, 28, .6);
+}
+
+/* ---- Yerleşim ---- */
+.auth-page { margin: 0; min-height: 100dvh; background: var(--color-surface); }
+.auth-shell { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(400px, 1fr); min-height: 100dvh; }
+
+.auth-visual {
+    position: sticky; top: 0; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; gap: 24px;
+    padding: 40px clamp(32px, 4vw, 64px); background: var(--auth-visual-bg); color: #fff;
+}
+.auth-visual__brand { display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 1.05rem; }
+.auth-visual__brand .brand-mark { width: 30px; height: 30px; }
+.auth-badge {
+    margin-left: 4px; padding: 3px 10px; border: 1px solid rgba(255, 255, 255, .28); border-radius: 999px;
+    font-size: .72rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: rgba(255, 255, 255, .85);
+}
+.auth-visual__art { flex: 1; display: grid; place-items: center; min-height: 0; }
+.auth-art { width: 100%; max-width: 640px; max-height: 60vh; }
+.auth-visual__copy h2 { margin: 0 0 10px; font-size: clamp(1.6rem, 2.5vw, 2.4rem); line-height: 1.15; letter-spacing: -.015em; max-width: 18ch; }
+.auth-visual__copy p { margin: 0; max-width: 46ch; color: rgba(255, 255, 255, .74); font-size: 1.02rem; }
+
+.auth-main { display: flex; flex-direction: column; padding: 24px clamp(24px, 5vw, 72px); background: var(--color-surface); }
+.auth-lang { display: flex; justify-content: flex-end; gap: 4px; }
+.auth-lang a { padding: 4px 10px; border-radius: var(--radius); color: var(--color-muted); text-decoration: none; font-size: .88rem; }
+.auth-lang a[aria-current="true"] { background: var(--color-bg); color: var(--color-text); font-weight: 600; }
+.auth-card { width: 100%; max-width: 400px; margin: auto; padding-block: 32px; }
+.auth-footer { color: var(--color-muted); font-size: .8rem; text-align: center; }
+
+/* ---- Form ---- */
+.auth-head h1 { margin: 0 0 6px; font-size: 1.85rem; letter-spacing: -.015em; line-height: 1.2; }
+.auth-head p { margin: 0 0 28px; color: var(--color-muted); }
+.auth-form { display: grid; gap: 18px; }
+.field { display: grid; gap: 6px; }
+.field label { font-size: .88rem; font-weight: 600; }
+.field input {
+    width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 10px;
+    background: var(--color-surface); color: var(--color-text); font: inherit; transition: border-color .15s, box-shadow .15s;
+}
+.field input:hover { border-color: color-mix(in srgb, var(--color-text) 30%, var(--color-border)); }
+.field input:focus { outline: none; border-color: var(--btn-bg); box-shadow: 0 0 0 4px color-mix(in srgb, var(--btn-bg) 18%, transparent); }
+.field input[aria-invalid="true"] { border-color: var(--color-fail); }
+.field-error { margin: 0; color: var(--color-fail); font-size: .84rem; }
+.field-hint { margin: 0; color: var(--color-muted); font-size: .84rem; }
+.password-wrap { position: relative; }
+.password-wrap input { padding-right: 52px; }
+.password-toggle {
+    position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px;
+    display: grid; place-items: center; border: 0; border-radius: 8px; background: transparent; color: var(--color-muted); cursor: pointer;
+}
+.password-toggle:hover, .password-toggle[aria-pressed="true"] { color: var(--color-text); background: var(--color-bg); }
+.password-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; line-height: 1.4; cursor: pointer; }
+.check-group { display: grid; gap: 6px; }
+.check input { width: 18px; height: 18px; margin: 1px 0 0; accent-color: var(--btn-bg); flex: none; }
+.auth-form .btn-primary { margin-top: 6px; }
+.form-alert {
+    margin-bottom: 20px; padding: 12px 14px; border-radius: 10px; font-size: .92rem;
+    background: color-mix(in srgb, var(--color-fail) 10%, transparent); border: 1px solid color-mix(in srgb, var(--color-fail) 30%, transparent); color: var(--color-fail);
+}
+.auth-switch, .auth-note { margin: 24px 0 0; text-align: center; color: var(--color-muted); font-size: .92rem; }
+.auth-switch a { font-weight: 600; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
+
+/* ---- Çizim (SVG) parçaları ---- */
+.art-grid-minor { stroke: var(--art-grid-minor); stroke-width: 1; }
+.art-grid-major { stroke: var(--art-grid-major); stroke-width: 1; }
+.art-wall { fill: none; stroke: var(--art-wall); stroke-width: 3; }
+.art-dim path { stroke: var(--art-wall); stroke-width: 1.5; fill: none; }
+.art-stage { fill: var(--art-stage); }
+.art-stage-edge { fill: var(--art-stage-edge); }
+.art-beam-top { stop-color: var(--art-beam-top); }
+.art-beam-bottom { stop-color: var(--art-beam-bottom); }
+.art-glow-in { stop-color: var(--art-glow-in); }
+.art-glow-out { stop-color: var(--art-glow-out); }
+.seat { fill: var(--art-seat); stroke: var(--art-seat-line); stroke-width: 1.2; }
+.seat-selected { fill: var(--art-selected); stroke: var(--art-selected); }
+.seat-sold { fill: var(--art-sold); }
+.seat-picked { fill: var(--art-picked); filter: drop-shadow(0 0 6px var(--art-picked)); }
+.art-check { fill: none; stroke: var(--art-check); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.art-sel-box { fill: color-mix(in srgb, var(--art-selected) 8%, transparent); stroke: var(--art-handle); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.art-sel-handle { fill: var(--art-handle); stroke: var(--art-selected); stroke-width: 1.5; }
+.art-sel-line { stroke: var(--art-handle); stroke-width: 1.2; }
+.art-cursor { fill: var(--art-cursor); stroke: #0D1B2E; stroke-width: 1.4; stroke-linejoin: round; }
+.art-ticket > path:first-child { fill: var(--art-ticket); filter: drop-shadow(0 10px 18px rgba(0, 0, 0, .35)); }
+.art-ticket-perf { stroke: var(--art-ticket-ink); stroke-width: 1.5; stroke-dasharray: 3 4; fill: none; }
+.art-ticket-line { fill: var(--art-ticket-ink); }
+.art-ticket-line--soft { opacity: .5; }
+
+/* ---- Telefon ve dar ekran: görsel üstte şerit ---- */
+@media (max-width: 900px) {
+    .auth-shell { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+    .auth-visual { position: relative; height: auto; padding: 18px 16px 0; gap: 8px; }
+    .auth-visual__art { height: 170px; overflow: hidden; align-items: start; }
+    .auth-art { max-height: none; height: 300px; width: auto; margin-top: -40px; }
+    .auth-visual__copy { display: none; }
+    .auth-main { padding: 12px 16px 20px; }
+    .auth-card { padding-block: 16px 24px; margin-top: 0; }
+    .auth-head h1 { font-size: 1.55rem; }
+    .auth-head p { margin-bottom: 20px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .seat-picked { animation: art-pulse 2.4s ease-in-out infinite; }
+    @keyframes art-pulse { 50% { filter: drop-shadow(0 0 12px var(--art-picked)); } }
+}

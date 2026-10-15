@@ -1,0 +1,46 @@
+@page "/yonetim"
+@model ConferenceRoom.Web.Pages.Yonetim.IndexModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["admin.title"];
+    // Bölüm kartlarının simgeleri (yetki koduna göre). Bölüm eklendikçe buraya da eklenir.
+    var icons = new Dictionary<string, string>
+    {
+        ["halls.manage"] = "M3 21V8l9-5 9 5v13M7 21v-6h10v6M7 11h.01M12 11h.01M17 11h.01",
+        ["events.manage"] = "M4 6h16v15H4zM4 10h16M8 3v5M16 3v5",
+        ["pricing.manage"] = "M3 12V4h8l10 10-8 8L3 12ZM7.5 7.5h.01",
+        ["sales.view"] = "M4 20V10M10 20V4M16 20v-8M22 20H2",
+        ["users.manage"] = "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
+    };
+}
+<section class="admin-hero">
+    <h1>@T["admin.welcome", Model.FullName]</h1>
+    <p>@T["admin.intro"]</p>
+    @if (Model.RoleNames.Count > 0)
+    {
+        <p class="role-list"><span>@T["admin.roles"]:</span>
+            @foreach (var role in Model.RoleNames)
+            {
+                <span class="role-chip">@role</span>
+            }
+        </p>
+    }
+</section>
+
+<ul class="section-grid">
+    @foreach (var (permission, allowed) in Model.Sections)
+    {
+        <li class="section-card" data-allowed="@(allowed ? "true" : "false")">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="@icons.GetValueOrDefault(permission, "M4 4h16v16H4z")" /></svg>
+            <h2>@T[$"permission.{permission}.name"]</h2>
+            <p>@T[$"permission.{permission}.description"]</p>
+            <div class="section-card__foot">
+                <span class="pill @(allowed ? "pill-ok" : "pill-locked")">@(allowed ? T["admin.allowed"] : T["admin.locked"])</span>
+                @if (allowed)
+                {
+                    <span class="pill pill-soft">@T["admin.soon"]</span>
+                }
+            </div>
+        </li>
+    }
+</ul>

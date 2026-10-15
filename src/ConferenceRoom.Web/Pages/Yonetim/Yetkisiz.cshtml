@@ -1,0 +1,12 @@
+@page "/yonetim/yetkisiz"
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["admin.deniedTitle"];
+}
+@* Giriş yapmış ama istenen bölümün yetkisi olmayan kullanıcıya gösterilir (çerez ayarı: AccessDeniedPath). *@
+<section class="admin-empty">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+    <h1>@T["admin.deniedTitle"]</h1>
+    <p>@T["admin.deniedText"]</p>
+    <a class="btn-secondary" href="/yonetim">@T["admin.backToPanel"]</a>
+</section>

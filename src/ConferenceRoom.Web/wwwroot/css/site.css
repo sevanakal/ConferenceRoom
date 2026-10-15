@@ -78,3 +78,29 @@ main { padding-block: calc(var(--space) * 2); display: grid; gap: var(--space); 
 
 /* Alt bilgi */
 .site-footer { color: var(--color-muted); font-size: .85rem; padding-block: var(--space); border-top: 1px solid var(--color-border); }
+
+/* Düğmeler: giriş, yönetim ve genel sayfalarda ortak */
+.btn-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    min-height: 48px; padding: 0 20px; width: 100%;
+    border: 0; border-radius: 10px; background: var(--btn-bg, var(--color-accent)); color: #fff;
+    font: inherit; font-weight: 600; cursor: pointer; transition: filter .15s, transform .05s;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:active { transform: translateY(1px); }
+.btn-secondary {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: 0 18px;
+    border: 1px solid var(--color-border); border-radius: 10px; background: var(--color-surface); color: var(--color-text);
+    font: inherit; font-weight: 600; text-decoration: none; cursor: pointer;
+}
+.btn-ghost {
+    border: 1px solid var(--color-border); background: transparent; color: var(--color-text);
+    border-radius: var(--radius); padding: 5px 12px; font: inherit; font-size: .9rem; cursor: pointer;
+}
+.btn-ghost:hover { background: var(--color-bg); }
+:is(.btn-primary, .btn-secondary, .btn-ghost):focus-visible { outline: 3px solid color-mix(in srgb, var(--color-accent) 45%, transparent); outline-offset: 2px; }
+
+/* Başlıktaki giriş bağlantısı / kullanıcı adı */
+.header-login { font-weight: 600; text-decoration: none; }
+.header-user { color: var(--color-muted); font-size: .9rem; }
+.header-form { margin: 0; }

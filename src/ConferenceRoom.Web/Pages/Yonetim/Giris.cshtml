@@ -1,0 +1,32 @@
+@page "/yonetim/giris"
+@model ConferenceRoom.Web.Pages.Yonetim.GirisModel
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["staffLogin.title"];
+    ViewData["AuthVariant"] = "staff";
+}
+<header class="auth-head">
+    <h1>@T["staffLogin.title"]</h1>
+    <p>@T["staffLogin.subtitle"]</p>
+</header>
+
+@if (Model.ErrorKey is not null)
+{
+    <div class="form-alert" role="alert">@T[Model.ErrorKey]</div>
+}
+
+<form method="post" class="auth-form" novalidate>
+    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+    <div class="field">
+        <label for="Input_Email">@T["auth.email"]</label>
+        <input id="Input_Email" name="Input.Email" type="email" value="@Model.Input.Email" autocomplete="username" inputmode="email" required autofocus />
+    </div>
+    <partial name="_PasswordField" model="@(("Input.Password", "current-password", (string?)null, (string?)null))" />
+    <label class="check">
+        <input type="checkbox" name="Input.RememberMe" value="true" @(Model.Input.RememberMe ? "checked" : null) />
+        <span>@T["auth.rememberMe"]</span>
+    </label>
+    <button type="submit" class="btn-primary">@T["staffLogin.submit"]</button>
+</form>
+
+<p class="auth-note">@T["staffLogin.forgot"]</p>

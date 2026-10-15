@@ -1,0 +1,74 @@
+@*
+    Giriş ve kayıt sayfalarının şablonu: solda görsel, sağda form (telefonda görsel üstte ince bir şerit olur).
+    Sayfa ViewData["AuthVariant"] ile hangi tarafa ait olduğunu söyler:
+      "staff"    → yönetim girişi (koyu plan kâğıdı görseli)
+      "customer" → bilet alan izleyici (sahne ışıklı görsel)
+    Görseldeki başlık ve açıklama "<bölüm>.visualTitle / visualText / badge" anahtarlarından gelir.
+    Stil: wwwroot/css/auth.css (renkler oradaki --auth-* ve --art-* değişkenlerinde).
+*@
+@using System.Globalization
+@inject ConferenceRoom.Localization.LanguageCatalog Catalog
+@{
+    var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var returnUrl = Context.Request.Path + Context.Request.QueryString;
+    var variant = ViewData["AuthVariant"] as string ?? "customer";
+    var section = variant == "staff" ? "staffLogin" : "customerLogin";
+}
+<!DOCTYPE html>
+<html lang="@currentCulture">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>@ViewData["Title"] · @T["app.name"]</title>
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
+</head>
+<body class="auth-page" data-variant="@variant">
+    <div class="auth-shell">
+        <aside class="auth-visual">
+            <div class="auth-visual__brand">
+                <partial name="_BrandMark" />
+                <span>@T["app.name"]</span>
+                <span class="auth-badge">@T[section + ".badge"]</span>
+            </div>
+            <div class="auth-visual__art">
+                <partial name="_AuthArt" model="variant" />
+            </div>
+            <div class="auth-visual__copy">
+                <h2>@T[section + ".visualTitle"]</h2>
+                <p>@T[section + ".visualText"]</p>
+            </div>
+        </aside>
+
+        <main class="auth-main" id="main">
+            <nav class="auth-lang" aria-label="@T["nav.language"]">
+                @foreach (var language in Catalog.Languages)
+                {
+                    <a href="/language/@language.Culture?returnUrl=@Uri.EscapeDataString(returnUrl)"
+                       aria-current="@(language.Culture == currentCulture ? "true" : null)"
+                       lang="@language.Culture">@language.Name</a>
+                }
+            </nav>
+            <div class="auth-card">
+                @RenderBody()
+            </div>
+            <footer class="auth-footer">@T["app.name"] · @T["footer.license"]</footer>
+        </main>
+    </div>
+
+    <script>
+        // Şifre alanındaki göz düğmesi: şifreyi göster/gizle. Metinler düğmenin data-* alanlarından gelir.
+        document.querySelectorAll("[data-toggle-password]").forEach(function (btn) {
+            btn.addEventListener("click", function () {
+                var input = document.getElementById(btn.getAttribute("data-toggle-password"));
+                var show = input.type === "password";
+                input.type = show ? "text" : "password";
+                btn.setAttribute("aria-pressed", show ? "true" : "false");
+                btn.setAttribute("aria-label", show ? btn.dataset.hide : btn.dataset.show);
+                btn.title = btn.getAttribute("aria-label");
+            });
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -34,6 +34,13 @@ Tarayıcıda http://localhost:8080 adresini açın. MySQL de birlikte başlar, t
 
 Bağlantı metni `ConferenceRoom.Web/appsettings.json` içindedir (kullanıcı `konferans`, şifre `gelistirme`).
 
+### İlk giriş
+
+Geliştirme ortamında ve Docker kurulumunda açılışta bir yönetici hesabı oluşturulur:
+`admin@konferans.local` / `Yonetici.2026` (adres: http://localhost:8080/yonetim/giris).
+Bu hesap yalnızca veritabanında hiç yönetim kullanıcısı yokken açılır; ayarlardaki `Admin:Email` ve
+`Admin:Password` değerlerinden gelir. Canlı sunucuda bu değerleri değiştirin.
+
 ### Komut satırından
 
 ```
@@ -48,6 +55,10 @@ Sayfada `@T["bolum.anahtar"]` ile kullanın. Bir dilde unutulan anahtarı testle
 
 **Yeni dil eklemek:** `Resources` klasörüne `de.json` gibi bir dosya ekleyin (`_language.name` alanıyla). Dil seçicide kendiliğinden görünür.
 
+**Yeni yetki eklemek:** `ConferenceRoom.Domain/Accounts/Permissions.cs` içine sabit ve `All` listesine ekleyin,
+dil dosyalarına `permission.<kod>.name` / `.description` yazın. Sayfayı yetkiye bağlamak için:
+`[Authorize(Policy = "Yetki:<kod>")]` (ya da `AuthPolicies.Permission(Permissions.X)`).
+
 **Veritabanında değişiklik:** varlığı `Domain` içinde değiştirin, eşlemesini `Infrastructure/Persistence/Configurations` içinde yapın, sonra:
 
 ```
@@ -60,6 +71,9 @@ dotnet ef migrations add DegisiklikAdi -p ConferenceRoom.Infrastructure -s Confe
 | Adres | İçerik |
 | --- | --- |
 | `/` | Ana sayfa (sistem durumu) |
+| `/giris`, `/kayit` | Bilet alan izleyicinin girişi ve kaydı |
+| `/yonetim/giris` | Yönetim paneli girişi (ayrı sayfa, ayrı çerez) |
+| `/yonetim` | Yönetim paneli: rolün yetkili olduğu bölümler |
 | `/health` | Sağlık kontrolü (veritabanı dahil) |
 | `/api/languages` | Kullanılabilir diller |
 | `/api/languages/{dil}` | Bir dilin tüm metinleri (mobil uygulama için) |

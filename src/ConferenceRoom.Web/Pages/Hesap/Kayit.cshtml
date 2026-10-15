@@ -1,0 +1,52 @@
+@page "/kayit"
+@model ConferenceRoom.Web.Pages.Hesap.KayitModel
+@using ConferenceRoom.Web.Auth
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["register.title"];
+    ViewData["AuthVariant"] = "customer";
+    string? Error(string field) => Model.Errors.TryGetValue(field, out var key) ? T[key, PasswordService.MinimumLength].Value : null;
+}
+<header class="auth-head">
+    <h1>@T["register.title"]</h1>
+    <p>@T["register.subtitle"]</p>
+</header>
+
+<form method="post" class="auth-form" novalidate>
+    <input type="hidden" name="ReturnUrl" value="@Model.ReturnUrl" />
+    @foreach (var (field, label, type, auto) in new[]
+    {
+        ("FullName", "register.fullName", "text", "name"),
+        ("Email", "auth.email", "email", "email"),
+        ("Phone", "register.phone", "tel", "tel"),
+    })
+    {
+        var error = Error(field);
+        var value = field switch { "FullName" => Model.Input.FullName, "Email" => Model.Input.Email, _ => Model.Input.Phone };
+        <div class="field">
+            <label for="Input_@field">@T[label]</label>
+            <input id="Input_@field" name="Input.@field" type="@type" value="@value" autocomplete="@auto"
+                   required="@(field == "Phone" ? null : "required")"
+                   aria-invalid="@(error is null ? null : "true")" aria-describedby="@(error is null ? null : $"Input_{field}-error")" />
+            @if (error is not null)
+            {
+                <p class="field-error" id="Input_@(field)-error">@error</p>
+            }
+        </div>
+    }
+    <partial name="_PasswordField" model="@(("Input.Password", "new-password", Error("Password"), T["register.passwordHint", PasswordService.MinimumLength].Value))" />
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.Consent" value="true" @(Model.Input.Consent ? "checked" : null)
+                   aria-invalid="@(Error("Consent") is null ? null : "true")" />
+            <span>@T["register.consent"]</span>
+        </label>
+        @if (Error("Consent") is { } consentError)
+        {
+            <p class="field-error">@consentError</p>
+        }
+    </div>
+    <button type="submit" class="btn-primary">@T["register.submit"]</button>
+</form>
+
+<p class="auth-switch">@T["register.haveAccount"] <a href="/giris@(Model.ReturnUrl is null ? "" : "?returnUrl=" + Uri.EscapeDataString(Model.ReturnUrl))">@T["register.login"]</a></p>
