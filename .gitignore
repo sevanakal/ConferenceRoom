@@ -1,0 +1,16 @@
+# .NET derleme çıktıları
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.idea/
+*.swp
+
+# Test ve kapsam raporları
+TestResults/
+coverage*/
+
+# Yerel ortam dosyaları (şifreler buraya yazılır, depoya girmez)
+.env
+appsettings.*.local.json

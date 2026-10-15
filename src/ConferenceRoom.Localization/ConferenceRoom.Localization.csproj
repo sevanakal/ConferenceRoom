@@ -1,0 +1,13 @@
+<!--
+  Dil kütüphanesi. Arayüzdeki tüm metinler Resources/*.json dosyalarından gelir.
+  Yeni dil eklemek için Resources klasörüne yeni bir JSON dosyası (ör. de.json) koymak yeterli.
+-->
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\*.json" LogicalName="ConferenceRoom.Localization.%(Filename)%(Extension)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Localization.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,28 @@
+{
+  "_language": { "name": "Türkçe", "direction": "ltr" },
+  "app": {
+    "name": "Konferans Salonu",
+    "tagline": "Salon, etkinlik ve rezervasyon yönetimi"
+  },
+  "nav": {
+    "home": "Ana sayfa",
+    "language": "Dil"
+  },
+  "home": {
+    "title": "Hoş geldiniz",
+    "intro": "Bu, konferans salonu yönetim sisteminin ilk iskeletidir. Salon krokisi, etkinlikler ve rezervasyonlar sırayla eklenecek.",
+    "statusTitle": "Sistem durumu",
+    "database": "Veritabanı",
+    "databaseOk": "Bağlantı kuruldu",
+    "databaseFail": "Bağlantı kurulamadı",
+    "organization": "Kurum"
+  },
+  "error": {
+    "title": "Bir hata oluştu",
+    "message": "İsteğiniz işlenirken beklenmeyen bir hata oluştu. Lütfen daha sonra tekrar deneyin.",
+    "requestId": "İstek numarası"
+  },
+  "footer": {
+    "license": "Açık kaynak, MIT lisansı"
+  }
+}
