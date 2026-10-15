@@ -3,6 +3,7 @@
 using System.Globalization;
 using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Infrastructure;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
@@ -19,6 +20,9 @@ builder.Services.AddRazorPages(o =>
 {
     o.Conventions.AuthorizeFolder("/Yonetim", AuthPolicies.Staff);
     o.Conventions.AllowAnonymousToPage("/Yonetim/Giris");
+    // Bölüm klasörleri ayrıca kendi yetkisini ister (yetki kodları: Domain/Accounts/Permissions.cs).
+    o.Conventions.AuthorizeFolder("/Yonetim/Kullanicilar", AuthPolicies.Permission(Permissions.UsersManage));
+    o.Conventions.AuthorizeFolder("/Yonetim/Roller", AuthPolicies.Permission(Permissions.UsersManage));
 });
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));

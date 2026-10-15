@@ -39,6 +39,8 @@ public static class AuthenticationSetup
                 o.AccessDeniedPath = "/yonetim/yetkisiz";
                 o.ExpireTimeSpan = TimeSpan.FromHours(10);  // bir iş günü
                 o.SlidingExpiration = true;
+                // Pasif yapılan kullanıcının oturumu hemen kapanır, yetki değişikliği hemen geçerli olur.
+                o.Events.OnValidatePrincipal = StaffAccounts.ValidatePrincipalAsync;
             });
 
         // ---- Kurallar: panele giriş + her yetki için bir kural ----

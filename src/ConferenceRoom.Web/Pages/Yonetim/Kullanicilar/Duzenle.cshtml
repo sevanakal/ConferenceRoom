@@ -1,0 +1,89 @@
+@page "/yonetim/kullanicilar/duzenle/{id:int?}"
+@model ConferenceRoom.Web.Pages.Yonetim.Kullanicilar.DuzenleModel
+@using ConferenceRoom.Web.Auth
+@{
+    Layout = "_AdminLayout";
+    var title = Model.Id is null ? T["users.newTitle"] : T["users.editTitle"];
+    ViewData["Title"] = title;
+    ViewData["AdminNav"] = "users";
+    string? Error(string field) => Model.Errors.TryGetValue(field, out var key) ? T[key, PasswordService.MinimumLength].Value : null;
+    var passwordHint = Model.Id is null ? T["users.passwordNew", PasswordService.MinimumLength].Value : T["users.passwordKeep"].Value;
+}
+<header class="page-head">
+    <div>
+        <a class="back-link" href="/yonetim/kullanicilar">← @T["users.title"]</a>
+        <h1>@title</h1>
+    </div>
+</header>
+
+@if (Error("") is { } formError)
+{
+    <div class="form-alert" role="alert">@formError</div>
+}
+
+<form method="post" class="form-card" autocomplete="off" novalidate>
+    <div class="form-row">
+        @foreach (var (field, label, type, value) in new[]
+        {
+            ("FullName", "users.fullName", "text", Model.Input.FullName),
+            ("Email", "users.email", "email", Model.Input.Email),
+        })
+        {
+            var error = Error(field);
+            <div class="field">
+                <label for="Input_@field">@T[label]</label>
+                <input id="Input_@field" name="Input.@field" type="@type" value="@value" required
+                       aria-invalid="@(error is null ? null : "true")" aria-describedby="@(error is null ? null : $"Input_{field}-error")" />
+                @if (error is not null)
+                {
+                    <p class="field-error" id="Input_@(field)-error">@error</p>
+                }
+            </div>
+        }
+    </div>
+
+    <partial name="_PasswordField" model="@(("Input.Password", "new-password", Error("Password"), passwordHint))" />
+
+    <fieldset class="choice-group">
+        <legend>@T["users.roles"]</legend>
+        <p class="field-hint">@T["users.rolesHint"]</p>
+        <div class="choice-grid">
+            @foreach (var role in Model.Roles)
+            {
+                <label class="choice">
+                    <input type="checkbox" name="Input.RoleIds" value="@role.Id" @(Model.Input.RoleIds.Contains(role.Id) ? "checked" : null) />
+                    <span>
+                        <b>@role.Name</b>
+                        @if (!string.IsNullOrEmpty(role.Description))
+                        {
+                            <small>@role.Description</small>
+                        }
+                    </span>
+                </label>
+            }
+        </div>
+    </fieldset>
+
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.IsActive" value="true" @(Model.Input.IsActive ? "checked" : null)
+                   aria-invalid="@(Error("IsActive") is null ? null : "true")" />
+            <span>@T["users.isActive"]</span>
+        </label>
+        @* İşaretsiz kutu hiçbir değer göndermez; bu gizli alan o durumda "false" gönderir (işaretliyse ilk değer "true" kazanır). *@
+        <input type="hidden" name="Input.IsActive" value="false" />
+        @if (Error("IsActive") is { } activeError)
+        {
+            <p class="field-error">@activeError</p>
+        }
+        else
+        {
+            <p class="field-hint">@T["users.isActiveHint"]</p>
+        }
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-primary btn-inline">@T["admin.save"]</button>
+        <a class="btn-secondary" href="/yonetim/kullanicilar">@T["admin.cancel"]</a>
+    </div>
+</form>

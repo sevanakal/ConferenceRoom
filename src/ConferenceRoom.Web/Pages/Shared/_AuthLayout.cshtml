@@ -4,7 +4,7 @@
       "staff"    → yönetim girişi (koyu plan kâğıdı görseli)
       "customer" → bilet alan izleyici (sahne ışıklı görsel)
     Görseldeki başlık ve açıklama "<bölüm>.visualTitle / visualText / badge" anahtarlarından gelir.
-    Stil: wwwroot/css/auth.css (renkler oradaki --auth-* ve --art-* değişkenlerinde).
+    Stil: wwwroot/css/auth.css (renkler oradaki --auth-* ve --art-* değişkenlerinde), form alanları forms.css.
 *@
 @using System.Globalization
 @inject ConferenceRoom.Localization.LanguageCatalog Catalog
@@ -21,6 +21,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>@ViewData["Title"] · @T["app.name"]</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/forms.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/auth.css" asp-append-version="true" />
 </head>
 <body class="auth-page" data-variant="@variant">
@@ -56,19 +57,7 @@
         </main>
     </div>
 
-    <script>
-        // Şifre alanındaki göz düğmesi: şifreyi göster/gizle. Metinler düğmenin data-* alanlarından gelir.
-        document.querySelectorAll("[data-toggle-password]").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                var input = document.getElementById(btn.getAttribute("data-toggle-password"));
-                var show = input.type === "password";
-                input.type = show ? "text" : "password";
-                btn.setAttribute("aria-pressed", show ? "true" : "false");
-                btn.setAttribute("aria-label", show ? btn.dataset.hide : btn.dataset.show);
-                btn.title = btn.getAttribute("aria-label");
-            });
-        });
-    </script>
+    <script src="~/js/forms.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

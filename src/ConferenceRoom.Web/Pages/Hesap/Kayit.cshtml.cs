@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
@@ -16,7 +15,7 @@ namespace ConferenceRoom.Web.Pages.Hesap;
 /// Hatalar alan bazında toplanır; görünüm her alanın altına kendi hatasını yazar.
 /// </summary>
 [EnableRateLimiting(AuthenticationSetup.LoginRateLimit)]
-public partial class KayitModel(AppDbContext db, PasswordService passwords) : PageModel
+public class KayitModel(AppDbContext db, PasswordService passwords) : PageModel
 {
     /// <summary>Kayıt formunun alanları.</summary>
     public sealed class RegisterInput
@@ -47,7 +46,7 @@ public partial class KayitModel(AppDbContext db, PasswordService passwords) : Pa
         var fullName = Input.FullName?.Trim() ?? "";
         var email = PasswordService.NormalizeEmail(Input.Email ?? "");
         if (fullName.Length == 0) Errors["FullName"] = "auth.required";
-        if (!EmailPattern().IsMatch(email)) Errors["Email"] = "auth.emailInvalid";
+        if (!PasswordService.IsValidEmail(email)) Errors["Email"] = "auth.emailInvalid";
         if ((Input.Password ?? "").Length < PasswordService.MinimumLength) Errors["Password"] = "register.passwordShort";
         if (!Input.Consent) Errors["Consent"] = "register.consentRequired";
         if (Errors.Count == 0 && await db.Customers.AnyAsync(c => c.OrganizationId == Organization.DefaultId && c.Email == email, cancellationToken))
@@ -81,7 +80,4 @@ public partial class KayitModel(AppDbContext db, PasswordService passwords) : Pa
         await HttpContext.SignInAsync(AuthSchemes.Customer, Principals.ForCustomer(customer));
         return LocalRedirect(Principals.SafeReturnUrl(ReturnUrl, "/"));
     }
-
-    [GeneratedRegex(@"^[^\s@]+@[^\s@]+\.[^\s@]{2,}$")]
-    private static partial Regex EmailPattern();
 }

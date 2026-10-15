@@ -1,0 +1,66 @@
+@page "/yonetim/roller/duzenle/{id:int?}"
+@model ConferenceRoom.Web.Pages.Yonetim.Roller.DuzenleModel
+@using ConferenceRoom.Domain.Accounts
+@{
+    Layout = "_AdminLayout";
+    var title = Model.Id is null ? T["roles.newTitle"] : T["roles.editTitle"];
+    ViewData["Title"] = title;
+    ViewData["AdminNav"] = "roles";
+}
+<header class="page-head">
+    <div>
+        <a class="back-link" href="/yonetim/roller">← @T["roles.title"]</a>
+        <h1>@title</h1>
+    </div>
+</header>
+
+@if (Model.Errors.TryGetValue("", out var formError))
+{
+    <div class="form-alert" role="alert">@T[formError]</div>
+}
+
+<form method="post" class="form-card" novalidate>
+    <div class="field">
+        <label for="Input_Name">@T["roles.name"]</label>
+        <input id="Input_Name" name="Input.Name" value="@Model.Input.Name" maxlength="100" required
+               aria-invalid="@(Model.Errors.ContainsKey("Name") ? "true" : null)" />
+        @if (Model.Errors.TryGetValue("Name", out var nameError))
+        {
+            <p class="field-error">@T[nameError]</p>
+        }
+    </div>
+    <div class="field">
+        <label for="Input_Description">@T["roles.description"]</label>
+        <input id="Input_Description" name="Input.Description" value="@Model.Input.Description" maxlength="500" />
+    </div>
+
+    <fieldset class="choice-group">
+        <legend>@T["roles.permissions"]</legend>
+        <p class="field-hint">@T["roles.permissionsHint"]</p>
+        <div class="choice-grid">
+            @foreach (var permission in Permissions.All)
+            {
+                <label class="choice">
+                    <input type="checkbox" name="Input.Permissions" value="@permission" @(Model.Input.Permissions.Contains(permission) ? "checked" : null) />
+                    <span>
+                        <b>@T[$"permission.{permission}.name"]</b>
+                        <small>@T[$"permission.{permission}.description"]</small>
+                    </span>
+                </label>
+            }
+        </div>
+    </fieldset>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-primary btn-inline">@T["admin.save"]</button>
+        <a class="btn-secondary" href="/yonetim/roller">@T["admin.cancel"]</a>
+    </div>
+</form>
+
+@if (Model.Id is not null && !Model.IsSystem)
+{
+    <form method="post" asp-page-handler="Delete" class="danger-zone" data-confirm="@T["roles.deleteConfirm"]">
+        <p>@T["roles.deleteConfirm"]</p>
+        <button type="submit" class="btn-danger">@T["roles.delete"]</button>
+    </form>
+}
