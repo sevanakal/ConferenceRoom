@@ -1,0 +1,752 @@
+<!doctype html>
+<!--
+  Koltuk Seçimi ve Bilet (prototip, tek dosya)
+  ============================================
+  İzleyicinin salon krokisinden koltuk seçip bilet aldığı ekran. Editörün (salon-kroki-editoru/)
+  ürettiği kroki verisini kullanır; aynı tarayıcıda editörde kayıtlı kroki varsa onu açar,
+  yoksa örnek salonu yükler. "Kroki yükle" ile editörden dışa aktarılan JSON da açılabilir.
+  Sunucu gerektirmez. Tek dış bağımlılık Konva.js (CDN).
+
+  Dosyanın bölümleri:
+    1. <style>  : tasarım değişkenleri (açık/koyu tema), yerleşim, telefon görünümü
+    2. HTML     : etkinlik başlığı, kat sekmeleri ve araçlar, kroki, sepet
+    3. <script> : dil sözlüğü (I18N) → editörden alınan geometri ve örnek salon →
+                  etkinlik verisi (kategori, fiyat, satılmış koltuklar; şimdilik örnek) →
+                  çizim → seçim → en iyi yer → ayırma süresi → sepet adımları → başlangıç
+
+  Ana projeye taşınırken:
+    - Kategori, fiyat ve koltuk durumları (buildEvent) Web API'den gelecek,
+    - koltuk ayırma ve 10 dakikalık süre sunucuda tutulacak (iki kişi aynı koltuğu alamasın),
+    - ödeme adımına ödeme sağlayıcısı eklenecek.
+  Ayrıntılar: koltuk-secimi/README.md ve kökteki CLAUDE.md.
+-->
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Koltuk Seçimi ve Bilet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Yerleşim: üstte etkinlik bilgisi, solda (geniş ekranda) salon krokisi, sağda sepet.
+   Telefonda kroki tam ekran, sepet alttan açılan bir panel olur. Renkler editörle aynı değişkenlerden gelir. */
+:root {
+  --chrome: #E9EBEE;
+  --panel: #F7F8F9;
+  --paper: #FBFBF8;
+  --ink: #1C2530;
+  --muted: #5C6773;
+  --line: #CDD2D8;
+  --accent: #A3213A;          /* seçili koltuk, ana düğme */
+  --accent-soft: rgba(163,33,58,.10);
+  --sold: #C3C8CE;            /* satılmış koltuk */
+  --stage: #2B3542;
+  --stage-text: #F2F3F4;
+  --exit: #1E7F4F;
+  --ok: #1E7F4F;
+  --warn: #9A5B00;
+  --cat1: #0F766E;            /* fiyat kategorileri */
+  --cat2: #5B3FB0;
+  --cat3: #9A4A12;
+  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --chrome: #14181D; --panel: #1A1F25; --paper: #20262D; --ink: #E3E7EB; --muted: #98A2AD; --line: #323A43;
+    --accent: #E0566F; --accent-soft: rgba(224,86,111,.16); --sold: #3A424B; --stage: #3A4552; --stage-text: #F2F3F4;
+    --exit: #3FB57A; --ok: #3FB57A; --warn: #E3A23B; --cat1: #2A9D8F; --cat2: #8467D7; --cat3: #C26A2B;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --chrome: #14181D; --panel: #1A1F25; --paper: #20262D; --ink: #E3E7EB; --muted: #98A2AD; --line: #323A43;
+  --accent: #E0566F; --accent-soft: rgba(224,86,111,.16); --sold: #3A424B; --stage: #3A4552; --stage-text: #F2F3F4;
+  --exit: #3FB57A; --ok: #3FB57A; --warn: #E3A23B; --cat1: #2A9D8F; --cat2: #8467D7; --cat3: #C26A2B;
+  color-scheme: dark;
+}
+html, body { height: 100%; }
+[hidden] { display: none !important; }
+body {
+  margin: 0; background: var(--chrome); color: var(--ink); font-family: var(--font-ui); font-size: 14px; overflow: hidden;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px; box-sizing: border-box;
+}
+*, *::before, *::after { box-sizing: border-box; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.app { height: 100%; display: grid; grid-template-rows: auto 1fr; gap: 10px; min-width: 0; }
+
+/* Etkinlik başlığı */
+.event { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; min-width: 0; }
+.event .when { display: grid; place-items: center; background: var(--accent); color: #fff; border-radius: 8px; width: 54px; height: 54px; line-height: 1.05; flex: none; }
+.event .when b { font-size: 20px; }
+.event .when span { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.event h1 { margin: 0; font-size: 18px; font-weight: 600; text-wrap: balance; }
+.event .meta { color: var(--muted); font-size: 13px; }
+.event .spacer { flex: 1; }
+.chipbtn { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.chipbtn:hover { border-color: var(--accent); }
+
+.layout { display: grid; grid-template-columns: 1fr 340px; gap: 10px; min-height: 0; min-width: 0; }
+
+/* Kroki sütunu */
+.mapcol { display: grid; grid-template-rows: auto auto 1fr; gap: 8px; min-height: 0; min-width: 0; }
+.tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.tabs { display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+.tab { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; color: var(--muted); font-weight: 500; }
+.tab small { font-family: var(--font-data); font-size: 11px; margin-left: 6px; opacity: .8; }
+.tab[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+.group { display: flex; align-items: center; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
+.ibtn { border: 0; background: transparent; height: 30px; min-width: 30px; padding: 0 8px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.ibtn:hover { background: var(--accent-soft); }
+.ibtn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.best { display: flex; align-items: center; gap: 6px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px 2px 2px 10px; }
+.best select { border: 1px solid var(--line); background: var(--paper); border-radius: 5px; padding: 3px 4px; }
+.best button { border: 0; background: var(--ink); color: var(--paper); border-radius: 6px; padding: 5px 10px; font-weight: 500; }
+
+.legend { display: flex; gap: 6px 14px; flex-wrap: wrap; align-items: center; font-size: 13px; color: var(--muted); }
+.legend .it { display: inline-flex; align-items: center; gap: 6px; }
+.legend .it b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.sw { width: 16px; height: 14px; border-radius: 4px 4px 6px 6px; display: inline-block; flex: none; }
+.sw.sold { background: var(--sold); }
+.sw.sel { background: var(--accent); }
+.sw.vip { background: transparent; border: 2.5px solid #C9A227; }
+
+.map { position: relative; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); min-height: 0; touch-action: none; }
+#stage { position: absolute; inset: 0; cursor: grab; }
+#stage.drag { cursor: grabbing; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--paper); border-radius: 6px; padding: 6px 9px; font-size: 12px; line-height: 1.4; white-space: nowrap; z-index: 2; transform: translate(-50%, calc(-100% - 12px)); }
+.tip b { font-weight: 600; }
+.maphint { position: absolute; left: 8px; bottom: 8px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 3px 8px; font-size: 12px; color: var(--muted); pointer-events: none; }
+
+/* Sepet */
+.cart { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.cart header { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.cart h2 { margin: 0; font-size: 15px; }
+.steps { display: flex; gap: 4px; font-size: 11px; color: var(--muted); }
+.steps span { padding: 2px 7px; border-radius: 999px; border: 1px solid var(--line); }
+.steps span[aria-current="step"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.timer { font-family: var(--font-data); font-size: 12px; color: var(--warn); display: flex; align-items: center; gap: 6px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: color-mix(in srgb, var(--warn) 8%, transparent); }
+.cart .body { padding: 12px 14px; overflow-y: auto; flex: 1; display: grid; gap: 10px; align-content: start; }
+.empty { color: var(--muted); line-height: 1.5; margin: 0; }
+.tickets { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ticket { display: grid; grid-template-columns: 4px 1fr; grid-auto-flow: column; grid-auto-columns: auto; gap: 10px; align-items: center; background: var(--paper); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; }
+.ticket .bar { width: 4px; align-self: stretch; border-radius: 2px; }
+.ticket .seat b { display: block; font-weight: 600; }
+.ticket .seat span { color: var(--muted); font-size: 12px; }
+.ticket select { border: 1px solid var(--line); background: var(--panel); border-radius: 5px; padding: 3px 4px; font-size: 12px; max-width: 110px; }
+.ticket .price { font-family: var(--font-data); font-variant-numeric: tabular-nums; text-align: right; min-width: 64px; }
+.ticket .rm { border: 0; background: transparent; color: var(--muted); padding: 2px 4px; border-radius: 4px; font-size: 16px; line-height: 1; }
+.ticket .rm:hover { color: var(--accent); }
+.note { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 0; }
+.cart footer { border-top: 1px solid var(--line); padding: 12px 14px; display: grid; gap: 10px; }
+.total { display: flex; justify-content: space-between; align-items: baseline; }
+.total b { font-family: var(--font-data); font-size: 20px; font-variant-numeric: tabular-nums; }
+.primary { border: 0; background: var(--accent); color: #fff; border-radius: 8px; padding: 11px 14px; font-weight: 600; width: 100%; }
+.primary:disabled { opacity: .4; cursor: default; }
+.secondary { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 9px 14px; width: 100%; }
+.fld { display: grid; gap: 4px; }
+.fld label { font-size: 12px; color: var(--muted); }
+.fld input { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 8px 10px; width: 100%; }
+.fld input[aria-invalid="true"] { border-color: var(--accent); }
+.err { color: var(--accent); font-size: 12px; min-height: 0; }
+.check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; line-height: 1.4; }
+.check input { margin-top: 3px; }
+.done { text-align: center; display: grid; gap: 8px; justify-items: center; padding-top: 6px; }
+.done .ok { width: 44px; height: 44px; border-radius: 50%; background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); display: grid; place-items: center; font-size: 22px; }
+.code { font-family: var(--font-data); font-size: 24px; letter-spacing: .12em; padding: 6px 14px; border: 2px dashed var(--line); border-radius: 8px; }
+.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 9px 14px; border-radius: 6px; z-index: 20; max-width: calc(100% - 32px); }
+.mobilebar { display: none; }
+
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; }
+  .cart { position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-height: 75%; z-index: 5; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
+  .cart:not(.open) { display: none; }
+  .mobilebar { display: flex; position: fixed; left: max(16px, env(safe-area-inset-left, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); bottom: calc(12px + env(safe-area-inset-bottom, 0px)); z-index: 4; background: var(--ink); color: var(--paper); border-radius: 10px; padding: 10px 12px; align-items: center; gap: 10px; }
+  .mobilebar span { flex: 1; }
+  .mobilebar b { font-family: var(--font-data); }
+  .mobilebar button { border: 0; background: var(--accent); color: #fff; border-radius: 7px; padding: 8px 12px; font-weight: 600; }
+  .toast { bottom: calc(76px + env(safe-area-inset-bottom, 0px)); }
+  .mapcol { padding-bottom: 64px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="event">
+    <div class="when"><b id="evDay">21</b><span id="evMonth">Kas</span></div>
+    <div>
+      <h1 id="evTitle"></h1>
+      <div class="meta"><span id="evTime"></span> · <span class="hall" id="evHall"></span></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="chipbtn" id="loadBtn" data-i18n="loadPlan">Kroki yükle</button>
+    <button class="chipbtn" id="langBtn" aria-label="Dil / Language"><span id="langLbl">EN</span></button>
+  </header>
+
+  <div class="layout">
+    <section class="mapcol">
+      <div class="tools">
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="group">
+          <button class="ibtn" id="zoomOut" data-i18n-title="zoomOut"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          <button class="ibtn" id="zoomIn" data-i18n-title="zoomIn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button class="ibtn" id="fitBtn" data-i18n-title="fit"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        </div>
+        <div class="best">
+          <span data-i18n="bestLabel">En iyi yer</span>
+          <select id="bestCount" aria-label="adet"></select>
+          <button id="bestBtn" data-i18n="bestBtn">Bul</button>
+        </div>
+      </div>
+      <div class="legend" id="legend"></div>
+      <div class="map" id="map">
+        <div id="stage"></div>
+        <div class="tip" id="tip" hidden></div>
+        <div class="maphint" id="mapHint"></div>
+      </div>
+    </section>
+
+    <aside class="cart" id="cart" aria-labelledby="cartTitle">
+      <header>
+        <h2 id="cartTitle" data-i18n="cartTitle">Biletleriniz</h2>
+        <div class="steps" id="steps"></div>
+      </header>
+      <div class="timer" id="timer" hidden></div>
+      <div class="body" id="cartBody"></div>
+      <footer id="cartFoot"></footer>
+    </aside>
+  </div>
+</div>
+<div class="mobilebar" id="mobileBar"><span id="mobileSum"></span><button id="mobileOpen" data-i18n="mobileOpen">Sepet</button></div>
+
+<div class="toast" id="toast" hidden></div>
+<input type="file" id="fileIn" accept=".json,application/json" hidden>
+
+<script src="https://cdn.jsdelivr.net/npm/konva@9.3.6/konva.min.js"></script>
+<script>
+(() => {
+"use strict";
+
+/* ------------------------------------------------------------------
+   Dil sözlüğü (prototip). Ana projede ConferenceRoom.Localization/Resources/*.json
+------------------------------------------------------------------ */
+const I18N = {
+  tr: {
+    loadPlan: "Kroki yükle", zoomIn: "Yakınlaştır", zoomOut: "Uzaklaştır", fit: "Tümünü göster",
+    bestLabel: "En iyi yer", bestBtn: "Bul", cartTitle: "Biletleriniz", mobileOpen: "Sepet",
+    stepSeats: "Koltuk", stepInfo: "Bilgiler", stepDone: "Onay",
+    emptyCart: "Krokiden koltuk seçin. Yan yana yer arıyorsanız yukarıdan kişi sayısını seçip \"Bul\"a basın.",
+    maxNote: "Tek seferde en fazla {n} bilet alınabilir.",
+    hold: "Koltuklarınız {t} süreyle sizin için ayrıldı",
+    holdExpired: "Süre doldu, seçtiğiniz koltuklar serbest bırakıldı.",
+    full: "Tam", student: "Öğrenci", free: "Ücretsiz",
+    total: "Toplam", next: "Devam et", back: "Geri", pay: "Rezervasyonu tamamla",
+    name: "Ad soyad", email: "E-posta", phone: "Telefon (isteğe bağlı)",
+    consent: "Kişisel verilerimin bilet işlemi için kullanılmasını kabul ediyorum (KVKK aydınlatma metni).",
+    errName: "Adınızı yazın.", errEmail: "Geçerli bir e-posta adresi yazın.", errConsent: "Devam etmek için onay kutusunu işaretleyin.",
+    doneTitle: "Rezervasyonunuz tamamlandı", doneCode: "Rezervasyon kodu", doneNote: "Girişte bu kodu gösterin. Prototip olduğu için ödeme alınmadı ve e-posta gönderilmedi.",
+    newOrder: "Yeni bilet al",
+    row: "Sıra", seat: "No", sold: "Satıldı", selected: "Seçili", protocol: "Protokol (satışa kapalı)", accessible: "Engelli yeri",
+    extra: "Ekstra sandalye", seatsN: "{n} koltuk", available: "{n} boş",
+    hint: "Koltuğa dokunarak seçin · sürükleyerek kaydırın",
+    bestNone: "{n} kişilik yan yana boş yer bulunamadı.", bestFound: "{n} kişilik en iyi yer seçildi.",
+    limit: "En fazla {n} koltuk seçebilirsiniz.", imported: "Kroki yüklendi", importFail: "Bu dosya geçerli bir kroki değil",
+    cat1: "1. Kategori", cat2: "2. Kategori", cat3: "3. Kategori",
+    evTitle: "Kentsel Dönüşüm ve Afet Hazırlığı Paneli", evTime: "Cumartesi 19:30", months: ["Oca","Şub","Mar","Nis","May","Haz","Tem","Ağu","Eyl","Eki","Kas","Ara"]
+  },
+  en: {
+    loadPlan: "Load plan", zoomIn: "Zoom in", zoomOut: "Zoom out", fit: "Show all",
+    bestLabel: "Best seats", bestBtn: "Find", cartTitle: "Your tickets", mobileOpen: "Basket",
+    stepSeats: "Seats", stepInfo: "Details", stepDone: "Done",
+    emptyCart: "Pick seats on the plan. Looking for seats together? Choose how many above and press \"Find\".",
+    maxNote: "Up to {n} tickets per order.",
+    hold: "Your seats are held for {t}",
+    holdExpired: "Time ran out and your seats were released.",
+    full: "Standard", student: "Student", free: "Free",
+    total: "Total", next: "Continue", back: "Back", pay: "Complete booking",
+    name: "Full name", email: "Email", phone: "Phone (optional)",
+    consent: "I agree to my personal data being used to process this booking.",
+    errName: "Enter your name.", errEmail: "Enter a valid email address.", errConsent: "Tick the box to continue.",
+    doneTitle: "Your booking is complete", doneCode: "Booking code", doneNote: "Show this code at the entrance. This is a prototype, so no payment was taken and no email was sent.",
+    newOrder: "Book more tickets",
+    row: "Row", seat: "Seat", sold: "Sold", selected: "Selected", protocol: "Protocol (not for sale)", accessible: "Wheelchair space",
+    extra: "Extra chair", seatsN: "{n} seats", available: "{n} free",
+    hint: "Tap a seat to select · drag to move",
+    bestNone: "No {n} free seats together were found.", bestFound: "Best {n} seats together selected.",
+    limit: "You can select up to {n} seats.", imported: "Plan loaded", importFail: "This file is not a valid plan",
+    cat1: "Category 1", cat2: "Category 2", cat3: "Category 3",
+    evTitle: "Urban Renewal and Disaster Preparedness Panel", evTime: "Saturday 19:30", months: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"]
+  }
+};
+let lang = "tr";
+const t = (k, v) => { let s = I18N[lang][k] ?? I18N.tr[k] ?? k; if (v && typeof s === "string") for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
+
+/* ------------------------------------------------------------------
+   Kroki geometrisi ve örnek salon. Editördeki (salon-kroki-editoru/index.html) kodun aynısı;
+   ana projede kroki veritabanından geleceği için bu kopya yalnızca prototipte durur.
+------------------------------------------------------------------ */
+const SEAT_W = 48, SEAT_H = 44;
+const uid = () => "i" + Math.random().toString(36).slice(2, 9);
+function indexToRow(i) { let s = ""; i += 1; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = Math.floor((i - 1) / 26); } return s; }
+function numberSeq(n, pattern, start = 1) {
+  const out = [];
+  for (let i = 0; i < n; i++) {
+    if (pattern === "odd") out.push((start % 2 ? start : start + 1) + 2 * i);
+    else if (pattern === "even") out.push((start % 2 ? start + 1 : start) + 2 * i);
+    else out.push(start + i);
+  }
+  return out;
+}
+function rowSeatPositions(p0, p1, gap, curve) {
+  const dx = p1.x - p0.x, dy = p1.y - p0.y, c = Math.hypot(dx, dy), th = Math.atan2(dy, dx), cos = Math.cos(th), sin = Math.sin(th);
+  const local = []; const s = Math.max(-c / 2, Math.min(c / 2, curve));
+  if (c < 1) return [{ x: p0.x, y: p0.y, rot: 0 }];
+  if (Math.abs(s) < 1) { const n = Math.floor(c / gap + 1e-6) + 1; for (let k = 0; k < n; k++) local.push({ x: k * gap, y: 0, r: 0 }); }
+  else {
+    const sa = Math.abs(s), sign = Math.sign(s), R = (c * c / 4 + sa * sa) / (2 * sa), alpha = Math.asin(Math.min(1, (c / 2) / R)), L = 2 * R * alpha;
+    const n = Math.floor(L / gap + 1e-6) + 1, cy = sa - R;
+    for (let k = 0; k < n; k++) { const phi = Math.PI / 2 + alpha - (k * gap) / R; local.push({ x: c / 2 + R * Math.cos(phi), y: (cy + R * Math.sin(phi)) * sign, r: Math.atan2(-Math.cos(phi), Math.sin(phi)) * sign }); }
+  }
+  return local.map((p) => ({ x: p0.x + p.x * cos - p.y * sin, y: p0.y + p.x * sin + p.y * cos, rot: ((th + p.r) * 180) / Math.PI }));
+}
+function makeRow(p0, p1, o) {
+  const pts = rowSeatPositions(p0, p1, o.gap, o.curve || 0);
+  let nums = numberSeq(pts.length, o.numbering, o.start || 1); if (o.dir === "rtl") nums = nums.reverse();
+  return pts.map((p, i) => ({ id: uid(), levelId: o.levelId, type: "seat", x: Math.round(p.x), y: Math.round(p.y), rotation: +p.rot.toFixed(2), row: o.row, num: nums[i], kind: o.kind || "normal", blockId: o.blockId || null, groupId: o.groupId || null }));
+}
+function sampleDoc() {
+  const tr = lang === "tr";
+  const d = { schema: 1, unit: "cm", name: tr ? "Kongre Merkezi Ana Salon" : "Congress Centre Main Hall", levels: [], blocks: [], items: [] };
+  const P = { id: uid(), name: tr ? "Parter" : "Stalls" }, B = { id: uid(), name: tr ? "Balkon" : "Balcony" };
+  d.levels.push(P, B);
+  const blk = (levelId, name, color) => { const b = { id: uid(), levelId, name, color }; d.blocks.push(b); return b.id; };
+  const add = (it) => d.items.push(Object.assign({ id: uid(), rotation: 0 }, it));
+  add({ levelId: P.id, type: "wall", x: 1200, y: 0, w: 2420, h: 20 }); add({ levelId: P.id, type: "wall", x: 0, y: 1300, w: 20, h: 2600 });
+  add({ levelId: P.id, type: "wall", x: 2400, y: 1300, w: 20, h: 2600 }); add({ levelId: P.id, type: "wall", x: 1200, y: 2600, w: 2420, h: 20 });
+  add({ levelId: P.id, type: "stage", x: 1200, y: 230, w: 1500, h: 420, label: tr ? "SAHNE" : "STAGE" });
+  add({ levelId: P.id, type: "door", x: 520, y: 2590, w: 160, h: 14, kind: "door", label: tr ? "Giriş 1" : "Entrance 1" });
+  add({ levelId: P.id, type: "door", x: 1880, y: 2590, w: 160, h: 14, kind: "door", label: tr ? "Giriş 2" : "Entrance 2" });
+  add({ levelId: P.id, type: "door", x: 10, y: 640, w: 140, h: 14, rotation: 90, kind: "exit", label: tr ? "Acil çıkış" : "Emergency exit" });
+  add({ levelId: P.id, type: "door", x: 2390, y: 640, w: 140, h: 14, rotation: -90, kind: "exit", label: tr ? "Acil çıkış" : "Emergency exit" });
+  add({ levelId: P.id, type: "column", x: 760, y: 2330, w: 50, h: 50 }); add({ levelId: P.id, type: "column", x: 1640, y: 2330, w: 50, h: 50 });
+  add({ levelId: P.id, type: "area", x: 1200, y: 2440, w: 560, h: 220, label: tr ? "Reji / Kontrol" : "Control room", color: "#64748B" });
+  const L = blk(P.id, tr ? "Sol Blok" : "Left Block", "#0F766E"), C = blk(P.id, tr ? "Orta Blok" : "Centre Block", "#1D5FBF"), R = blk(P.id, tr ? "Sağ Blok" : "Right Block", "#B4531A");
+  const gL = uid(), gC = uid(), gR = uid();
+  for (let i = 0; i < 12; i++) {
+    const y = 640 + i * 92, row = indexToRow(i);
+    d.items.push(...makeRow({ x: 150, y: y + 46 }, { x: 610, y }, { gap: 55, numbering: "even", dir: "rtl", row, levelId: P.id, blockId: L, groupId: gL }));
+    d.items.push(...makeRow({ x: 760, y }, { x: 1640, y }, { gap: 55, curve: 60 + i * 4, numbering: "seq", dir: "ltr", row, levelId: P.id, blockId: C, groupId: gC }));
+    d.items.push(...makeRow({ x: 1790, y }, { x: 2250, y: y + 46 }, { gap: 55, numbering: "odd", dir: "ltr", row, levelId: P.id, blockId: R, groupId: gR }));
+  }
+  d.items.push(...makeRow({ x: 860, y: 1830 }, { x: 1540, y: 1830 }, { gap: 170, numbering: "seq", dir: "ltr", row: tr ? "EN" : "WC", kind: "accessible", levelId: P.id, blockId: C, groupId: uid() }));
+  d.items.push(...makeRow({ x: 200, y: 2030 }, { x: 600, y: 2030 }, { gap: 55, numbering: "seq", dir: "ltr", row: "EK", kind: "extra", levelId: P.id, groupId: uid() }));
+  d.items.push(...makeRow({ x: 1800, y: 2030 }, { x: 2200, y: 2030 }, { gap: 55, numbering: "seq", dir: "ltr", row: "EK", kind: "extra", levelId: P.id, groupId: uid(), start: 9 }));
+  d.items.forEach((it) => { if (it.blockId === C && it.row === "A") it.kind = "vip"; });
+  add({ levelId: B.id, type: "area", x: 1200, y: 1050, w: 2300, h: 900, label: tr ? "Balkon" : "Balcony", color: "#7C6A55" });
+  add({ levelId: B.id, type: "wall", x: 1200, y: 600, w: 2300, h: 14 });
+  add({ levelId: B.id, type: "text", x: 1200, y: 420, size: 46, label: tr ? "↑ Sahne yönü" : "↑ Towards stage" });
+  add({ levelId: B.id, type: "door", x: 1200, y: 1495, w: 160, h: 14, kind: "door", label: tr ? "Balkon girişi" : "Balcony entrance" });
+  const BM = blk(B.id, tr ? "Balkon Orta" : "Balcony Centre", "#6D3FC0"), BL = blk(B.id, tr ? "Sol Loca" : "Left Box", "#B0306A"), BR = blk(B.id, tr ? "Sağ Loca" : "Right Box", "#4D7C0F");
+  const gB = uid();
+  for (let i = 0; i < 5; i++) d.items.push(...makeRow({ x: 380, y: 700 + i * 95 }, { x: 2020, y: 700 + i * 95 }, { gap: 55, curve: 110 + i * 6, numbering: "seq", dir: "ltr", row: "B" + indexToRow(i), levelId: B.id, blockId: BM, groupId: gB }));
+  const gl = uid(), gr = uid();
+  for (let i = 0; i < 2; i++) {
+    d.items.push(...makeRow({ x: 160 + i * 80, y: 700 }, { x: 160 + i * 80, y: 920 }, { gap: 55, numbering: "seq", dir: "ltr", row: "L" + (i + 1), kind: "vip", levelId: B.id, blockId: BL, groupId: gl }));
+    d.items.push(...makeRow({ x: 2240 - i * 80, y: 920 }, { x: 2240 - i * 80, y: 700 }, { gap: 55, numbering: "seq", dir: "ltr", row: "R" + (i + 1), kind: "vip", levelId: B.id, blockId: BR, groupId: gr }));
+  }
+  return d;
+}
+
+/* ------------------------------------------------------------------
+   Etkinlik: krokiyi satışa açar.
+   Ana projede bu bilgiler Etkinlik / FiyatKategorisi / Bilet tablolarından gelecek:
+     - etkinlik, krokinin belirli bir SÜRÜMÜNE bağlıdır
+     - her blok bir fiyat kategorisine bağlanır
+     - her koltuğun durumu: boş | satıldı | geçici ayrıldı | satışa kapalı
+   Prototipte kategoriler bloklara kendiliğinden dağıtılır ve satılmış koltuklar örnek olarak üretilir.
+------------------------------------------------------------------ */
+const MAX_TICKETS = 10;
+const HOLD_SECONDS = 600;
+const STUDENT_RATE = 0.6;                  // öğrenci bileti tam fiyatın %60'ı
+const CATS = [
+  { id: "c1", key: "cat1", price: 450, color: "--cat1" },
+  { id: "c2", key: "cat2", price: 300, color: "--cat2" },
+  { id: "c3", key: "cat3", price: 180, color: "--cat3" }
+];
+
+let doc, ev, levelId;
+let selected = new Map();                  // seatId → bilet türü ("full" | "student")
+let step = 1, holdUntil = 0, holdTimer = null, lastOrder = null;
+
+// Tekrarlanabilir rastgele sayı (aynı kroki her açılışta aynı satılmış koltukları göstersin)
+function rng(seed) { let s = seed >>> 0; return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296); }
+function hashStr(str) { let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+
+function buildEvent(d) {
+  const seats = d.items.filter((i) => i.type === "seat");
+  const firstLevel = d.levels[0]?.id;
+  const stage = d.items.find((i) => i.type === "stage" && i.levelId === firstLevel);
+  const allX = seats.map((s) => s.x);
+  const midX = stage ? stage.x : (Math.min(...allX) + Math.max(...allX)) / 2;
+  const frontY = stage ? stage.y + (stage.h || 0) / 2 : Math.min(...seats.map((s) => s.y));
+
+  // Blok → kategori: ilk kattaki en ortadaki blok 1. kategori, ilk kattaki diğerleri 2., üst katlar 3.
+  const blockCat = {};
+  const firstBlocks = d.blocks.filter((b) => b.levelId === firstLevel).map((b) => {
+    const bs = seats.filter((s) => s.blockId === b.id); const cx = bs.reduce((a, s) => a + s.x, 0) / (bs.length || 1);
+    return { id: b.id, off: Math.abs(cx - midX) };
+  }).sort((a, b) => a.off - b.off);
+  firstBlocks.forEach((b, i) => (blockCat[b.id] = i === 0 ? "c1" : "c2"));
+  d.blocks.forEach((b) => { if (!blockCat[b.id]) blockCat[b.id] = "c3"; });
+  const catOf = (s) => (s.kind === "extra" || !s.blockId ? "c3" : blockCat[s.blockId] || "c3");
+
+  // Örnek satışlar: öne ve ortaya yakın koltuklar daha çok satılmış olsun.
+  const rand = rng(hashStr(d.name + seats.length));
+  const status = new Map();
+  const maxDist = Math.max(...seats.map((s) => Math.hypot(s.x - midX, s.y - frontY))) || 1;
+  for (const s of seats) {
+    if (s.kind === "vip") { status.set(s.id, "closed"); continue; }
+    const near = 1 - Math.hypot(s.x - midX, s.y - frontY) / maxDist;
+    const lvl = s.levelId === firstLevel ? 0 : 0.15;
+    status.set(s.id, rand() < 0.12 + 0.5 * near * near - lvl ? "sold" : "free");
+  }
+  // Tek tük kalmasın diye satışları yan yana kümelendir: satılmış koltuğun sağındaki komşu da %40 satılmış.
+  const rows = groupRows(seats);
+  for (const list of rows.values()) for (let i = 0; i < list.length - 1; i++) if (status.get(list[i].id) === "sold" && status.get(list[i + 1].id) === "free" && rand() < 0.4) status.set(list[i + 1].id, "sold");
+  return { title: t("evTitle"), time: t("evTime"), date: new Date(2026, 10, 21), status, catOf, rows, ideal: { x: midX, y: frontY + 650 }, firstLevel };
+}
+
+// Aynı kat + blok + sıradaki koltukları sıra boyunca dizilmiş olarak gruplar (yan yana yer bulmak için).
+function groupRows(seats) {
+  const m = new Map();
+  for (const s of seats) { const k = s.levelId + "|" + (s.blockId || "-") + "|" + (s.row || "") + "|" + s.kind; if (!m.has(k)) m.set(k, []); m.get(k).push(s); }
+  for (const list of m.values()) {
+    let sx = 0, sy = 0; list.forEach((s) => { const a = (s.rotation || 0) * Math.PI / 180; sx += Math.cos(a); sy += Math.sin(a); });
+    const th = Math.atan2(sy, sx), c = Math.cos(th), sn = Math.sin(th);
+    list.sort((a, b) => (a.x * c + a.y * sn) - (b.x * c + b.y * sn));
+  }
+  return m;
+}
+
+const seatById = (id) => doc.items.find((i) => i.id === id);
+const blockById = (id) => doc.blocks.find((b) => b.id === id);
+const catById = (id) => CATS.find((c) => c.id === id);
+const priceOf = (s, type) => Math.round(catById(ev.catOf(s)).price * (type === "student" ? STUDENT_RATE : 1));
+// money: tek bir fiyat (0 ise "Ücretsiz" yazar); cur: toplamlar için her zaman tutar
+const cur = (n) => new Intl.NumberFormat(lang === "tr" ? "tr-TR" : "en-GB", { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(n);
+const money = (n) => n === 0 ? t("free") : cur(n);
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+/* ------------------------------------------------------------------
+   Kroki çizimi (Konva). Yapı öğeleri (sahne, duvar, kapı...) dinlenmez; yalnızca koltuklar tıklanır.
+------------------------------------------------------------------ */
+const host = $("stage");
+const stage = new Konva.Stage({ container: "stage", width: host.clientWidth || 800, height: host.clientHeight || 600, draggable: true });
+const baseLayer = new Konva.Layer({ listening: false });
+const seatLayer = new Konva.Layer();
+stage.add(baseLayer, seatLayer);
+const seatNodes = new Map();
+let TC = {};
+const readTheme = () => (TC = { ink: css("--ink"), muted: css("--muted"), paper: css("--paper"), accent: css("--accent"), sold: css("--sold"), stage: css("--stage"), stageText: css("--stage-text"), exit: css("--exit"), font: css("--font-ui"), mono: css("--font-data"), cats: Object.fromEntries(CATS.map((c) => [c.id, css(c.color)])) });
+
+function drawStructure(it) {
+  const g = new Konva.Group({ x: it.x, y: it.y, rotation: it.rotation || 0 });
+  const w = it.w || 100, h = it.h || 100;
+  if (it.type === "stage") {
+    g.add(new Konva.Rect({ x: -w / 2, y: -h / 2, width: w, height: h, fill: TC.stage, cornerRadius: 8 }));
+    g.add(new Konva.Text({ text: it.label || "", x: -w / 2, y: -22, width: w, align: "center", fontSize: 44, fontStyle: "600", letterSpacing: 10, fontFamily: TC.font, fill: TC.stageText }));
+  } else if (it.type === "area") {
+    const col = it.color || "#64748B";
+    g.add(new Konva.Rect({ x: -w / 2, y: -h / 2, width: w, height: h, fill: col + "14", stroke: col, strokeWidth: 3, dash: [16, 10], cornerRadius: 6 }));
+    g.add(new Konva.Text({ text: it.label || "", x: -w / 2 + 16, y: -h / 2 + 14, fontSize: 30, fontStyle: "600", fontFamily: TC.font, fill: col }));
+  } else if (it.type === "wall") {
+    g.add(new Konva.Rect({ x: -w / 2, y: -h / 2, width: w, height: h, fill: TC.ink }));
+  } else if (it.type === "door") {
+    const col = it.kind === "exit" ? TC.exit : TC.ink;
+    g.add(new Konva.Rect({ x: -w / 2, y: -h / 2, width: w, height: h, fill: TC.paper, stroke: col, strokeWidth: 3 }));
+    g.add(new Konva.Text({ text: it.label || "", x: -w / 2 - 60, y: h / 2 + 8, width: w + 120, align: "center", fontSize: 26, fontStyle: "600", fontFamily: TC.font, fill: col }));
+  } else if (it.type === "column") {
+    g.add(new Konva.Ellipse({ radiusX: w / 2, radiusY: h / 2, fill: TC.muted }));
+  } else if (it.type === "text") {
+    const tx = new Konva.Text({ text: it.label || "", fontSize: it.size || 40, fontStyle: "600", fontFamily: TC.font, fill: TC.muted });
+    tx.offsetX(tx.width() / 2); tx.offsetY(tx.height() / 2); g.add(tx);
+  }
+  return g;
+}
+
+function seatLook(s) {
+  const st = ev.status.get(s.id);
+  if (selected.has(s.id)) return { fill: TC.accent, stroke: TC.accent, sw: 4, text: "#FFFFFF", click: true, label: "✓" };
+  if (st === "sold") return { fill: TC.sold, stroke: TC.sold, sw: 1, text: TC.muted, click: false, label: "" };
+  if (st === "closed") return { fill: TC.paper, stroke: "#C9A227", sw: 4, text: TC.muted, click: false, label: "" };
+  const col = TC.cats[ev.catOf(s)];
+  return { fill: col, stroke: col, sw: 1, text: "#FFFFFF", click: true, label: s.kind === "accessible" ? "♿" : String(s.num ?? ""), dash: s.kind === "extra" ? [6, 4] : null };
+}
+
+function drawSeat(s) {
+  const L = seatLook(s);
+  const g = new Konva.Group({ x: s.x, y: s.y, rotation: s.rotation || 0 });
+  g.setAttr("seatId", s.id);
+  g.add(new Konva.Rect({ name: "body", x: -SEAT_W / 2, y: -SEAT_H / 2, width: SEAT_W, height: SEAT_H, cornerRadius: [12, 12, 6, 6], fill: L.fill, stroke: L.stroke, strokeWidth: L.sw, dash: L.dash }));
+  g.add(new Konva.Text({ name: "lbl", text: L.label, x: -SEAT_W / 2, y: -SEAT_H / 2 + 10, width: SEAT_W, align: "center", fontSize: L.label.length > 2 ? 14 : 17, fontStyle: "600", fontFamily: TC.mono, fill: L.text, listening: false }));
+  g.listening(L.click);
+  return g;
+}
+
+function render() {
+  baseLayer.destroyChildren(); seatLayer.destroyChildren(); seatNodes.clear();
+  const items = doc.items.filter((i) => i.levelId === levelId);
+  const order = { area: 0, stage: 1, wall: 2, column: 3, door: 4, text: 5 };
+  items.filter((i) => i.type !== "seat").sort((a, b) => order[a.type] - order[b.type]).forEach((it) => baseLayer.add(drawStructure(it)));
+  // Sıra harfleri: her sıranın iki ucuna, izleyicinin yerini kolay bulması için
+  for (const list of ev.rows.values()) {
+    if (!list.length || list[0].levelId !== levelId || !list[0].row) continue;
+    for (const [s, dirSign] of [[list[0], -1], [list[list.length - 1], 1]]) {
+      const a = (s.rotation || 0) * Math.PI / 180;
+      baseLayer.add(new Konva.Text({ text: s.row, x: s.x + Math.cos(a) * 52 * dirSign - 30, y: s.y + Math.sin(a) * 52 * dirSign - 10, width: 60, align: "center", fontSize: 20, fontStyle: "600", fontFamily: TC.mono, fill: TC.muted }));
+    }
+  }
+  items.filter((i) => i.type === "seat").forEach((s) => { const n = drawSeat(s); seatLayer.add(n); seatNodes.set(s.id, n); });
+  baseLayer.batchDraw(); seatLayer.batchDraw();
+}
+function refreshSeat(id) {
+  const n = seatNodes.get(id); if (!n) return;
+  const s = seatById(id), L = seatLook(s);
+  const body = n.findOne(".body"), lbl = n.findOne(".lbl");
+  body.setAttrs({ fill: L.fill, stroke: L.stroke, strokeWidth: L.sw, dash: L.dash || null });
+  lbl.setAttrs({ text: L.label, fill: L.text, fontSize: L.label.length > 2 ? 14 : 17 });
+  n.listening(L.click);
+  seatLayer.batchDraw();
+}
+
+/* ---------- Görünüm: sığdırma, yakınlaştırma, sürükleme, iki parmakla yakınlaştırma ---------- */
+function fit(ids) {
+  const nodes = ids ? ids.map((id) => seatNodes.get(id)).filter(Boolean) : [...baseLayer.getChildren(), ...seatLayer.getChildren()];
+  if (!nodes.length) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const n of nodes) { const r = n.getClientRect({ relativeTo: n.getLayer() }); x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.width); y1 = Math.max(y1, r.y + r.height); }
+  const pad = ids ? 140 : 30, W = stage.width() - pad * 2, H = stage.height() - pad * 2;
+  const s = Math.max(0.05, Math.min(ids ? 0.9 : 2, Math.min(W / (x1 - x0), H / (y1 - y0))));
+  stage.scale({ x: s, y: s });
+  stage.position({ x: pad + (W - (x1 - x0) * s) / 2 - x0 * s, y: pad + (H - (y1 - y0) * s) / 2 - y0 * s });
+}
+function zoom(f, center) {
+  const old = stage.scaleX(), s = Math.max(0.05, Math.min(3, old * f));
+  center = center || { x: stage.width() / 2, y: stage.height() / 2 };
+  const w = { x: (center.x - stage.x()) / old, y: (center.y - stage.y()) / old };
+  stage.scale({ x: s, y: s }); stage.position({ x: center.x - w.x * s, y: center.y - w.y * s });
+}
+new ResizeObserver(() => { stage.size({ width: host.clientWidth, height: host.clientHeight }); }).observe(host);
+stage.on("wheel", (e) => { e.evt.preventDefault(); zoom(Math.exp(-e.evt.deltaY * (e.evt.ctrlKey ? 0.01 : 0.0015)), stage.getPointerPosition()); });
+let moved = false, pinch = null;
+stage.on("dragstart", () => { moved = true; host.classList.add("drag"); $("tip").hidden = true; });
+stage.on("dragend", () => host.classList.remove("drag"));
+stage.on("mousedown touchstart", () => { moved = false; });
+stage.on("touchmove", (e) => {
+  const tt = e.evt.touches; if (tt.length !== 2) { pinch = null; return; }
+  e.evt.preventDefault(); stage.stopDrag();
+  const r = host.getBoundingClientRect(), d = Math.hypot(tt[0].clientX - tt[1].clientX, tt[0].clientY - tt[1].clientY);
+  const c = { x: (tt[0].clientX + tt[1].clientX) / 2 - r.left, y: (tt[0].clientY + tt[1].clientY) / 2 - r.top };
+  if (pinch) zoom(d / pinch, c); pinch = d; moved = true;
+});
+stage.on("touchend", () => { pinch = null; });
+
+/* ---------- Koltuk seçimi ---------- */
+const seatIdOf = (node) => { while (node && node !== stage) { const id = node.getAttr && node.getAttr("seatId"); if (id) return id; node = node.getParent(); } return null; };
+stage.on("click tap", (e) => {
+  if (moved || step !== 1) return;
+  const id = seatIdOf(e.target); if (!id) return;
+  toggleSeat(id);
+});
+function toggleSeat(id) {
+  if (selected.has(id)) selected.delete(id);
+  else {
+    if (selected.size >= MAX_TICKETS) { toast(t("limit", { n: MAX_TICKETS })); return; }
+    if (ev.status.get(id) !== "free") return;
+    selected.set(id, "full");
+  }
+  refreshSeat(id); onSelectionChanged();
+}
+function onSelectionChanged() {
+  if (selected.size && !holdUntil) startHold();
+  if (!selected.size) stopHold();
+  renderCart(); renderTabs();
+}
+
+stage.on("mousemove", (e) => {
+  const id = seatIdOf(e.target), tip = $("tip");
+  if (!id) { tip.hidden = true; host.style.cursor = ""; return; }
+  host.style.cursor = "pointer";
+  const s = seatById(id), b = s.blockId && blockById(s.blockId), cat = catById(ev.catOf(s));
+  const p = stage.getPointerPosition();
+  const kind = s.kind === "accessible" ? " · " + t("accessible") : s.kind === "extra" ? " · " + t("extra") : "";
+  tip.innerHTML = `<b>${esc(b ? b.name : t("extra"))}</b> · ${esc(t("row"))} ${esc(s.row || "—")} · ${esc(t("seat"))} ${esc(s.num)}${esc(kind)}<br>${esc(t(cat.key))} · ${esc(money(priceOf(s, "full")))}${selected.has(id) ? " · " + esc(t("selected")) : ""}`;
+  tip.style.left = p.x + "px"; tip.style.top = p.y + "px"; tip.hidden = false;
+});
+stage.on("mouseleave", () => ($("tip").hidden = true));
+
+/* ---------- En iyi yer: istenen sayıda yan yana boş koltuk, sahnenin ortasına en yakın ---------- */
+function findBest(n) {
+  let best = null;
+  for (const list of ev.rows.values()) {
+    if (list.length < n || list[0].kind === "vip") continue;
+    const levelPenalty = list[0].levelId === ev.firstLevel ? 0 : 1200;
+    for (let i = 0; i + n <= list.length; i++) {
+      const win = list.slice(i, i + n);
+      if (!win.every((s) => ev.status.get(s.id) === "free" && !selected.has(s.id))) continue;
+      // koridor ya da boşluk varsa yan yana sayılmaz
+      if (win.some((s, k) => k && Math.hypot(s.x - win[k - 1].x, s.y - win[k - 1].y) > 90)) continue;
+      const cx = win.reduce((a, s) => a + s.x, 0) / n, cy = win.reduce((a, s) => a + s.y, 0) / n;
+      const score = Math.hypot((cx - ev.ideal.x) * 1.2, cy - ev.ideal.y) + levelPenalty + (list[0].kind === "extra" ? 800 : 0);
+      if (!best || score < best.score) best = { score, win };
+    }
+  }
+  return best && best.win;
+}
+$("bestBtn").onclick = () => {
+  if (step !== 1) return;
+  const n = +$("bestCount").value;
+  const prev = [...selected.keys()]; selected.clear(); prev.forEach(refreshSeat);
+  const win = findBest(n);
+  if (!win) { toast(t("bestNone", { n })); onSelectionChanged(); return; }
+  if (win[0].levelId !== levelId) { levelId = win[0].levelId; render(); }
+  win.forEach((s) => { selected.set(s.id, "full"); refreshSeat(s.id); });
+  fit(win.map((s) => s.id)); onSelectionChanged(); toast(t("bestFound", { n }));
+};
+
+/* ---------- Geçici ayırma süresi ---------- */
+function startHold() { holdUntil = Date.now() + HOLD_SECONDS * 1000; clearInterval(holdTimer); holdTimer = setInterval(tickHold, 1000); tickHold(); }
+function stopHold() { holdUntil = 0; clearInterval(holdTimer); $("timer").hidden = true; }
+function tickHold() {
+  const left = Math.max(0, Math.round((holdUntil - Date.now()) / 1000));
+  const mm = String(Math.floor(left / 60)).padStart(2, "0"), ss = String(left % 60).padStart(2, "0");
+  $("timer").innerHTML = `⏱ ${esc(t("hold", { t: mm + ":" + ss }))}`; $("timer").hidden = step === 3;
+  if (left === 0) { const ids = [...selected.keys()]; selected.clear(); ids.forEach(refreshSeat); stopHold(); step = 1; renderCart(); renderTabs(); toast(t("holdExpired")); }
+}
+
+/* ---------- Sepet ve satın alma adımları ---------- */
+function cartTotal() { let s = 0; for (const [id, type] of selected) s += priceOf(seatById(id), type); return s; }
+function renderCart() {
+  $("steps").innerHTML = ["stepSeats", "stepInfo", "stepDone"].map((k, i) => `<span ${step === i + 1 ? 'aria-current="step"' : ""}>${i + 1}. ${esc(t(k))}</span>`).join("");
+  const body = $("cartBody"), foot = $("cartFoot");
+  const total = cartTotal();
+  $("mobileSum").innerHTML = selected.size ? `${esc(t("seatsN", { n: selected.size }))} · <b>${esc(cur(total))}</b>` : esc(t("hint"));
+  if (step === 3 && lastOrder) {
+    body.innerHTML = `<div class="done"><div class="ok">✓</div><h3 style="margin:0">${esc(t("doneTitle"))}</h3>
+      <div class="note">${esc(t("doneCode"))}</div><div class="code">${esc(lastOrder.code)}</div>
+      <p class="note">${esc(lastOrder.name)} · ${esc(lastOrder.email)}</p></div>
+      <ul class="tickets">${lastOrder.lines.map(lineHtml).join("")}</ul><p class="note">${esc(t("doneNote"))}</p>`;
+    foot.innerHTML = `<div class="total"><span>${esc(t("total"))}</span><b>${esc(cur(lastOrder.total))}</b></div><button class="secondary" id="newOrder">${esc(t("newOrder"))}</button>`;
+    $("newOrder").onclick = () => { step = 1; lastOrder = null; renderCart(); };
+    return;
+  }
+  const lines = [...selected].map(([id, type]) => ({ s: seatById(id), type }));
+  if (step === 1) {
+    body.innerHTML = lines.length ? `<ul class="tickets">${lines.map(({ s, type }) => lineHtml({ s, type, editable: true })).join("")}</ul><p class="note">${esc(t("maxNote", { n: MAX_TICKETS }))}</p>` : `<p class="empty">${esc(t("emptyCart"))}</p>`;
+    foot.innerHTML = `<div class="total"><span>${esc(t("total"))}</span><b>${esc(cur(total))}</b></div><button class="primary" id="toInfo" ${lines.length ? "" : "disabled"}>${esc(t("next"))}</button>`;
+    body.querySelectorAll("select[data-id]").forEach((el) => el.onchange = () => { selected.set(el.dataset.id, el.value); renderCart(); });
+    body.querySelectorAll("button[data-rm]").forEach((el) => el.onclick = () => toggleSeat(el.dataset.rm));
+    $("toInfo").onclick = () => { step = 2; renderCart(); };
+  } else if (step === 2) {
+    body.innerHTML = `
+      <div class="fld"><label for="fName">${esc(t("name"))}</label><input id="fName" autocomplete="name"><div class="err" id="eName"></div></div>
+      <div class="fld"><label for="fEmail">${esc(t("email"))}</label><input id="fEmail" type="email" autocomplete="email" inputmode="email"><div class="err" id="eEmail"></div></div>
+      <div class="fld"><label for="fPhone">${esc(t("phone"))}</label><input id="fPhone" type="tel" autocomplete="tel" inputmode="tel"></div>
+      <label class="check"><input type="checkbox" id="fConsent"> <span>${esc(t("consent"))}</span></label><div class="err" id="eConsent"></div>
+      <ul class="tickets">${lines.map(({ s, type }) => lineHtml({ s, type })).join("")}</ul>`;
+    foot.innerHTML = `<div class="total"><span>${esc(t("total"))}</span><b>${esc(cur(total))}</b></div>
+      <button class="primary" id="payBtn">${esc(t("pay"))}</button><button class="secondary" id="backBtn">${esc(t("back"))}</button>`;
+    $("backBtn").onclick = () => { step = 1; renderCart(); };
+    $("payBtn").onclick = submitOrder;
+  }
+}
+function lineHtml({ s, type, editable }) {
+  const b = s.blockId && blockById(s.blockId), cat = catById(ev.catOf(s));
+  const typeCtl = editable
+    ? `<select data-id="${s.id}" aria-label="${esc(t("full"))}/${esc(t("student"))}"><option value="full" ${type === "full" ? "selected" : ""}>${esc(t("full"))}</option><option value="student" ${type === "student" ? "selected" : ""}>${esc(t("student"))}</option></select>`
+    : `<span class="note">${esc(t(type))}</span>`;
+  return `<li class="ticket"><span class="bar" style="background:${TC.cats[cat.id]}"></span>
+    <span class="seat"><b>${esc(t("row"))} ${esc(s.row || "—")} · ${esc(t("seat"))} ${esc(s.num)}</b><span>${esc(b ? b.name : t("extra"))} · ${esc(t(cat.key))}${s.kind === "accessible" ? " · " + esc(t("accessible")) : ""}</span></span>
+    ${typeCtl}<span class="price">${esc(money(priceOf(s, type)))}</span>
+    ${editable ? `<button class="rm" data-rm="${s.id}" aria-label="×">×</button>` : ""}</li>`;
+}
+function submitOrder() {
+  const name = $("fName").value.trim(), email = $("fEmail").value.trim(), consent = $("fConsent").checked;
+  const errs = { eName: name ? "" : t("errName"), eEmail: /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) ? "" : t("errEmail"), eConsent: consent ? "" : t("errConsent") };
+  for (const k in errs) $(k).textContent = errs[k];
+  $("fName").setAttribute("aria-invalid", !!errs.eName); $("fEmail").setAttribute("aria-invalid", !!errs.eEmail);
+  if (errs.eName || errs.eEmail || errs.eConsent) return;
+  const code = "KS-" + Array.from({ length: 6 }, () => "ACDEFGHJKLMNPRSTUVYZ23456789"[Math.floor(Math.random() * 28)]).join("");
+  const lines = [...selected].map(([id, type]) => ({ s: seatById(id), type }));
+  lastOrder = { code, name, email, lines, total: cartTotal() };
+  for (const { s } of lines) ev.status.set(s.id, "sold");
+  const ids = [...selected.keys()]; selected.clear(); ids.forEach(refreshSeat);
+  stopHold(); step = 3; renderCart(); renderTabs();
+}
+
+/* ---------- Başlık, kat sekmeleri, açıklama ---------- */
+function renderHeader() {
+  $("evTitle").textContent = ev.title; $("evTime").textContent = ev.time; $("evHall").textContent = doc.name;
+  $("evDay").textContent = ev.date.getDate(); $("evMonth").textContent = t("months")[ev.date.getMonth()];
+}
+function renderTabs() {
+  $("tabs").innerHTML = doc.levels.map((l) => {
+    const free = doc.items.filter((i) => i.type === "seat" && i.levelId === l.id && ev.status.get(i.id) === "free" && !selected.has(i.id)).length;
+    return `<button class="tab" role="tab" data-level="${l.id}" aria-selected="${l.id === levelId}">${esc(l.name)}<small>${esc(t("available", { n: free }))}</small></button>`;
+  }).join("");
+}
+$("tabs").addEventListener("click", (e) => { const b = e.target.closest("[data-level]"); if (b && b.dataset.level !== levelId) { levelId = b.dataset.level; render(); fit(); renderTabs(); } });
+function renderLegend() {
+  $("legend").innerHTML = CATS.map((c) => `<span class="it"><i class="sw" style="background:${TC.cats[c.id]}"></i>${esc(t(c.key))} <b>${esc(money(c.price))}</b></span>`).join("") +
+    `<span class="it"><i class="sw sel"></i>${esc(t("selected"))}</span><span class="it"><i class="sw sold"></i>${esc(t("sold"))}</span><span class="it"><i class="sw vip"></i>${esc(t("protocol"))}</span><span class="it">♿ ${esc(t("accessible"))}</span>`;
+  $("bestCount").innerHTML = Array.from({ length: 6 }, (_, i) => `<option value="${i + 1}" ${i === 1 ? "selected" : ""}>${i + 1}</option>`).join("");
+  $("mapHint").textContent = t("hint");
+}
+function applyI18n() {
+  document.documentElement.lang = lang; $("langLbl").textContent = lang === "tr" ? "EN" : "TR";
+  document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => { el.title = t(el.dataset.i18nTitle); el.setAttribute("aria-label", el.title); });
+  ev.title = t("evTitle"); ev.time = t("evTime");
+  renderHeader(); renderLegend(); renderTabs(); renderCart(); if (holdUntil) tickHold();
+}
+
+let toastTimer;
+function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.hidden = true), 2600); }
+
+/* ---------- Düğmeler ---------- */
+$("zoomIn").onclick = () => zoom(1.3); $("zoomOut").onclick = () => zoom(1 / 1.3); $("fitBtn").onclick = () => fit();
+$("langBtn").onclick = () => { lang = lang === "tr" ? "en" : "tr"; applyI18n(); };
+$("mobileOpen").onclick = () => $("cart").classList.toggle("open");
+$("loadBtn").onclick = () => $("fileIn").click();
+$("fileIn").onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+  r.onload = () => { try { const d = JSON.parse(r.result); if (!d || !Array.isArray(d.levels) || !d.levels.length || !Array.isArray(d.items)) throw 0; d.blocks = d.blocks || []; start(d); toast(t("imported")); } catch (err) { toast(t("importFail")); } };
+  r.readAsText(f); e.target.value = "";
+};
+const reTheme = () => { readTheme(); render(); renderLegend(); renderCart(); };
+try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", reTheme); } catch (e) {}
+new MutationObserver(reTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+
+/* ---------- Başlangıç ----------
+   Editörle aynı tarayıcıda, aynı klasörden açılırsa editörde kaydedilen kroki kullanılır; yoksa örnek salon. */
+function start(d) {
+  doc = d; ev = buildEvent(doc); levelId = doc.levels[0].id;
+  selected.clear(); stopHold(); step = 1; lastOrder = null;
+  readTheme(); render(); applyI18n(); fit();
+}
+let initial = null;
+try { const raw = localStorage.getItem("salon-krokisi-v1"); if (raw) { const o = JSON.parse(raw); if (o && o.doc && Array.isArray(o.doc.levels) && o.doc.levels.length) initial = o.doc; } } catch (e) {}
+start(initial || sampleDoc());
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { readTheme(); render(); });
+window.__bilet = { get doc() { return doc; }, get ev() { return ev; }, selected: () => [...selected.keys()], stage, findBest };
+})();
+</script>
+</body>
+</html>
