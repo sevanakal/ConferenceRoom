@@ -4,9 +4,8 @@
 Sunucu ya da kurulum gerekmez; dosyayı tarayıcıda açmak yeterli (internet bağlantısı Konva.js
 kütüphanesi ve yazı tipleri için gerekir).
 
-Kroki verisi [salon kroki editörünün](../salon-kroki-editoru/) ürettiği yapıdır. Aynı tarayıcıda editörde
-kayıtlı bir kroki varsa o açılır, yoksa editördeki örnek salon yüklenir. Editörün "{ }" penceresinden
-kopyalanan JSON, "Kroki yükle" düğmesiyle de açılabilir.
+Kroki verisi yönetim panelindeki kroki editörünün (Salonlar → Krokiyi aç) ürettiği yapıdır. Açılışta
+editördeki örnek salon yüklenir; editörün "{ }" penceresinden kopyalanan JSON, "Kroki yükle" düğmesiyle açılabilir.
 
 Fiyatlar, kategoriler ve satılmış koltuklar şimdilik örnek veridir; gerçek ödeme alınmaz, e-posta gönderilmez.
 

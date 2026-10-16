@@ -1,334 +1,30 @@
-<!doctype html>
-<!--
-  Salon Kroki Editörü (prototip, tek dosya)
-  =========================================
-  Konferans salonunun 2B krokisini çizmek için tarayıcıda çalışan editör.
-  Sunucu gerektirmez: dosyayı tarayıcıda açmak yeterli. Tek dış bağımlılık Konva.js (CDN).
+/*
+  Salon kroki editörü (yönetim paneli: /yonetim/salonlar/{id}/kroki)
+  ===================================================================
+  Konferans salonunun 2B krokisini çizen editör. Çizim Konva.js ile yapılır (wwwroot/lib/konva).
+  Sayfa (Pages/Yonetim/Salonlar/Kroki.cshtml) iki JSON bloğu verir:
+    #editorConfig : salon adı, güncel sürüm numarası, kayıt adresi, dil, editör metinleri (tr.json/en.json "planEditor" bölümü)
+    #planData     : açılacak kroki verisi (güncel sürüm, istenen eski sürüm ya da boş kroki)
+  "Kaydet" krokiyi sunucuya gönderir; sunucu denetleyip yeni sürüm olarak saklar (Web/Halls/HallPlanStore.cs).
 
   Dosyanın bölümleri:
-    1. <style>  : tasarım değişkenleri (açık/koyu tema) ve yerleşim
-    2. HTML     : başlık, seçenek çubuğu, araçlar, tuval, sağ panel, JSON penceresi
-    3. <script> : dil sözlüğü (I18N) → sabitler/durum → geometri → veri modeli →
-                  geri al/yinele → Konva çizimi → etkileşim → araçlar/panel → kısayollar → başlangıç
-
-  Ana proje (ASP.NET Core) kurulduğunda bu editör oraya taşınacak:
-    - I18N nesnesi ConferenceRoom.Localization içindeki tr.json / en.json dosyalarına,
-    - doc yapısı (levels / blocks / items) MySQL tablolarına,
-    - localStorage kaydı API çağrısına dönüşecek.
-  Ayrıntılar: salon-kroki-editoru/README.md ve kökteki CLAUDE.md.
--->
-<html lang="tr">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Salon Krokisi Editörü</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
-<style>
-/* Yerleşim: üstte başlık ve araç seçenekleri, solda araç çubuğu, ortada kroki tuvali, sağda özellik paneli.
-   Tüm renkler aşağıdaki değişkenlerden gelir; koyu tema aynı değişkenleri yeniden tanımlar. */
-:root {
-  --chrome: #E7E9EC;      /* app frame */
-  --panel: #F5F6F7;       /* panels */
-  --paper: #FBFBF8;       /* drawing sheet */
-  --ink: #1C2530;         /* text, walls */
-  --muted: #5C6773;
-  --line: #CDD2D8;
-  --grid-minor: rgba(28,37,48,.06);
-  --grid-major: rgba(28,37,48,.14);
-  --accent: #A3213A;      /* theatre velvet: selection, active tool */
-  --accent-soft: rgba(163,33,58,.10);
-  --seat: #D9DDE2;
-  --seat-stroke: #8A949F;
-  --stage: #2B3542;
-  --stage-text: #F2F3F4;
-  --exit: #1E7F4F;
-  --font-ui: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --font-data: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --chrome: #14181D; --panel: #1A1F25; --paper: #20262D; --ink: #E3E7EB; --muted: #98A2AD; --line: #323A43;
-    --grid-minor: rgba(227,231,235,.05); --grid-major: rgba(227,231,235,.12);
-    --accent: #E0566F; --accent-soft: rgba(224,86,111,.16);
-    --seat: #3A434D; --seat-stroke: #6F7A86; --stage: #3A4552; --stage-text: #F2F3F4; --exit: #3FB57A;
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --chrome: #14181D; --panel: #1A1F25; --paper: #20262D; --ink: #E3E7EB; --muted: #98A2AD; --line: #323A43;
-  --grid-minor: rgba(227,231,235,.05); --grid-major: rgba(227,231,235,.12);
-  --accent: #E0566F; --accent-soft: rgba(224,86,111,.16);
-  --seat: #3A434D; --seat-stroke: #6F7A86; --stage: #3A4552; --stage-text: #F2F3F4; --exit: #3FB57A;
-  color-scheme: dark;
-}
-html, body { height: 100%; }
-body { margin: 0; }
-[hidden] { display: none !important; }
-body {
-  background: var(--chrome); color: var(--ink); font-family: var(--font-ui); font-size: 13px;
-  padding-left: max(16px, env(safe-area-inset-left, 0px));
-  padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 12px; box-sizing: border-box; overflow: hidden;
-}
-*, *::before, *::after { box-sizing: border-box; }
-button, input, select, textarea { font: inherit; color: inherit; }
-button { cursor: pointer; }
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-
-.app { height: 100%; display: grid; grid-template-rows: auto auto 1fr; gap: 8px; min-width: 0; }
-
-/* Başlık çubuğu */
-.top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
-.brand { display: flex; align-items: baseline; gap: 8px; margin-right: 6px; }
-.brand b { font-weight: 600; font-size: 15px; letter-spacing: .01em; }
-.brand span { color: var(--muted); font-size: 12px; }
-.tabs { display: flex; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
-.tab { border: 0; background: transparent; padding: 5px 12px; border-radius: 6px; color: var(--muted); font-weight: 500; }
-.tab[aria-selected="true"] { background: var(--paper); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.08); }
-.tab.add { padding: 5px 9px; }
-.spacer { flex: 1; }
-.group { display: flex; align-items: center; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 2px; }
-.ibtn { border: 0; background: transparent; height: 28px; min-width: 28px; padding: 0 7px; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.ibtn:hover:not(:disabled) { background: var(--accent-soft); }
-.ibtn:disabled { opacity: .35; cursor: default; }
-.ibtn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent); }
-.ibtn svg { width: 17px; height: 17px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.zoomval { font-family: var(--font-data); font-size: 12px; min-width: 46px; text-align: center; font-variant-numeric: tabular-nums; }
-
-/* Seçili aracın seçenek çubuğu */
-.optbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; min-height: 40px; min-width: 0; }
-.optbar .toolname { font-weight: 600; }
-.optbar label { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
-.optbar input[type=number], .optbar input[type=text], .optbar select { width: 72px; padding: 3px 6px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); font-family: var(--font-data); font-size: 12px; }
-.optbar select { width: auto; font-family: var(--font-ui); }
-.optbar .hint { color: var(--muted); }
-.unit { font-family: var(--font-data); font-size: 11px; color: var(--muted); }
-
-/* Ana alan: araçlar + tuval + panel */
-.main { display: grid; grid-template-columns: 46px 1fr 286px; gap: 8px; min-height: 0; min-width: 0; }
-.tools { display: flex; flex-direction: column; gap: 2px; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 4px; overflow-y: auto; }
-.tools .sep { height: 1px; background: var(--line); margin: 4px 2px; flex: none; }
-.tool { border: 0; background: transparent; width: 36px; height: 36px; flex: none; border-radius: 6px; display: grid; place-items: center; color: var(--ink); position: relative; }
-.tool svg { width: 20px; height: 20px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.tool:hover { background: var(--accent-soft); }
-.tool[aria-pressed="true"] { background: var(--accent); color: #fff; }
-.tool kbd { position: absolute; right: 2px; bottom: 1px; font-family: var(--font-data); font-size: 8px; opacity: .6; }
-
-.canvas-wrap { position: relative; min-width: 0; min-height: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper); }
-#stage { position: absolute; inset: 0; }
-#stage.pan { cursor: grab; } #stage.panning { cursor: grabbing; } #stage.draw { cursor: crosshair; }
-.hud { position: absolute; left: 8px; bottom: 8px; right: 8px; display: flex; gap: 8px; justify-content: flex-end; pointer-events: none; flex-wrap: wrap; }
-.hud #hoverInfo { margin-right: auto; }
-.hud span { background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 7px; font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.scalebar { display: inline-flex; align-items: center; gap: 6px; }
-.scalebar i { display: inline-block; height: 6px; border: 1.5px solid var(--muted); border-top: 0; }
-
-/* Sağ panel: özellikler, bloklar, kapasite */
-.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow-y: auto; min-width: 0; display: flex; flex-direction: column; }
-.sec { padding: 12px; border-bottom: 1px solid var(--line); display: grid; gap: 8px; }
-.sec:last-child { border-bottom: 0; }
-.sec h3 { margin: 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); display: flex; justify-content: space-between; align-items: center; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.fld { display: grid; gap: 3px; min-width: 0; }
-.fld span { font-size: 11px; color: var(--muted); }
-.fld input, .fld select { width: 100%; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); }
-.fld input[type=number], .fld input.mono { font-family: var(--font-data); font-size: 12px; }
-.fld input[type=color] { padding: 1px; height: 30px; }
-.btns { display: flex; flex-wrap: wrap; gap: 4px; }
-.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; padding: 5px 9px; display: inline-flex; align-items: center; gap: 6px; }
-.btn:hover { border-color: var(--accent); }
-.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.btn.icon { padding: 5px; }
-.note { color: var(--muted); line-height: 1.45; margin: 0; }
-.selinfo { font-weight: 600; }
-.blocks { display: grid; gap: 4px; }
-.blk { display: grid; grid-template-columns: 14px 1fr auto auto auto auto; gap: 6px; align-items: center; padding: 4px; border-radius: 6px; }
-.blk:hover { background: var(--accent-soft); }
-.blk .sw { width: 14px; height: 14px; border-radius: 3px; }
-.blk input { border: 0; background: transparent; padding: 2px 0; min-width: 0; width: 100%; }
-.blk .cnt { font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
-.blk button { border: 0; background: transparent; padding: 2px 4px; border-radius: 4px; color: var(--muted); }
-.blk button:hover { color: var(--accent); }
-.stats { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; margin: 0; }
-.stats dt { color: var(--muted); }
-.stats dd { margin: 0; text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
-.stats .total { font-weight: 600; color: var(--ink); border-top: 1px solid var(--line); padding-top: 4px; }
-.legend { display: flex; flex-wrap: wrap; gap: 10px; color: var(--muted); font-size: 11px; }
-.legend i { display: inline-block; width: 14px; height: 12px; border-radius: 3px 3px 5px 5px; vertical-align: -2px; margin-right: 4px; background: var(--seat); border: 1.5px solid var(--seat-stroke); }
-.legend .vip { border: 2.5px solid #C9A227; }
-.legend .ext { border-style: dashed; }
-.keys { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 12px; color: var(--muted); }
-.keys kbd { font-family: var(--font-data); font-size: 11px; color: var(--ink); }
-
-/* JSON veri penceresi ve bildirim */
-.modal { position: fixed; inset: 0; background: rgba(10,14,18,.45); display: grid; place-items: center; z-index: 10; padding: 16px; }
-.dialog { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; width: min(680px, 100%); max-height: 100%; overflow: auto; padding: 16px; display: grid; gap: 10px; }
-.dialog h2 { margin: 0; font-size: 15px; }
-.dialog textarea { width: 100%; height: 280px; font-family: var(--font-data); font-size: 11px; background: var(--paper); border: 1px solid var(--line); border-radius: 6px; padding: 8px; resize: vertical; }
-.toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 8px 14px; border-radius: 6px; z-index: 20; }
-
-.paneltoggle { display: none; }
-@media (max-width: 860px) {
-  .main { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
-  .tools { flex-direction: row; overflow-x: auto; overflow-y: hidden; }
-  .tools .sep { width: 1px; height: auto; margin: 2px 4px; }
-  .panel { position: fixed; top: 12px; bottom: 12px; right: max(16px, env(safe-area-inset-right, 0px)); width: min(300px, calc(100% - 32px)); z-index: 5; box-shadow: 0 10px 30px rgba(0,0,0,.25); }
-  .panel:not(.open) { display: none; }
-  .paneltoggle { display: inline-flex; }
-  .brand span { display: none; }
-  .optbar .hint { display: none; }
-}
-@media (prefers-reduced-motion: no-preference) {
-  .tool, .btn, .ibtn { transition: background-color .12s, border-color .12s, color .12s; }
-}
-</style>
-</head>
-<body>
-<div class="app">
-  <header class="top">
-    <div class="brand"><b data-i18n="appName">Salon Krokisi</b><span id="hallName"></span></div>
-    <div class="tabs" id="tabs" role="tablist"></div>
-    <div class="spacer"></div>
-    <div class="group">
-      <button class="ibtn" id="undoBtn" data-i18n-title="undo"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
-      <button class="ibtn" id="redoBtn" data-i18n-title="redo"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
-    </div>
-    <div class="group">
-      <button class="ibtn" id="zoomOut" data-i18n-title="zoomOut"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
-      <span class="zoomval" id="zoomVal">100%</span>
-      <button class="ibtn" id="zoomIn" data-i18n-title="zoomIn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
-      <button class="ibtn" id="fitBtn" data-i18n-title="fit"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
-    </div>
-    <div class="group">
-      <button class="ibtn" id="snapBtn" aria-pressed="true" data-i18n-title="snap"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg></button>
-      <button class="ibtn" id="dataBtn" data-i18n-title="data"><svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2"/></svg></button>
-      <button class="ibtn" id="langBtn" data-i18n-title="language"><span id="langLbl" style="font-family:var(--font-data);font-size:12px">TR</span></button>
-      <button class="ibtn paneltoggle" id="panelBtn" data-i18n-title="panel"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM14 5v14"/></svg></button>
-    </div>
-  </header>
-
-  <div class="optbar" id="optbar"></div>
-
-  <div class="main">
-    <nav class="tools" id="tools"></nav>
-    <div class="canvas-wrap">
-      <div id="stage"></div>
-      <div class="hud"><span id="hoverInfo" hidden></span><span class="scalebar"><i id="scaleBar"></i><b id="scaleLbl" style="font-weight:500">1 m</b></span><span id="posInfo">x 0,00 m · y 0,00 m</span></div>
-    </div>
-    <aside class="panel" id="panel">
-      <section class="sec" id="propSec"></section>
-      <section class="sec" id="blockSec"></section>
-      <section class="sec" id="statSec"></section>
-    </aside>
-  </div>
-</div>
-
-<div class="modal" id="modal" hidden>
-  <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
-    <h2 id="dlgTitle" data-i18n="dataTitle">Kroki verisi (JSON)</h2>
-    <p class="note" data-i18n="dataNote">Bu yapı ileride veritabanına kaydedilecek veri modelinin taslağıdır. Kopyalayabilir ya da başka bir krokiyi yapıştırıp içe aktarabilirsiniz.</p>
-    <textarea id="jsonArea" spellcheck="false"></textarea>
-    <div class="btns">
-      <button class="btn primary" id="copyJson" data-i18n="copy">Kopyala</button>
-      <button class="btn" id="importJson" data-i18n="importPasted">Yapıştırılanı içe aktar</button>
-      <label class="btn"><span data-i18n="importFile">Dosyadan yükle</span><input type="file" id="fileIn" accept=".json,application/json" hidden></label>
-      <button class="btn" id="loadSample" data-i18n="loadSample">Örnek salonu yükle</button>
-      <button class="btn" id="newBlank" data-i18n="newBlank">Boş kroki</button>
-      <span class="spacer"></span>
-      <button class="btn" id="closeModal" data-i18n="close">Kapat</button>
-    </div>
-  </div>
-</div>
-<div class="toast" id="toast" hidden></div>
-
-<script src="https://cdn.jsdelivr.net/npm/konva@9.3.6/konva.min.js"></script>
-<script>
+    dil ve ayarlar → sabitler/durum → geometri → veri modeli → geri al/yinele → Konva çizimi → etkileşim →
+    araçlar/panel → kaydetme → kısayollar → başlangıç
+*/
 (() => {
 "use strict";
 
 /* ------------------------------------------------------------------
-   Dil kütüphanesi (prototip). Gerçek projede ConferenceRoom.Localization
-   içindeki tr.json / en.json dosyalarından gelecek.
+   Dil ve ayarlar. Metinler sayfanın dilinde, sunucudan gelir (anahtarlar "planEditor." önekisiz).
+   t("tool.select"), t("saved", { n: 3 }) → "{n}" yerine 3 yazılır.
 ------------------------------------------------------------------ */
-const I18N = {
-  tr: {
-    appName: "Salon Krokisi", undo: "Geri al (Ctrl+Z)", redo: "Yinele (Ctrl+Shift+Z)", zoomIn: "Yakınlaştır (+)", zoomOut: "Uzaklaştır (−)",
-    fit: "Ekrana sığdır (0)", snap: "Izgaraya yasla", data: "Kroki verisi (JSON)", language: "Dil / Language", panel: "Panel",
-    t_select: "Seç ve taşı", t_hand: "El (kaydır)", t_seat: "Tek koltuk / sandalye", t_row: "Koltuk sırası", t_grid: "Koltuk bloğu",
-    t_stage: "Sahne", t_area: "Bölge (balkon, loca, fuaye)", t_wall: "Duvar", t_door: "Kapı / çıkış", t_column: "Sütun", t_text: "Yazı",
-    gap: "Koltuk aralığı", rowGap: "Sıra aralığı", curve: "Kavis", nextRow: "Sıra harfi", numbering: "Numaralama", dir: "Yön",
-    seq: "Sıralı 1,2,3", odd: "Tek 1,3,5", even: "Çift 2,4,6", ltr: "Soldan sağa", rtl: "Sağdan sola", kind: "Tür",
-    k_normal: "Normal", k_vip: "VIP / protokol", k_accessible: "Engelli", k_extra: "Ekstra sandalye",
-    h_select: "Tıkla: seç · Shift: ekle/çıkar · Alt+tıkla: grup içinden tek koltuk · Boş alanda sürükle: alan seçimi · Boşluk tuşu: kaydır",
-    h_seat: "Tıklayarak koltuk ya da ekstra sandalye koyun.",
-    h_row: "Sıranın başından sonuna sürükleyin. Kavis değeri sırayı sahneye doğru yay şeklinde büker.",
-    h_grid: "Bloğun kaplayacağı alanı dikdörtgen olarak sürükleyin.",
-    h_draw: "Sürükleyerek çizin.", h_click: "Tıklayarak yerleştirin.",
-    properties: "Özellikler", nothingSel: "Seçim yok", hall: "Salon adı", level: "Kat adı", deleteLevel: "Katı sil",
-    levelNotEmpty: "Katı silmek için önce içindeki öğeleri kaldırın.",
-    selCount: "{n} öğe seçili", seatsCount: "{n} koltuk", row: "Sıra", number: "No", block: "Blok", none: "— Yok —",
-    rotation: "Açı", width: "Genişlik", height: "Derinlik", label: "Etiket", color: "Renk", size: "Boyut",
-    align: "Hizala", distribute: "Eşit dağıt", transform: "Döndür / yansıt",
-    a_left: "Sola hizala", a_hcenter: "Yatay ortala", a_right: "Sağa hizala", a_top: "Üste hizala", a_vmiddle: "Dikey ortala", a_bottom: "Alta hizala",
-    d_h: "Yatayda eşit dağıt", d_v: "Dikeyde eşit dağıt", r_ccw: "90° sola döndür", r_cw: "90° sağa döndür", flip: "Yatay yansıt",
-    group: "Grupla (Ctrl+G)", ungroup: "Grubu çöz (Ctrl+Shift+G)", duplicate: "Çoğalt (Ctrl+D)", del: "Sil (Delete)",
-    numberTool: "Numaralandır", startNo: "Başlangıç no", reassignRows: "Sıra harflerini yeniden ver", firstRow: "İlk sıra", apply: "Uygula",
-    blocks: "Bloklar", addBlock: "Blok ekle", assignSel: "Seçili koltukları bu bloğa ata", selectBlock: "Bloktaki koltukları seç", removeBlock: "Bloğu kaldır",
-    noBlocks: "Bu katta blok yok. Koltukları gruplamak için blok ekleyin.", newBlockName: "Yeni blok",
-    capacity: "Kapasite", thisLevel: "Bu kat", allLevels: "Tüm salon",
-    s_fixed: "Sabit koltuk", s_vip: "VIP / protokol", s_acc: "Engelli yeri", s_extra: "Ekstra sandalye", s_total: "Toplam kapasite",
-    legend: "Gösterim", shortcuts: "Kısayollar",
-    dataTitle: "Kroki verisi (JSON)", dataNote: "Bu yapı ileride veritabanına kaydedilecek veri modelinin taslağıdır. Kopyalayabilir ya da başka bir krokiyi yapıştırıp içe aktarabilirsiniz.",
-    copy: "Kopyala", importPasted: "Yapıştırılanı içe aktar", importFile: "Dosyadan yükle", loadSample: "Örnek salonu yükle", newBlank: "Boş kroki", close: "Kapat",
-    copied: "Panoya kopyalandı", copyFail: "Kopyalanamadı, metni seçip elle kopyalayın", imported: "Kroki içe aktarıldı", importFail: "Bu metin geçerli bir kroki verisi değil",
-    newLevel: "Kat ekle", levelN: "Kat {n}", stageLbl: "SAHNE", doorLbl: "Kapı", exitLbl: "Acil çıkış", areaLbl: "Bölge", textLbl: "Yazı",
-    doorKind: "Kapı türü", door: "Kapı", exit: "Acil çıkış", fontSize: "Yazı boyu",
-    hoverSeat: "{level} · {block} · Sıra {row} · No {num}", sampleName: "Örnek: Kongre Merkezi Ana Salon", blankName: "Yeni salon",
-    k_types: { seat: "Koltuk", stage: "Sahne", area: "Bölge", wall: "Duvar", door: "Kapı", column: "Sütun", text: "Yazı" }
-  },
-  en: {
-    appName: "Hall Plan", undo: "Undo (Ctrl+Z)", redo: "Redo (Ctrl+Shift+Z)", zoomIn: "Zoom in (+)", zoomOut: "Zoom out (−)",
-    fit: "Fit to screen (0)", snap: "Snap to grid", data: "Plan data (JSON)", language: "Language / Dil", panel: "Panel",
-    t_select: "Select and move", t_hand: "Hand (pan)", t_seat: "Single seat / chair", t_row: "Seat row", t_grid: "Seat block",
-    t_stage: "Stage", t_area: "Zone (balcony, box, foyer)", t_wall: "Wall", t_door: "Door / exit", t_column: "Column", t_text: "Text",
-    gap: "Seat spacing", rowGap: "Row spacing", curve: "Curve", nextRow: "Row letter", numbering: "Numbering", dir: "Direction",
-    seq: "Sequential 1,2,3", odd: "Odd 1,3,5", even: "Even 2,4,6", ltr: "Left to right", rtl: "Right to left", kind: "Type",
-    k_normal: "Standard", k_vip: "VIP / protocol", k_accessible: "Wheelchair", k_extra: "Extra chair",
-    h_select: "Click: select · Shift: add/remove · Alt+click: single seat inside a group · Drag on empty space: box select · Space: pan",
-    h_seat: "Click to place a seat or an extra chair.",
-    h_row: "Drag from the start of the row to its end. Curve bends the row into an arc facing the stage.",
-    h_grid: "Drag a rectangle for the area the block will cover.",
-    h_draw: "Drag to draw.", h_click: "Click to place.",
-    properties: "Properties", nothingSel: "Nothing selected", hall: "Hall name", level: "Level name", deleteLevel: "Delete level",
-    levelNotEmpty: "Remove the items on this level before deleting it.",
-    selCount: "{n} items selected", seatsCount: "{n} seats", row: "Row", number: "No", block: "Block", none: "— None —",
-    rotation: "Angle", width: "Width", height: "Depth", label: "Label", color: "Colour", size: "Size",
-    align: "Align", distribute: "Distribute", transform: "Rotate / mirror",
-    a_left: "Align left", a_hcenter: "Centre horizontally", a_right: "Align right", a_top: "Align top", a_vmiddle: "Centre vertically", a_bottom: "Align bottom",
-    d_h: "Distribute horizontally", d_v: "Distribute vertically", r_ccw: "Rotate 90° left", r_cw: "Rotate 90° right", flip: "Mirror horizontally",
-    group: "Group (Ctrl+G)", ungroup: "Ungroup (Ctrl+Shift+G)", duplicate: "Duplicate (Ctrl+D)", del: "Delete (Delete)",
-    numberTool: "Number seats", startNo: "Start no", reassignRows: "Reassign row letters", firstRow: "First row", apply: "Apply",
-    blocks: "Blocks", addBlock: "Add block", assignSel: "Assign selected seats to this block", selectBlock: "Select seats in block", removeBlock: "Remove block",
-    noBlocks: "No blocks on this level. Add a block to group seats.", newBlockName: "New block",
-    capacity: "Capacity", thisLevel: "This level", allLevels: "Whole hall",
-    s_fixed: "Fixed seats", s_vip: "VIP / protocol", s_acc: "Wheelchair spaces", s_extra: "Extra chairs", s_total: "Total capacity",
-    legend: "Legend", shortcuts: "Shortcuts",
-    dataTitle: "Plan data (JSON)", dataNote: "This is a draft of the data model that will later be stored in the database. Copy it, or paste another plan and import it.",
-    copy: "Copy", importPasted: "Import pasted text", importFile: "Load from file", loadSample: "Load sample hall", newBlank: "Blank plan", close: "Close",
-    copied: "Copied to clipboard", copyFail: "Could not copy, select the text and copy it manually", imported: "Plan imported", importFail: "This text is not valid plan data",
-    newLevel: "Add level", levelN: "Level {n}", stageLbl: "STAGE", doorLbl: "Door", exitLbl: "Emergency exit", areaLbl: "Zone", textLbl: "Text",
-    doorKind: "Door type", door: "Door", exit: "Emergency exit", fontSize: "Font size",
-    hoverSeat: "{level} · {block} · Row {row} · No {num}", sampleName: "Sample: Congress Centre Main Hall", blankName: "New hall",
-    k_types: { seat: "Seat", stage: "Stage", area: "Zone", wall: "Wall", door: "Door", column: "Column", text: "Text" }
-  }
-};
-let lang = "tr";
+const CONFIG = JSON.parse(document.getElementById("editorConfig").textContent);
+const TEXTS = CONFIG.texts;
+const lang = CONFIG.culture;
+const numberLocale = lang === "tr" ? "tr-TR" : "en-GB";
 function t(key, vars) {
-  let s = I18N[lang][key] ?? I18N.tr[key] ?? key;
-  if (vars && typeof s === "string") for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
+  let s = TEXTS[key] ?? key;
+  if (vars) for (const k in vars) s = s.split("{" + k + "}").join(vars[k]);
   return s;
 }
 
@@ -341,7 +37,6 @@ const SEAT_W = 48, SEAT_H = 44;               // cm
 const SNAP = 10;                              // cm
 const BLOCK_COLORS = ["#0F766E", "#B4531A", "#6D3FC0", "#1D5FBF", "#B0306A", "#4D7C0F", "#0E7490", "#8A5A12"];
 const RESIZABLE = new Set(["stage", "area", "wall", "door", "column"]);
-const STORE_KEY = "salon-krokisi-v1";
 
 const opts = { gap: 55, rowGap: 92, curve: 0, nextRow: "A", numbering: "seq", dir: "ltr", kind: "normal", snap: true };
 let doc, levelId, tool = "select";
@@ -419,17 +114,16 @@ function makeRow(p0, p1, o) {
        type = text   → label, size
    x,y nesnenin merkezidir. groupId Photoshop'taki grup gibi birlikte seçilen öğeleri bağlar. */
 function blankDoc() {
-  const lv = { id: uid(), name: lang === "tr" ? "Parter" : "Stalls" };
-  return { schema: 1, unit: "cm", name: t("blankName"), levels: [lv], blocks: [], items: [] };
+  const lv = { id: uid(), name: t("defaultLevel") };
+  return { schema: 1, unit: "cm", name: CONFIG.hallName, levels: [lv], blocks: [], items: [] };
 }
 
 function sampleDoc() {
-  const d = { schema: 1, unit: "cm", name: t("sampleName"), levels: [], blocks: [], items: [] };
-  const P = { id: uid(), name: lang === "tr" ? "Parter" : "Stalls" }, B = { id: uid(), name: lang === "tr" ? "Balkon" : "Balcony" };
+  const d = { schema: 1, unit: "cm", name: CONFIG.hallName, levels: [], blocks: [], items: [] };
+  const P = { id: uid(), name: t("defaultLevel") }, B = { id: uid(), name: t("sample.balcony") };
   d.levels.push(P, B);
   const blk = (levelId, name, color) => { const b = { id: uid(), levelId, name, color }; d.blocks.push(b); return b.id; };
   const add = (it) => d.items.push(Object.assign({ id: uid(), rotation: 0 }, it));
-  const tr = lang === "tr";
 
   // Parter: duvarlar, sahne, kapılar
   add({ levelId: P.id, type: "wall", x: 1200, y: 0, w: 2420, h: 20 });
@@ -437,17 +131,17 @@ function sampleDoc() {
   add({ levelId: P.id, type: "wall", x: 2400, y: 1300, w: 20, h: 2600 });
   add({ levelId: P.id, type: "wall", x: 1200, y: 2600, w: 2420, h: 20 });
   add({ levelId: P.id, type: "stage", x: 1200, y: 230, w: 1500, h: 420, label: t("stageLbl") });
-  add({ levelId: P.id, type: "door", x: 520, y: 2590, w: 160, h: 14, kind: "door", label: tr ? "Giriş 1" : "Entrance 1" });
-  add({ levelId: P.id, type: "door", x: 1880, y: 2590, w: 160, h: 14, kind: "door", label: tr ? "Giriş 2" : "Entrance 2" });
+  add({ levelId: P.id, type: "door", x: 520, y: 2590, w: 160, h: 14, kind: "door", label: t("sample.entrance1") });
+  add({ levelId: P.id, type: "door", x: 1880, y: 2590, w: 160, h: 14, kind: "door", label: t("sample.entrance2") });
   add({ levelId: P.id, type: "door", x: 10, y: 640, w: 140, h: 14, rotation: 90, kind: "exit", label: t("exitLbl") });
   add({ levelId: P.id, type: "door", x: 2390, y: 640, w: 140, h: 14, rotation: -90, kind: "exit", label: t("exitLbl") });
   add({ levelId: P.id, type: "column", x: 760, y: 2330, w: 50, h: 50 });
   add({ levelId: P.id, type: "column", x: 1640, y: 2330, w: 50, h: 50 });
-  add({ levelId: P.id, type: "area", x: 1200, y: 2440, w: 560, h: 220, label: tr ? "Reji / Kontrol" : "Control room", color: "#64748B" });
+  add({ levelId: P.id, type: "area", x: 1200, y: 2440, w: 560, h: 220, label: t("sample.control"), color: "#64748B" });
 
-  const L = blk(P.id, tr ? "Sol Blok" : "Left Block", BLOCK_COLORS[0]);
-  const C = blk(P.id, tr ? "Orta Blok" : "Centre Block", BLOCK_COLORS[3]);
-  const R = blk(P.id, tr ? "Sağ Blok" : "Right Block", BLOCK_COLORS[1]);
+  const L = blk(P.id, t("sample.leftBlock"), BLOCK_COLORS[0]);
+  const C = blk(P.id, t("sample.centreBlock"), BLOCK_COLORS[3]);
+  const R = blk(P.id, t("sample.rightBlock"), BLOCK_COLORS[1]);
   const gL = uid(), gC = uid(), gR = uid();
   for (let i = 0; i < 12; i++) {
     const y = 640 + i * 92, row = indexToRow(i);
@@ -456,20 +150,20 @@ function sampleDoc() {
     d.items.push(...makeRow({ x: 1790, y }, { x: 2250, y: y + 46 }, { gap: 55, curve: 0, numbering: "odd", dir: "ltr", row, levelId: P.id, blockId: R, groupId: gR }));
   }
   // orta bloğun arkasında engelli yerleri, en arkada ekstra sandalyeler
-  d.items.push(...makeRow({ x: 860, y: 1830 }, { x: 1540, y: 1830 }, { gap: 170, numbering: "seq", dir: "ltr", row: tr ? "EN" : "WC", kind: "accessible", levelId: P.id, blockId: C, groupId: uid() }));
+  d.items.push(...makeRow({ x: 860, y: 1830 }, { x: 1540, y: 1830 }, { gap: 170, numbering: "seq", dir: "ltr", row: t("sample.accessibleRow"), kind: "accessible", levelId: P.id, blockId: C, groupId: uid() }));
   d.items.push(...makeRow({ x: 200, y: 2030 }, { x: 600, y: 2030 }, { gap: 55, numbering: "seq", dir: "ltr", row: "EK", kind: "extra", levelId: P.id, groupId: uid() }));
   d.items.push(...makeRow({ x: 1800, y: 2030 }, { x: 2200, y: 2030 }, { gap: 55, numbering: "seq", dir: "ltr", row: "EK", kind: "extra", levelId: P.id, groupId: uid(), start: 9 }));
   // protokol sırası: orta bloğun A sırası VIP
   d.items.forEach((it) => { if (it.blockId === C && it.row === "A") it.kind = "vip"; });
 
   // Balkon
-  add({ levelId: B.id, type: "area", x: 1200, y: 1050, w: 2300, h: 900, label: tr ? "Balkon" : "Balcony", color: "#7C6A55" });
+  add({ levelId: B.id, type: "area", x: 1200, y: 1050, w: 2300, h: 900, label: t("sample.balcony"), color: "#7C6A55" });
   add({ levelId: B.id, type: "wall", x: 1200, y: 600, w: 2300, h: 14 });
-  add({ levelId: B.id, type: "text", x: 1200, y: 420, size: 46, label: tr ? "↑ Sahne yönü" : "↑ Towards stage" });
-  add({ levelId: B.id, type: "door", x: 1200, y: 1495, w: 160, h: 14, kind: "door", label: tr ? "Balkon girişi" : "Balcony entrance" });
-  const BM = blk(B.id, tr ? "Balkon Orta" : "Balcony Centre", BLOCK_COLORS[2]);
-  const BL = blk(B.id, tr ? "Sol Loca" : "Left Box", BLOCK_COLORS[4]);
-  const BR = blk(B.id, tr ? "Sağ Loca" : "Right Box", BLOCK_COLORS[5]);
+  add({ levelId: B.id, type: "text", x: 1200, y: 420, size: 46, label: t("sample.towardsStage") });
+  add({ levelId: B.id, type: "door", x: 1200, y: 1495, w: 160, h: 14, kind: "door", label: t("sample.balconyEntrance") });
+  const BM = blk(B.id, t("sample.balconyCentre"), BLOCK_COLORS[2]);
+  const BL = blk(B.id, t("sample.leftBox"), BLOCK_COLORS[4]);
+  const BR = blk(B.id, t("sample.rightBox"), BLOCK_COLORS[5]);
   const gB = uid();
   for (let i = 0; i < 5; i++) {
     const y = 700 + i * 95;
@@ -486,31 +180,23 @@ function sampleDoc() {
 function validDoc(d) {
   return d && Array.isArray(d.levels) && d.levels.length && Array.isArray(d.items) && Array.isArray(d.blocks);
 }
-function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify({ doc, lang })); } catch (e) {} }
-function load() {
-  try {
-    const raw = localStorage.getItem(STORE_KEY);
-    if (raw) { const o = JSON.parse(raw); if (o.lang && I18N[o.lang]) lang = o.lang; if (validDoc(o.doc)) return o.doc; }
-  } catch (e) {}
-  return null;
-}
 
 /* ---------- Geri al / yinele ----------
    Her değişiklikten sonra commit() çağrılır: önceki durumun JSON kopyası yığına atılır,
-   tarayıcıya kaydedilir ve ekran yeniden çizilir. */
+   kaydetme durumu güncellenir (markChanged) ve ekran yeniden çizilir. */
 function commit() {
   undoStack.push(lastSnap);
   if (undoStack.length > 150) undoStack.shift();
   redoStack = [];
   lastSnap = JSON.stringify(doc);
-  save(); render();
+  markChanged(); render();
 }
 function resetHistory() { undoStack = []; redoStack = []; lastSnap = JSON.stringify(doc); }
 function restore(snap) {
   doc = JSON.parse(snap); lastSnap = snap;
   if (!doc.levels.find((l) => l.id === levelId)) levelId = doc.levels[0].id;
   selected = new Set([...selected].filter((id) => doc.items.some((i) => i.id === id && i.levelId === levelId)));
-  save(); render();
+  markChanged(); render();
 }
 function undo() { if (!undoStack.length) return; redoStack.push(JSON.stringify(doc)); restore(undoStack.pop()); }
 function redo() { if (!redoStack.length) return; undoStack.push(JSON.stringify(doc)); restore(redoStack.pop()); }
@@ -636,7 +322,6 @@ function render() {
   syncTransformer();
   layer.batchDraw(); gridLayer.batchDraw();
   renderTabs(); renderPanel(); renderStats(); updateHistoryBtns();
-  $("hallName").textContent = doc.name;
 }
 
 function syncTransformer() {
@@ -785,9 +470,9 @@ stage.on("mousemove touchmove", (e) => {
   if (it && it.type === "seat") {
     const b = it.blockId && blockById(it.blockId);
     const lv = doc.levels.find((l) => l.id === it.levelId);
-    $("hoverInfo").textContent = t("hoverSeat", { level: lv ? lv.name : "", block: b ? b.name : "—", row: it.row || "—", num: it.num ?? "—" }) + (it.kind !== "normal" ? " · " + t("k_" + it.kind) : "");
+    $("hoverInfo").textContent = t("hoverSeat", { level: lv ? lv.name : "", block: b ? b.name : "—", row: it.row || "—", num: it.num ?? "—" }) + (it.kind !== "normal" ? " · " + t("kind." + it.kind) : "");
   } else if (it) {
-    $("hoverInfo").textContent = (I18N[lang].k_types[it.type] || it.type) + (it.label ? " · " + it.label : "");
+    $("hoverInfo").textContent = (t("type." + it.type) || it.type) + (it.label ? " · " + it.label : "");
   } else $("hoverInfo").textContent = "";
   $("hoverInfo").hidden = !$("hoverInfo").textContent;
 });
@@ -1118,7 +803,7 @@ const ICONS = {
 const TOOLS = [["select", "V"], ["hand", "H"], "|", ["seat", "S"], ["row", "R"], ["grid", "B"], "|", ["stage", "P"], ["area", "A"], ["wall", "W"], ["door", "D"], ["column", "C"], ["text", "T"]];
 function renderTools() {
   $("tools").innerHTML = TOOLS.map((x) => x === "|" ? '<div class="sep"></div>' :
-    `<button class="tool" data-tool="${x[0]}" aria-pressed="${tool === x[0]}" title="${esc(t("t_" + x[0]))} (${x[1]})" aria-label="${esc(t("t_" + x[0]))}"><svg viewBox="0 0 24 24">${ICONS[x[0]]}</svg><kbd>${x[1]}</kbd></button>`).join("");
+    `<button class="tool" data-tool="${x[0]}" aria-pressed="${tool === x[0]}" title="${esc(t("tool." + x[0]))} (${x[1]})" aria-label="${esc(t("tool." + x[0]))}"><svg viewBox="0 0 24 24">${ICONS[x[0]]}</svg><kbd>${x[1]}</kbd></button>`).join("");
 }
 $("tools").addEventListener("click", (e) => { const b = e.target.closest("[data-tool]"); if (b) setTool(b.dataset.tool); });
 
@@ -1135,15 +820,15 @@ function optInput(key, type, label, unit, extra = "") {
   return `<label>${esc(label)} <input id="o_${key}" type="${type}" value="${esc(opts[key])}" ${extra}>${unit ? `<span class="unit">${unit}</span>` : ""}</label>`;
 }
 function optSelect(key, label, choices) {
-  return `<label>${esc(label)} <select id="o_${key}">${choices.map((c) => `<option value="${c}" ${opts[key] === c ? "selected" : ""}>${esc(t(c.startsWith("k_") ? c : c))}</option>`).join("")}</select></label>`;
+  return `<label>${esc(label)} <select id="o_${key}">${choices.map((c) => `<option value="${c}" ${opts[key] === c ? "selected" : ""}>${esc(t(c.startsWith("kind.") ? c : c))}</option>`).join("")}</select></label>`;
 }
 function renderOptions() {
-  const name = `<span class="toolname">${esc(t("t_" + tool))}</span>`;
-  const kinds = `<label>${esc(t("kind"))} <select id="o_kind">${["normal", "vip", "accessible", "extra"].map((k) => `<option value="${k}" ${opts.kind === k ? "selected" : ""}>${esc(t("k_" + k))}</option>`).join("")}</select></label>`;
+  const name = `<span class="toolname">${esc(t("tool." + tool))}</span>`;
+  const kinds = `<label>${esc(t("kindLabel"))} <select id="o_kind">${["normal", "vip", "accessible", "extra"].map((k) => `<option value="${k}" ${opts.kind === k ? "selected" : ""}>${esc(t("kind." + k))}</option>`).join("")}</select></label>`;
   let h = name;
-  if (tool === "select") h += `<span class="hint">${esc(t("h_select"))}</span>`;
+  if (tool === "select") h += `<span class="hint">${esc(t("hint.select"))}</span>`;
   else if (tool === "hand") h += "";
-  else if (tool === "seat") h += kinds + `<span class="hint">${esc(t("h_seat"))}</span>`;
+  else if (tool === "seat") h += kinds + `<span class="hint">${esc(t("hint.seat"))}</span>`;
   else if (tool === "row" || tool === "grid") {
     h += optInput("gap", "number", t("gap"), "cm", 'min="30" step="5" style="width:64px"');
     if (tool === "grid") h += optInput("rowGap", "number", t("rowGap"), "cm", 'min="50" step="5" style="width:64px"');
@@ -1152,9 +837,9 @@ function renderOptions() {
     h += optSelect("numbering", t("numbering"), ["seq", "odd", "even"]);
     h += optSelect("dir", t("dir"), ["ltr", "rtl"]);
     h += kinds;
-    h += `<span class="hint">${esc(t(tool === "row" ? "h_row" : "h_grid"))}</span>`;
-  } else if (["door", "column", "text"].includes(tool)) h += `<span class="hint">${esc(t("h_click"))}</span>`;
-  else h += `<span class="hint">${esc(t("h_draw"))}</span>`;
+    h += `<span class="hint">${esc(t(tool === "row" ? "hint.row" : "hint.grid"))}</span>`;
+  } else if (["door", "column", "text"].includes(tool)) h += `<span class="hint">${esc(t("hint.click"))}</span>`;
+  else h += `<span class="hint">${esc(t("hint.draw"))}</span>`;
   $("optbar").innerHTML = h;
   $("optbar").querySelectorAll("input,select").forEach((el) => el.addEventListener("change", () => {
     const k = el.id.slice(2); opts[k] = el.type === "number" ? +el.value : el.value;
@@ -1196,21 +881,21 @@ function renderPanel() {
   let h = `<h3>${esc(t("properties"))}</h3>`;
   if (!its.length) {
     const lv = doc.levels.find((l) => l.id === levelId);
-    h += `<div class="fld"><span>${esc(t("hall"))}</span><input id="p_hall" value="${esc(doc.name)}"></div>
-      <div class="fld"><span>${esc(t("level"))}</span><input id="p_level" value="${esc(lv.name)}"></div>
+    h += `<div class="fld"><span>${esc(t("level"))}</span><input id="p_level" value="${esc(lv.name)}"></div>
       ${doc.levels.length > 1 ? `<div class="btns"><button class="btn" data-act="delLevel">${esc(t("deleteLevel"))}</button></div>` : ""}
-      <div class="legend"><span><i></i>${esc(t("k_normal"))}</span><span><i class="vip"></i>${esc(t("k_vip"))}</span><span><i class="ext"></i>${esc(t("k_extra"))}</span><span>♿ ${esc(t("k_accessible"))}</span></div>
-      <div class="keys"><kbd>Ctrl+A</kbd><span>${lang === "tr" ? "Kattaki her şeyi seç" : "Select everything on level"}</span>
-      <kbd>Ctrl+C / V / D</kbd><span>${lang === "tr" ? "Kopyala / yapıştır / çoğalt" : "Copy / paste / duplicate"}</span>
-      <kbd>Ctrl+G</kbd><span>${lang === "tr" ? "Grupla, Shift ile çöz" : "Group, with Shift to ungroup"}</span>
-      <kbd>← ↑ → ↓</kbd><span>${lang === "tr" ? "1 cm kaydır, Shift ile 10 cm" : "Nudge 1 cm, 10 cm with Shift"}</span>
-      <kbd>${lang === "tr" ? "Boşluk" : "Space"}</kbd><span>${lang === "tr" ? "Basılı tutup kaydır" : "Hold and drag to pan"}</span>
-      <kbd>Shift</kbd><span>${lang === "tr" ? "Sıra çizerken 15° adım" : "15° steps while drawing a row"}</span></div>`;
+      <div class="legend"><span><i></i>${esc(t("kind.normal"))}</span><span><i class="vip"></i>${esc(t("kind.vip"))}</span><span><i class="ext"></i>${esc(t("kind.extra"))}</span><span>♿ ${esc(t("kind.accessible"))}</span></div>
+      <div class="keys"><kbd>Ctrl+S</kbd><span>${esc(t("keys.save"))}</span>
+      <kbd>Ctrl+A</kbd><span>${esc(t("keys.selectAll"))}</span>
+      <kbd>Ctrl+C / V / D</kbd><span>${esc(t("keys.copyPaste"))}</span>
+      <kbd>Ctrl+G</kbd><span>${esc(t("keys.group"))}</span>
+      <kbd>← ↑ → ↓</kbd><span>${esc(t("keys.nudge"))}</span>
+      <kbd>${esc(t("keys.space"))}</kbd><span>${esc(t("keys.pan"))}</span>
+      <kbd>Shift</kbd><span>${esc(t("keys.rowStep"))}</span></div>`;
     sec.innerHTML = h; bindPanel(); return;
   }
   const seats = its.filter((i) => i.type === "seat");
   const single = its.length === 1 ? its[0] : null;
-  h += `<div class="selinfo">${its.length === 1 ? esc(I18N[lang].k_types[single.type]) : esc(t("selCount", { n: its.length }))}${seats.length && its.length > 1 ? ` · ${esc(t("seatsCount", { n: seats.length }))}` : ""}</div>`;
+  h += `<div class="selinfo">${its.length === 1 ? esc(t("type." + single.type)) : esc(t("selCount", { n: its.length }))}${seats.length && its.length > 1 ? ` · ${esc(t("seatsCount", { n: seats.length }))}` : ""}</div>`;
   if (single && single.type !== "seat") {
     if (single.type !== "wall" && single.type !== "column") h += `<div class="fld"><span>${esc(t("label"))}</span><input id="p_label" value="${esc(single.label || "")}"></div>`;
     if (RESIZABLE.has(single.type)) h += `<div class="row2"><div class="fld"><span>${esc(t("width"))} (cm)</span><input type="number" id="p_w" value="${single.w}"></div><div class="fld"><span>${esc(t("height"))} (cm)</span><input type="number" id="p_h" value="${single.h}"></div></div>`;
@@ -1222,16 +907,16 @@ function renderPanel() {
     const row = commonVal(seats, "row"), kind = commonVal(seats, "kind"), blk = commonVal(seats, "blockId");
     h += `<div class="row2">
       <div class="fld"><span>${esc(t("row"))}</span><input id="p_row" class="mono" value="${row === undefined ? "" : esc(row)}" placeholder="${row === undefined ? "…" : ""}"></div>
-      ${seats.length === 1 ? `<div class="fld"><span>${esc(t("number"))}</span><input id="p_num" class="mono" value="${esc(seats[0].num ?? "")}"></div>` : `<div class="fld"><span>${esc(t("kind"))}</span><select id="p_kind">${kind === undefined ? '<option value="">…</option>' : ""}${["normal", "vip", "accessible", "extra"].map((k) => `<option value="${k}" ${kind === k ? "selected" : ""}>${esc(t("k_" + k))}</option>`).join("")}</select></div>`}
+      ${seats.length === 1 ? `<div class="fld"><span>${esc(t("number"))}</span><input id="p_num" class="mono" value="${esc(seats[0].num ?? "")}"></div>` : `<div class="fld"><span>${esc(t("kindLabel"))}</span><select id="p_kind">${kind === undefined ? '<option value="">…</option>' : ""}${["normal", "vip", "accessible", "extra"].map((k) => `<option value="${k}" ${kind === k ? "selected" : ""}>${esc(t("kind." + k))}</option>`).join("")}</select></div>`}
     </div>`;
-    if (seats.length === 1) h += `<div class="fld"><span>${esc(t("kind"))}</span><select id="p_kind">${["normal", "vip", "accessible", "extra"].map((k) => `<option value="${k}" ${kind === k ? "selected" : ""}>${esc(t("k_" + k))}</option>`).join("")}</select></div>`;
+    if (seats.length === 1) h += `<div class="fld"><span>${esc(t("kindLabel"))}</span><select id="p_kind">${["normal", "vip", "accessible", "extra"].map((k) => `<option value="${k}" ${kind === k ? "selected" : ""}>${esc(t("kind." + k))}</option>`).join("")}</select></div>`;
     h += `<div class="fld"><span>${esc(t("block"))}</span><select id="p_block">${blk === undefined ? '<option value="__">…</option>' : ""}${blockOptions(blk ?? "")}</select></div>`;
   }
   if (single) h += `<div class="fld"><span>${esc(t("rotation"))} (°)</span><input type="number" id="p_rot" step="1" value="${Math.round(single.rotation || 0)}"></div>`;
   if (its.length > 1) {
-    h += `<h3>${esc(t("align"))}</h3><div class="btns">${ib("al-left", "left", t("a_left"))}${ib("al-hcenter", "hcenter", t("a_hcenter"))}${ib("al-right", "right", t("a_right"))}${ib("al-top", "top", t("a_top"))}${ib("al-vmiddle", "vmiddle", t("a_vmiddle"))}${ib("al-bottom", "bottom", t("a_bottom"))}${ib("dist-h", "dh", t("d_h"))}${ib("dist-v", "dv", t("d_v"))}</div>`;
+    h += `<h3>${esc(t("alignTitle"))}</h3><div class="btns">${ib("al-left", "left", t("align.left"))}${ib("al-hcenter", "hcenter", t("align.hcenter"))}${ib("al-right", "right", t("align.right"))}${ib("al-top", "top", t("align.top"))}${ib("al-vmiddle", "vmiddle", t("align.vmiddle"))}${ib("al-bottom", "bottom", t("align.bottom"))}${ib("dist-h", "dh", t("distribute.h"))}${ib("dist-v", "dv", t("distribute.v"))}</div>`;
   }
-  h += `<h3>${esc(t("transform"))}</h3><div class="btns">${ib("rot-ccw", "ccw", t("r_ccw"))}${ib("rot-cw", "cw", t("r_cw"))}${ib("flip", "flip", t("flip"))}${its.length > 1 ? ib("group", "group", t("group")) : ""}${its.some((i) => i.groupId) ? ib("ungroup", "ungroup", t("ungroup")) : ""}${ib("dup", "dup", t("duplicate"))}${ib("del", "del", t("del"))}</div>`;
+  h += `<h3>${esc(t("transform"))}</h3><div class="btns">${ib("rot-ccw", "ccw", t("rotate.ccw"))}${ib("rot-cw", "cw", t("rotate.cw"))}${ib("flip", "flip", t("flip"))}${its.length > 1 ? ib("group", "group", t("group")) : ""}${its.some((i) => i.groupId) ? ib("ungroup", "ungroup", t("ungroup")) : ""}${ib("dup", "dup", t("duplicate"))}${ib("del", "del", t("del"))}</div>`;
   if (seats.length > 1) {
     h += `<h3>${esc(t("numberTool"))}</h3>
       <div class="row2"><div class="fld"><span>${esc(t("startNo"))}</span><input type="number" id="n_start" value="1" min="0"></div>
@@ -1248,7 +933,6 @@ function bindPanel() {
   const sec = $("propSec");
   const its = () => selItems().filter((i) => i.levelId === levelId);
   const on = (id, fn) => { const el = $(id); if (el) el.addEventListener("change", () => fn(el.value, el)); };
-  on("p_hall", (v) => { doc.name = v.trim() || doc.name; commit(); });
   on("p_level", (v) => { const l = doc.levels.find((x) => x.id === levelId); l.name = v.trim() || l.name; commit(); });
   on("p_label", (v) => { its()[0].label = v; commit(); });
   on("p_w", (v) => { its()[0].w = Math.max(10, +v || 10); commit(); });
@@ -1332,18 +1016,18 @@ function stats(items) {
 function renderStats() {
   renderBlocks();
   const a = stats(levelItems()), b = stats(doc.items);
-  const fmt = (n) => n.toLocaleString(lang === "tr" ? "tr-TR" : "en-GB");
-  const rows = [["s_fixed", "fixed"], ["s_vip", "vip"], ["s_acc", "acc"], ["s_extra", "extra"]];
+  const fmt = (n) => n.toLocaleString(numberLocale);
+  const rows = [["stat.fixed", "fixed"], ["stat.vip", "vip"], ["stat.acc", "acc"], ["stat.extra", "extra"]];
   $("statSec").innerHTML = `<h3>${esc(t("capacity"))}</h3>
     <dl class="stats"><dt></dt><dd style="color:var(--muted);font-family:var(--font-ui);font-size:11px">${esc(t("thisLevel"))} / ${esc(t("allLevels"))}</dd>
     ${rows.map(([k, f]) => `<dt>${esc(t(k))}</dt><dd>${fmt(a[f])} / ${fmt(b[f])}</dd>`).join("")}
-    <dt class="total">${esc(t("s_total"))}</dt><dd class="total">${fmt(a.total)} / ${fmt(b.total)}</dd></dl>`;
+    <dt class="total">${esc(t("stat.total"))}</dt><dd class="total">${fmt(a.total)} / ${fmt(b.total)}</dd></dl>`;
 }
 
 function updateHistoryBtns() { $("undoBtn").disabled = !undoStack.length; $("redoBtn").disabled = !redoStack.length; }
-function fmtM(cm) { return (cm / 100).toLocaleString(lang === "tr" ? "tr-TR" : "en-GB", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m"; }
+function fmtM(cm) { return (cm / 100).toLocaleString(numberLocale, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " m"; }
 let toastTimer;
-function toast(msg) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.hidden = true), 2200); }
+function toast(msg, ms = 2200) { const el = $("toast"); el.textContent = msg; el.hidden = false; clearTimeout(toastTimer); toastTimer = setTimeout(() => (el.hidden = true), ms); }
 
 /* ---------- Başlık düğmeleri ve JSON penceresi ---------- */
 $("undoBtn").onclick = undo; $("redoBtn").onclick = redo;
@@ -1352,7 +1036,6 @@ $("zoomOut").onclick = () => setZoom(stage.scaleX() / 1.25);
 $("fitBtn").onclick = fit;
 $("snapBtn").onclick = () => { opts.snap = !opts.snap; $("snapBtn").setAttribute("aria-pressed", opts.snap); };
 $("panelBtn").onclick = () => $("panel").classList.toggle("open");
-$("langBtn").onclick = () => { lang = lang === "tr" ? "en" : "tr"; applyI18n(); save(); };
 $("dataBtn").onclick = () => { $("jsonArea").value = JSON.stringify(doc, null, 2); $("modal").hidden = false; $("jsonArea").focus(); };
 $("closeModal").onclick = () => ($("modal").hidden = true);
 $("modal").addEventListener("click", (e) => { if (e.target.id === "modal") $("modal").hidden = true; });
@@ -1370,22 +1053,63 @@ $("fileIn").onchange = (e) => { const f = e.target.files[0]; if (!f) return; con
 $("loadSample").onclick = () => { doc = sampleDoc(); levelId = doc.levels[0].id; selected.clear(); opts.nextRow = "M"; commit(); fit(); $("modal").hidden = true; };
 $("newBlank").onclick = () => { doc = blankDoc(); levelId = doc.levels[0].id; selected.clear(); opts.nextRow = "A"; commit(); fit(); $("modal").hidden = true; };
 
-function applyI18n() {
-  document.documentElement.lang = lang;
-  $("langLbl").textContent = lang.toUpperCase();
-  document.querySelectorAll("[data-i18n]").forEach((el) => (el.textContent = t(el.dataset.i18n)));
-  document.querySelectorAll("[data-i18n-title]").forEach((el) => { el.title = t(el.dataset.i18nTitle); el.setAttribute("aria-label", el.title); });
-  renderTools(); renderOptions(); render(); viewChanged();
+/* ---------- Kaydetme ----------
+   savedSnap: sunucudaki son hâlin JSON'u. lastSnap (geri al/yinele) ondan farklıysa kaydedilmemiş değişiklik vardır.
+   Kaydet → POST ?handler=Save&baseVersion=N, gövde kroki JSON'u. Sunucunun cevabı:
+     saved / unchanged → version güncellenir · conflict → bu arada başkası yeni sürüm kaydetmiş · invalid → message
+   Kaydedilmemiş değişiklik varken sayfadan çıkılmak istenirse tarayıcı uyarır. */
+let version = CONFIG.version;       // editörün temel aldığı (sunucudaki güncel) sürüm; hiç yoksa 0
+let savedSnap = "";
+let saving = false;
+
+const isDirty = () => lastSnap !== savedSnap;
+function markChanged() { updateSaveState(); }
+function updateSaveState(text) {
+  const dirty = isDirty();
+  $("saveState").textContent = text || (dirty ? t("unsaved") : version ? t("versionN", { n: version }) : t("noVersion"));
+  $("saveState").classList.toggle("dirty", dirty);
+  $("saveBtn").disabled = saving;
 }
+async function saveToServer() {
+  if (saving) return;
+  saving = true;
+  updateSaveState(t("saving"));
+  const body = JSON.stringify(doc);
+  let message = t("saveFailed");
+  try {
+    const res = await fetch(`${CONFIG.saveUrl}&baseVersion=${version}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "RequestVerificationToken": CONFIG.token },
+      body
+    });
+    const r = await res.json().catch(() => ({}));
+    if (r.status === "saved" || r.status === "unchanged") {
+      version = r.version; savedSnap = body;
+      $("oldVersion").hidden = true;
+      message = t(r.status, { n: version });
+    } else if (r.status === "conflict") {
+      message = t("conflict", { n: r.version });
+    } else if (r.message) {
+      message = r.message;
+    }
+  } catch (e) { /* bağlantı hatası: varsayılan mesaj */ }
+  saving = false;
+  updateSaveState();
+  toast(message, 6000);
+}
+$("saveBtn").onclick = saveToServer;
+window.addEventListener("beforeunload", (e) => { if (isDirty()) { e.preventDefault(); e.returnValue = ""; } });
 
 /* ---------- Klavye kısayolları ---------- */
 const KEYMAP = { v: "select", h: "hand", s: "seat", r: "row", b: "grid", p: "stage", a: "area", w: "wall", d: "door", c: "column", t: "text" };
 window.addEventListener("keydown", (e) => {
   const tag = (e.target.tagName || "").toLowerCase();
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s") { e.preventDefault(); if (["input", "select"].includes(tag)) e.target.blur(); saveToServer(); return; }
   if (["input", "textarea", "select"].includes(tag)) { if (e.key === "Escape") e.target.blur(); return; }
   if (!$("modal").hidden) { if (e.key === "Escape") $("modal").hidden = true; return; }
   const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
   if (e.code === "Space") { if (!spaceDown) { spaceDown = true; host.classList.add("pan"); setDraggable(false); } e.preventDefault(); return; }
+  if (mod && k === "s") { e.preventDefault(); saveToServer(); return; }
   if (mod && k === "z") { e.preventDefault(); e.shiftKey ? redo() : undo(); return; }
   if (mod && k === "y") { e.preventDefault(); redo(); return; }
   if (mod && k === "a") { e.preventDefault(); if (tool !== "select") setTool("select", true); selectAll(); return; }
@@ -1413,17 +1137,16 @@ const reTheme = () => { TC = themeColors(); render(); };
 try { matchMedia("(prefers-color-scheme: dark)").addEventListener("change", reTheme); } catch (e) {}
 new MutationObserver(reTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
-/* ---------- Başlangıç: kayıtlı kroki yoksa örnek salonu yükle ---------- */
-doc = load();
-if (!doc) { doc = sampleDoc(); opts.nextRow = "M"; }
+/* ---------- Başlangıç: sayfanın verdiği krokiyi aç (güncel sürüm, istenen eski sürüm ya da boş kroki) ---------- */
+doc = JSON.parse($("planData").textContent);
 levelId = doc.levels[0].id;
 resetHistory();
+savedSnap = CONFIG.openedVersion ? "" : lastSnap;   // eski sürüm açıldıysa kaydedilene kadar "kaydedilmemiş" sayılır
 resize();
-applyI18n();
+renderTools(); renderOptions(); render(); viewChanged();
+updateSaveState();
 fit();
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { TC = themeColors(); render(); });
+// Tarayıcı testleri ve hata ayıklama için: konsolda __salon.doc ile kroki verisine bakılabilir.
 window.__salon = { get doc() { return doc; }, selected: () => [...selected], setTool, stage, act };
 })();
-</script>
-</body>
-</html>

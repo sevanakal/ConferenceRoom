@@ -245,6 +245,73 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.ToTable("StaffUserRoles", (string)null);
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("Halls", (string)null);
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Halls.HallPlanVersion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("Capacity")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedByStaffUserId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HallId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("PlanJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("Version")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByStaffUserId");
+
+                    b.HasIndex("HallId", "Version")
+                        .IsUnique();
+
+                    b.ToTable("HallPlanVersions", (string)null);
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Organizations.Organization", b =>
                 {
                     b.Property<int>("Id")
@@ -338,6 +405,32 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Halls.HallPlanVersion", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByStaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Halls.Hall", null)
+                        .WithMany("PlanVersions")
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Role", b =>
                 {
                     b.Navigation("Permissions");
@@ -346,6 +439,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.StaffUser", b =>
                 {
                     b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>
+                {
+                    b.Navigation("PlanVersions");
                 });
 #pragma warning restore 612, 618
         }

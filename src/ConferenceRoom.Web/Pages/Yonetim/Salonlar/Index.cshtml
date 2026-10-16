@@ -1,0 +1,72 @@
+@page "/yonetim/salonlar"
+@model ConferenceRoom.Web.Pages.Yonetim.Salonlar.IndexModel
+@using ConferenceRoom.Web.Common
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["halls.title"];
+    ViewData["AdminNav"] = "halls";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["halls.title"]</h1>
+        <p>@T["halls.intro"]</p>
+    </div>
+    <a class="btn-primary btn-inline" href="/yonetim/salonlar/duzenle">@T["halls.new"]</a>
+</header>
+
+<partial name="_Flash" model="Model.Flash" />
+
+@if (Model.Halls.Count == 0)
+{
+    <div class="empty-state">
+        <p>@T["halls.empty"]</p>
+        <a class="btn-primary btn-inline" href="/yonetim/salonlar/duzenle">@T["halls.new"]</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">@T["halls.name"]</th>
+                    <th scope="col" class="num">@T["halls.capacity"]</th>
+                    <th scope="col">@T["halls.plan"]</th>
+                    <th scope="col">@T["halls.status"]</th>
+                    <th scope="col"><span class="visually-hidden">@T["admin.edit"]</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var hall in Model.Halls)
+                {
+                    <tr data-active="@(hall.IsActive ? "true" : "false")">
+                        <td>
+                            <a class="row-title" href="/yonetim/salonlar/@hall.Id/kroki">@hall.Name</a>
+                            @if (!string.IsNullOrEmpty(hall.Description))
+                            {
+                                <div class="row-sub">@hall.Description</div>
+                            }
+                        </td>
+                        <td class="num">@(hall.Version is null ? "–" : hall.Capacity.ToString("N0"))</td>
+                        <td>
+                            @if (hall.Version is null)
+                            {
+                                <span class="muted">@T["halls.noPlan"]</span>
+                            }
+                            else
+                            {
+                                <span>@T["halls.versionN", hall.Version]</span>
+                                <div class="row-sub">@T["halls.savedBy", DisplayTime.Format(hall.SavedAtUtc!.Value), hall.SavedBy ?? ""]</div>
+                            }
+                        </td>
+                        <td><span class="status @(hall.IsActive ? "status-on" : "status-off")">@(hall.IsActive ? T["halls.active"] : T["halls.inactive"])</span></td>
+                        <td class="actions">
+                            <a href="/yonetim/salonlar/@hall.Id/kroki">@T["halls.openPlan"]</a>
+                            <a href="/yonetim/salonlar/duzenle/@hall.Id">@T["admin.edit"]</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

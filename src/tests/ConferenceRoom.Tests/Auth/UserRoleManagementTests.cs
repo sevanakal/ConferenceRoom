@@ -112,14 +112,7 @@ public class UserRoleManagementTests(MySqlWebAppFactory factory) : IClassFixture
 
     // ---- Yardımcılar ----
 
-    private async Task<HttpClient> SignInAdminAsync()
-    {
-        var client = factory.CreateClient();
-        var html = await Forms.PostAsync(client, "/yonetim/giris",
-            [new("Input.Email", MySqlWebAppFactory.AdminEmail), new("Input.Password", MySqlWebAppFactory.AdminPassword)]);
-        Assert.Contains("Hoş geldiniz", html);
-        return client;
-    }
+    private Task<HttpClient> SignInAdminAsync() => factory.SignInStaffAsync();
 
     private async Task<int> IdOfAsync(string email)
     {

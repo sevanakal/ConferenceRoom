@@ -1,4 +1,5 @@
 using ConferenceRoom.Domain.Accounts;
+using ConferenceRoom.Domain.Halls;
 using ConferenceRoom.Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
 
@@ -19,6 +20,10 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Role> Roles => Set<Role>();
     public DbSet<RolePermission> RolePermissions => Set<RolePermission>();
     public DbSet<Customer> Customers => Set<Customer>();
+
+    // ---- Salonlar ve kroki sürümleri ----
+    public DbSet<Hall> Halls => Set<Hall>();
+    public DbSet<HallPlanVersion> HallPlanVersions => Set<HallPlanVersion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

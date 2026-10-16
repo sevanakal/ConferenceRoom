@@ -72,6 +72,12 @@
     padding: 12px 14px; border-radius: 10px; font-weight: 600;
     background: color-mix(in srgb, var(--color-ok) 12%, transparent); color: var(--color-ok);
 }
+.muted { color: var(--color-muted); }
+.empty-state {
+    display: grid; justify-items: start; gap: 12px; padding: 28px 24px;
+    background: var(--color-surface); border: 1px dashed var(--color-border); border-radius: 12px;
+}
+.empty-state p { margin: 0; color: var(--color-muted); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 /* ---- Tablolar ---- */
@@ -85,6 +91,7 @@
 .data-table .num { text-align: right; font-variant-numeric: tabular-nums; }
 .data-table .actions { text-align: right; white-space: nowrap; }
 .data-table .actions a { font-weight: 600; text-decoration: none; }
+.data-table .actions a + a { margin-left: 14px; }
 .row-title { color: var(--color-text); font-weight: 600; text-decoration: none; margin-right: 6px; }
 .row-title:hover { text-decoration: underline; }
 .row-sub { color: var(--color-muted); font-size: .86rem; margin-top: 2px; }
@@ -94,6 +101,11 @@
 .status::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
 .status-on { color: var(--color-ok); }
 .status-off { color: var(--color-muted); }
+
+/* ---- Salon düzenleme: kroki sürümleri ---- */
+.versions { display: grid; gap: 10px; max-width: 760px; }
+.versions h2 { margin: 8px 0 0; font-size: 1.15rem; }
+.versions > p { margin: 0; }
 
 /* ---- Düzenleme formu ---- */
 .form-card { display: grid; gap: 22px; max-width: 760px; padding: 24px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
