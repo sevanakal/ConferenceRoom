@@ -95,10 +95,13 @@ Kroki verisi her sürümde tek bir JSON olarak saklanır (`HallPlanVersions.Plan
 | Adres | İçerik |
 | --- | --- |
 | `/` | Ana sayfa (sistem durumu) |
+| `/pano` | Herkese açık etkinlik panosu (giriş gerekmez) |
 | `/giris`, `/kayit` | Bilet alan izleyicinin girişi ve kaydı |
 | `/yonetim/giris` | Yönetim paneli girişi (ayrı sayfa, ayrı çerez) |
 | `/yonetim` | Yönetim paneli: rolün yetkili olduğu bölümler |
 | `/yonetim/salonlar` | Salonlar; `/yonetim/salonlar/{id}/kroki` kroki editörü, `?surum=N` eski sürüm ("Salonlar ve kroki" yetkisi) |
+| `/yonetim/etkinlikler` | Etkinlikler ve seansları; `/yonetim/etkinlikler/turler` etkinlik türleri ("Etkinlikler" yetkisi) |
+| `/afisler/{dosya}` | Yüklenen afiş görselleri (Docker'da `posters` volume'u) |
 | `/yonetim/kullanicilar`, `/yonetim/roller` | Yönetim kullanıcıları ve roller ("Kullanıcılar ve roller" yetkisi) |
 | `/health` | Sağlık kontrolü (veritabanı dahil) |
 | `/api/languages` | Kullanılabilir diller |

@@ -23,6 +23,7 @@
             <a class="brand" href="/">@T["app.name"]</a>
             <nav class="main-nav" aria-label="@T["nav.home"]">
                 <a href="/">@T["nav.home"]</a>
+                <a href="/pano">@T["nav.board"]</a>
             </nav>
             @* Genel sayfalarda User bilet alan izleyicidir (varsayılan şema); yönetim girişi ayrı bir sayfadadır. *@
             @if (User.Identity?.IsAuthenticated == true)

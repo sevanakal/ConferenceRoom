@@ -245,6 +245,205 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.ToTable("StaffUserRoles", (string)null);
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.Event", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("CreatedByStaffUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<int>("EventTypeId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HallId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("MaxTicketsPerPerson")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("OnlineEnabled")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Organizer")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("PosterFileName")
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<bool>("RequiresApproval")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("SaleMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime?>("SalesEndUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("SalesStartUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedByStaffUserId");
+
+                    b.HasIndex("EventTypeId");
+
+                    b.HasIndex("HallId");
+
+                    b.HasIndex("OrganizationId", "Status");
+
+                    b.ToTable("Events", (string)null);
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.EventSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("DoorsOpenAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("EndsAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("HallPlanVersionId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("StartsAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("HallPlanVersionId");
+
+                    b.HasIndex("StartsAtUtc");
+
+                    b.ToTable("EventSessions", (string)null);
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.EventType", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("DefaultRequiresApproval")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("DefaultSaleMode")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique();
+
+                    b.ToTable("EventTypes", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            CreatedAtUtc = new DateTime(2026, 10, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultRequiresApproval = false,
+                            DefaultSaleMode = "Reservation",
+                            IsActive = true,
+                            Name = "Konferans",
+                            OrganizationId = 1
+                        },
+                        new
+                        {
+                            Id = 2,
+                            CreatedAtUtc = new DateTime(2026, 10, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultRequiresApproval = false,
+                            DefaultSaleMode = "Sale",
+                            IsActive = true,
+                            Name = "Konser",
+                            OrganizationId = 1
+                        },
+                        new
+                        {
+                            Id = 3,
+                            CreatedAtUtc = new DateTime(2026, 10, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultRequiresApproval = false,
+                            DefaultSaleMode = "Sale",
+                            IsActive = true,
+                            Name = "Tiyatro",
+                            OrganizationId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAtUtc = new DateTime(2026, 10, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultRequiresApproval = true,
+                            DefaultSaleMode = "Reservation",
+                            IsActive = true,
+                            Name = "Seminer",
+                            OrganizationId = 1
+                        },
+                        new
+                        {
+                            Id = 5,
+                            CreatedAtUtc = new DateTime(2026, 10, 16, 0, 0, 0, 0, DateTimeKind.Utc),
+                            DefaultRequiresApproval = true,
+                            DefaultSaleMode = "Reservation",
+                            IsActive = true,
+                            Name = "Toplantı",
+                            OrganizationId = 1
+                        });
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>
                 {
                     b.Property<int>("Id")
@@ -405,6 +604,65 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.Event", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", "CreatedBy")
+                        .WithMany()
+                        .HasForeignKey("CreatedByStaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Events.EventType", "EventType")
+                        .WithMany()
+                        .HasForeignKey("EventTypeId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Halls.Hall", "Hall")
+                        .WithMany()
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CreatedBy");
+
+                    b.Navigation("EventType");
+
+                    b.Navigation("Hall");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.EventSession", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Events.Event", null)
+                        .WithMany("Sessions")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Halls.HallPlanVersion", "HallPlanVersion")
+                        .WithMany()
+                        .HasForeignKey("HallPlanVersionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("HallPlanVersion");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.EventType", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>
                 {
                     b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
@@ -439,6 +697,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.StaffUser", b =>
                 {
                     b.Navigation("Roles");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.Event", b =>
+                {
+                    b.Navigation("Sessions");
                 });
 
             modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>

@@ -1,0 +1,233 @@
+@page "/yonetim/etkinlikler/duzenle/{id:int?}"
+@model ConferenceRoom.Web.Pages.Yonetim.Etkinlikler.DuzenleModel
+@using ConferenceRoom.Domain.Events
+@using ConferenceRoom.Web.Common
+@using ConferenceRoom.Web.Events
+@{
+    Layout = "_AdminLayout";
+    var title = Model.Id is null ? T["events.newTitle"] : T["events.editTitle"];
+    ViewData["Title"] = title;
+    ViewData["AdminNav"] = "events";
+    string? Invalid(string key) => Model.Errors.ContainsKey(key) ? "true" : null;
+    const string LocalFormat = "yyyy-MM-ddTHH:mm";
+}
+@functions {
+    // Alanın altındaki hata satırı (yoksa hiçbir şey yazmaz).
+    private void Error(string key)
+    {
+        if (Model.Errors.TryGetValue(key, out var error))
+        {
+            <p class="field-error">@T[error]</p>
+        }
+    }
+}
+<header class="page-head">
+    <div>
+        <a class="back-link" href="/yonetim/etkinlikler">← @T["events.title"]</a>
+        <h1>@title</h1>
+    </div>
+</header>
+
+<partial name="_Flash" model="Model.Flash" />
+@if (Model.Errors.Count > 0)
+{
+    <div class="form-alert" role="alert">@T["admin.formErrors"]</div>
+}
+
+@* ---- 1. Etkinlik bilgileri ---- *@
+<form method="post" class="form-card" enctype="multipart/form-data" novalidate>
+    <div class="field">
+        <label for="Input_Title">@T["events.eventTitle"]</label>
+        <input id="Input_Title" name="Input.Title" value="@Model.Input.Title" maxlength="200" required aria-invalid="@Invalid("Title")" />
+        @{ Error("Title"); }
+    </div>
+    <div class="form-row">
+        <div class="field">
+            <label for="Input_EventTypeId">@T["events.type"]</label>
+            @* Yeni etkinlikte tür değişince satış türü ve onay kutusu türün varsayılanına çekilir (sayfa sonundaki betik). *@
+            <select id="Input_EventTypeId" name="Input.EventTypeId" aria-invalid="@Invalid("EventTypeId")" data-apply-defaults="@(Model.Id is null ? "true" : null)">
+                @foreach (var type in Model.Types.Where(t => t.IsActive || t.Id == Model.Input.EventTypeId))
+                {
+                    <option value="@type.Id" selected="@(type.Id == Model.Input.EventTypeId)" data-sale-mode="@type.SaleMode" data-approval="@(type.RequiresApproval ? "true" : "false")">@type.Name</option>
+                }
+            </select>
+            @{ Error("EventTypeId"); }
+            <p class="field-hint"><a href="/yonetim/etkinlikler/turler">@T["eventTypes.manage"]</a></p>
+        </div>
+        <div class="field">
+            <label for="Input_HallId">@T["events.hall"]</label>
+            <select id="Input_HallId" name="Input.HallId" aria-invalid="@Invalid("HallId")">
+                @foreach (var hall in Model.Halls.Where(h => h.IsActive || h.Id == Model.Input.HallId))
+                {
+                    <option value="@hall.Id" selected="@(hall.Id == Model.Input.HallId)">@hall.Name</option>
+                }
+            </select>
+            @{ Error("HallId"); }
+        </div>
+    </div>
+    <div class="field">
+        <label for="Input_Organizer">@T["events.organizer"]</label>
+        <input id="Input_Organizer" name="Input.Organizer" value="@Model.Input.Organizer" maxlength="200" />
+        <p class="field-hint">@T["events.organizerHint"]</p>
+    </div>
+    <div class="field">
+        <label for="Input_Description">@T["events.description"]</label>
+        <textarea id="Input_Description" name="Input.Description" maxlength="4000" rows="5">@Model.Input.Description</textarea>
+    </div>
+    <div class="field">
+        <label for="Input_Poster">@T["events.poster"]</label>
+        @if (Model.PosterFileName is not null)
+        {
+            <div class="poster-preview">
+                <img src="@PosterStore.Url(Model.PosterFileName)" alt="@T["events.poster"]" />
+                <label class="check">
+                    <input type="checkbox" name="Input.RemovePoster" value="true" />
+                    <span>@T["events.removePoster"]</span>
+                </label>
+            </div>
+        }
+        <input id="Input_Poster" name="Input.Poster" type="file" accept="image/jpeg,image/png,image/webp" aria-invalid="@Invalid("Poster")" />
+        <p class="field-hint">@T["events.posterHint"]</p>
+        @{ Error("Poster"); }
+    </div>
+
+    <h2 class="form-section-title">@T["events.salesRules"]</h2>
+    <partial name="_SaleModeChoices" model="Model.Input.SaleMode" />
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" id="Input_RequiresApproval" name="Input.RequiresApproval" value="true" @(Model.Input.RequiresApproval ? "checked" : null) />
+            <span>@T["events.requiresApproval"]</span>
+        </label>
+        <input type="hidden" name="Input.RequiresApproval" value="false" />
+        <p class="field-hint">@T["events.requiresApprovalHint"]</p>
+    </div>
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.OnlineEnabled" value="true" @(Model.Input.OnlineEnabled ? "checked" : null) />
+            <span>@T["events.onlineEnabled"]</span>
+        </label>
+        <input type="hidden" name="Input.OnlineEnabled" value="false" />
+        <p class="field-hint">@T["events.onlineEnabledHint"]</p>
+    </div>
+    <div class="form-row">
+        <div class="field">
+            <label for="Input_SalesStart">@T["events.salesStart"]</label>
+            <input id="Input_SalesStart" name="Input.SalesStart" type="datetime-local" value="@Model.Input.SalesStart?.ToString(LocalFormat)" />
+            <p class="field-hint">@T["events.salesStartHint"]</p>
+        </div>
+        <div class="field">
+            <label for="Input_SalesEnd">@T["events.salesEnd"]</label>
+            <input id="Input_SalesEnd" name="Input.SalesEnd" type="datetime-local" value="@Model.Input.SalesEnd?.ToString(LocalFormat)" aria-invalid="@Invalid("SalesEnd")" />
+            <p class="field-hint">@T["events.salesEndHint"]</p>
+            @{ Error("SalesEnd"); }
+        </div>
+    </div>
+    <div class="field">
+        <label for="Input_MaxTicketsPerPerson">@T["events.maxTickets"]</label>
+        <input id="Input_MaxTicketsPerPerson" name="Input.MaxTicketsPerPerson" type="number" min="1" max="100" value="@Model.Input.MaxTicketsPerPerson" aria-invalid="@Invalid("MaxTicketsPerPerson")" />
+        <p class="field-hint">@T["events.maxTicketsHint"]</p>
+        @{ Error("MaxTicketsPerPerson"); }
+    </div>
+
+    <h2 class="form-section-title">@T["events.publishing"]</h2>
+    <div class="field">
+        <label for="Input_Status">@T["halls.status"]</label>
+        <select id="Input_Status" name="Input.Status" aria-invalid="@Invalid("Status")">
+            @foreach (var status in Enum.GetValues<EventStatus>())
+            {
+                <option value="@status" selected="@(status == Model.Input.Status)">@T[$"events.state{status}"]</option>
+            }
+        </select>
+        <p class="field-hint">@T["events.statusHint"]</p>
+        @{ Error("Status"); }
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-primary btn-inline">@(Model.Id is null ? T["events.createAndAddSessions"] : T["admin.save"])</button>
+        <a class="btn-secondary" href="/yonetim/etkinlikler">@T["admin.cancel"]</a>
+    </div>
+</form>
+
+@* ---- 2. Seanslar (yalnızca kayıtlı etkinlikte) ---- *@
+@if (Model.Id is not null)
+{
+    <section class="sessions" id="seanslar">
+        <h2>@T["events.sessions"]</h2>
+        <p class="muted">@T["events.sessionsHint"]</p>
+        @{ Error("Session.Delete"); }
+
+        @if (Model.Sessions.Count > 0)
+        {
+            <div class="table-wrap">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">@T["events.sessionStart"]</th>
+                            <th scope="col">@T["events.sessionEnd"]</th>
+                            <th scope="col">@T["events.doorsOpen"]</th>
+                            <th scope="col">@T["halls.plan"]</th>
+                            <th scope="col"><span class="visually-hidden">@T["events.deleteSession"]</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var session in Model.Sessions)
+                        {
+                            <tr>
+                                <td>@DisplayTime.Format(session.StartsAtUtc)</td>
+                                <td>@(session.EndsAtUtc is { } end ? DisplayTime.Format(end) : "–")</td>
+                                <td>@(session.DoorsOpenAtUtc is { } doors ? DisplayTime.Format(doors) : "–")</td>
+                                <td>@T["halls.versionN", session.PlanVersion]</td>
+                                <td class="actions">
+                                    <form method="post" asp-page-handler="DeleteSession" asp-route-sessionId="@session.Id" class="inline-form" data-confirm="@T["events.deleteSessionConfirm"]">
+                                        <button type="submit" class="link-button">@T["events.deleteSession"]</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <p class="muted">@T["events.noSessions"]</p>
+        }
+
+        <form method="post" asp-page-handler="AddSession" class="form-card session-form" novalidate>
+            <div class="field">
+                <label for="NewSession_Date">@T["events.sessionDate"]</label>
+                <input id="NewSession_Date" name="NewSession.Date" type="date" value="@Model.NewSession.Date?.ToString("yyyy-MM-dd")" required aria-invalid="@Invalid("Session.Start")" />
+            </div>
+            <div class="field">
+                <label for="NewSession_Start">@T["events.sessionStart"]</label>
+                <input id="NewSession_Start" name="NewSession.Start" type="time" value="@Model.NewSession.Start?.ToString("HH:mm")" required aria-invalid="@Invalid("Session.Start")" />
+            </div>
+            <div class="field">
+                <label for="NewSession_End">@T["events.sessionEnd"]</label>
+                <input id="NewSession_End" name="NewSession.End" type="time" value="@Model.NewSession.End?.ToString("HH:mm")" />
+            </div>
+            <div class="field">
+                <label for="NewSession_DoorsOpen">@T["events.doorsOpen"]</label>
+                <input id="NewSession_DoorsOpen" name="NewSession.DoorsOpen" type="time" value="@Model.NewSession.DoorsOpen?.ToString("HH:mm")" aria-invalid="@Invalid("Session.DoorsOpen")" />
+            </div>
+            <div class="form-actions">
+                @{ Error("Session.Start"); Error("Session.DoorsOpen"); }
+                <button type="submit" class="btn-primary btn-inline">@T["events.addSession"]</button>
+            </div>
+        </form>
+    </section>
+}
+
+<script>
+    // Yeni etkinlikte tür seçilince satış türü ve onay kuralı türün varsayılanına çekilir (sunucudaki OnGet ile aynı kural).
+    (function () {
+        var select = document.getElementById("Input_EventTypeId");
+        if (!select || !select.dataset.applyDefaults) return;
+        select.addEventListener("change", function () {
+            var option = select.options[select.selectedIndex];
+            var radio = document.querySelector('input[name="Input.SaleMode"][value="' + option.dataset.saleMode + '"]');
+            if (radio) radio.checked = true;
+            document.getElementById("Input_RequiresApproval").checked = option.dataset.approval === "true";
+        });
+    })();
+</script>

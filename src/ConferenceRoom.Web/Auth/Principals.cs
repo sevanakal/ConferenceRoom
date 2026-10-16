@@ -26,6 +26,10 @@ public static class Principals
         return new ClaimsPrincipal(new ClaimsIdentity(claims, AuthSchemes.Staff));
     }
 
+    /// <summary>Giriş yapmış kullanıcının (yönetim ya da izleyici) veritabanı kimliği. Yalnızca giriş isteyen sayfalarda çağrılır.</summary>
+    public static int UserId(this ClaimsPrincipal user) =>
+        int.Parse(user.FindFirstValue(ClaimTypes.NameIdentifier)!, System.Globalization.CultureInfo.InvariantCulture);
+
     /// <summary>Bilet alan izleyici.</summary>
     public static ClaimsPrincipal ForCustomer(Customer customer) => new(new ClaimsIdentity(
     [

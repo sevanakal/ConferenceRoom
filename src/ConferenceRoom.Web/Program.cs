@@ -9,7 +9,9 @@ using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
 using ConferenceRoom.Web.Api;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Events;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,12 +26,15 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/Yonetim/Kullanicilar", AuthPolicies.Permission(Permissions.UsersManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Roller", AuthPolicies.Permission(Permissions.UsersManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Salonlar", AuthPolicies.Permission(Permissions.HallsManage));
+    o.Conventions.AuthorizeFolder("/Yonetim/Etkinlikler", AuthPolicies.Permission(Permissions.EventsManage));
 });
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 builder.Services.AddJsonLocalization();                       // tüm metinler ConferenceRoom.Localization/Resources/*.json
 builder.Services.AddInfrastructure(builder.Configuration);    // MySQL + EF Core
 builder.Services.AddAppAuthentication(builder.Configuration); // iki ayrı giriş (yönetim / izleyici), yetkiler (bkz. Auth/)
+builder.Services.AddSingleton(TimeProvider.System);            // "şu an" tek yerden gelsin (testlerde değiştirilebilir)
+builder.Services.AddSingleton<PosterStore>();                  // etkinlik afişleri (diskte; Docker'da ayrı birim)
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
 
 var app = builder.Build();
@@ -65,6 +70,12 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 });
 
 app.UseStaticFiles();
+// Yüklenen afişler wwwroot dışında, ayrı bir klasörde durur (bkz. Events/PosterStore.cs).
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(app.Services.GetRequiredService<PosterStore>().Root),
+    RequestPath = PosterStore.RequestPath,
+});
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
