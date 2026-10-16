@@ -27,6 +27,7 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/Yonetim/Roller", AuthPolicies.Permission(Permissions.UsersManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Salonlar", AuthPolicies.Permission(Permissions.HallsManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Etkinlikler", AuthPolicies.Permission(Permissions.EventsManage));
+    o.Conventions.AuthorizeFolder("/Yonetim/Fiyatlandirma", AuthPolicies.Permission(Permissions.PricingManage));
 });
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));

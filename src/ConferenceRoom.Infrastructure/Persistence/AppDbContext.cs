@@ -30,6 +30,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EventType> EventTypes => Set<EventType>();
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventSession> EventSessions => Set<EventSession>();
+    public DbSet<EventSeatMap> EventSeatMaps => Set<EventSeatMap>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

@@ -1,0 +1,41 @@
+/*
+  Etkinlik koltuk ayarları ekranının kendine özgü stili (Pages/Yonetim/Fiyatlandirma/Koltuklar.cshtml).
+  Çerçeve (başlık, düğmeler, sekmeler, panel) ve renk değişkenleri kroki-editor.css'ten gelir.
+  Yerleşim: üstte başlık, solda kroki tuvali, sağda panel (seçim, kategoriler, internet satışı, özet).
+*/
+
+/* Ana alan: araç çubuğu yok, panel biraz daha geniş */
+.seat-app { grid-template-rows: auto 1fr; }
+.seat-app .main { grid-template-columns: 1fr 340px; }
+.seat-app .brand span#saveState::before { content: "· "; }
+
+/* Kategori listesi: renk, ad, Ata düğmesi; altında fiyat, protokol, koltuk sayısı, sil */
+.cats { display: grid; gap: 6px; }
+.cat {
+  display: grid; grid-template-columns: 30px 1fr auto; grid-template-areas: "color name assign" "price price price" "proto cnt del";
+  gap: 6px 8px; align-items: center; padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper);
+}
+.cat input[type=color] { grid-area: color; width: 30px; height: 30px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: none; cursor: pointer; }
+.cat input[data-field=name] { grid-area: name; min-width: 0; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); font-weight: 600; }
+.cat [data-act=assign] { grid-area: assign; }
+.cat .price { grid-area: price; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
+.cat .price input { font-family: var(--font-data); text-align: right; }
+.cat .check { grid-area: proto; display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+.cat .cnt { grid-area: cnt; justify-self: end; font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.icon-del { grid-area: del; border: 0; background: transparent; color: var(--muted); padding: 3px; border-radius: 5px; display: grid; place-items: center; }
+.icon-del:hover { color: var(--accent); background: var(--accent-soft); }
+.icon-del svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.btn:disabled { opacity: .45; cursor: default; border-color: var(--line); }
+.note.warn { color: var(--accent); }
+.legend .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--exit); border: 0; }
+.legend .proto { border: 2px dashed var(--ink); }
+
+/* Seansı olmayan etkinlik */
+.seat-empty { max-width: 560px; margin: 15vh auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 24px; font-size: 15px; }
+.seat-empty h1 { margin: 0 0 8px; font-size: 20px; }
+.seat-empty a { color: var(--accent); }
+
+@media (max-width: 860px) {
+  .seat-app .main { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  .seat-app .panel { width: min(340px, calc(100% - 32px)); }
+}

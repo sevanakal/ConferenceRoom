@@ -71,6 +71,13 @@
         <a class="back-link" href="/yonetim/etkinlikler">← @T["events.title"]</a>
         <h1>@title</h1>
     </div>
+    @* Kayıtlı etkinlikte, fiyatlandırma yetkisi olana koltuk ayarları (kategori, fiyat, online koltuklar) bağlantısı. *@
+    @if (Model.Id is not null && User.HasClaim(ConferenceRoom.Web.Auth.AppClaims.Permission, ConferenceRoom.Domain.Accounts.Permissions.PricingManage))
+    {
+        <div class="form-actions">
+            <a class="btn-secondary" href="/yonetim/fiyatlandirma/@Model.Id">@T["pricing.openSeats"]</a>
+        </div>
+    }
 </header>
 
 <partial name="_Flash" model="Model.Flash" />

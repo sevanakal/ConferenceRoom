@@ -2,6 +2,7 @@
   Salon kroki editörü (yönetim paneli: /yonetim/salonlar/{id}/kroki)
   ===================================================================
   Konferans salonunun 2B krokisini çizen editör. Çizim Konva.js ile yapılır (wwwroot/lib/konva).
+  Ortak çizim (koltuk, sahne, duvar..., ızgara, yakınlaştırma) kroki-cizim.js dosyasındadır (KrokiCizim).
   Sayfa (Pages/Yonetim/Salonlar/Kroki.cshtml) iki JSON bloğu verir:
     #editorConfig : salon adı, güncel sürüm numarası, kayıt adresi, dil, editör metinleri (tr.json/en.json "planEditor" bölümü)
     #planData     : açılacak kroki verisi (güncel sürüm, istenen eski sürüm ya da boş kroki)
@@ -33,7 +34,7 @@ function t(key, vars) {
    doc: krokinin tamamı (kaydedilen veri). selected: seçili öğe id'leri.
    opts: araç seçenek çubuğundaki değerler.
 ------------------------------------------------------------------ */
-const SEAT_W = 52, SEAT_H = 48;               // cm; koltuk üstünde "A-12" gibi sıra-numara etiketi sığacak kadar
+const { SEAT_W, SEAT_H, ORDER } = KrokiCizim;
 const SNAP = 10;                              // cm
 const BLOCK_COLORS = ["#0F766E", "#B4531A", "#6D3FC0", "#1D5FBF", "#B0306A", "#4D7C0F", "#0E7490", "#8A5A12"];
 const RESIZABLE = new Set(["stage", "area", "wall", "door", "column"]);
@@ -49,7 +50,6 @@ const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const uid = () => "i" + Math.random().toString(36).slice(2, 9);
 const snapV = (v) => (opts.snap ? Math.round(v / SNAP) * SNAP : Math.round(v));
-const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
 /* ---------- Sıra harfleri: A..Z, sonra AA, AB.. ve koltuk numara dizileri (sıralı/tek/çift) ---------- */
 function rowToIndex(s) { s = String(s || "A").toUpperCase().replace(/[^A-Z]/g, "") || "A"; let n = 0; for (const c of s) n = n * 26 + (c.charCodeAt(0) - 64); return n - 1; }
@@ -218,22 +218,7 @@ const layer = new Konva.Layer();
 const uiLayer = new Konva.Layer({ listening: false });
 stage.add(gridLayer, layer, uiLayer);
 
-const grid = new Konva.Shape({
-  sceneFunc(ctx) {
-    const s = stage.scaleX(), W = stage.width(), H = stage.height();
-    const x0 = -stage.x() / s, y0 = -stage.y() / s, x1 = x0 + W / s, y1 = y0 + H / s;
-    const pass = (step, color) => {
-      if (step * s < 7) return;
-      ctx.beginPath();
-      for (let x = Math.floor(x0 / step) * step; x <= x1; x += step) { ctx.moveTo(x, y0); ctx.lineTo(x, y1); }
-      for (let y = Math.floor(y0 / step) * step; y <= y1; y += step) { ctx.moveTo(x0, y); ctx.lineTo(x1, y); }
-      ctx.setAttr("strokeStyle", color); ctx.setAttr("lineWidth", 1 / s); ctx.stroke();
-    };
-    pass(50, css("--grid-minor"));
-    pass(100, css("--grid-major"));
-    pass(500, css("--grid-major"));
-  }
-});
+const grid = KrokiCizim.makeGrid(stage);
 gridLayer.add(grid);
 
 const tr = new Konva.Transformer({
@@ -249,12 +234,7 @@ uiLayer.add(preview, guide);
 
 const nodes = new Map();
 
-function themeColors() {
-  return {
-    ink: css("--ink"), muted: css("--muted"), paper: css("--paper"), accent: css("--accent"), seat: css("--seat"), seatStroke: css("--seat-stroke"),
-    stage: css("--stage"), stageText: css("--stage-text"), exit: css("--exit"), font: css("--font-ui") || "sans-serif", mono: css("--font-data") || "monospace"
-  };
-}
+const themeColors = KrokiCizim.themeColors;
 let TC = themeColors();
 
 function makeNode(it) {
@@ -262,63 +242,21 @@ function makeNode(it) {
   g.setAttr("itemId", it.id);
   const sel = selected.has(it.id);
   if (it.type === "seat") {
+    // renk bloktan gelir; VIP altın kenarlı, ekstra sandalye kesik çizgili
     const b = it.blockId && blockById(it.blockId);
-    const fill = b ? b.color : TC.seat;
-    const txt = b ? "#FFFFFF" : TC.ink;
     let stroke = b ? "rgba(0,0,0,.35)" : TC.seatStroke, sw = 1.5, dash = null;
     if (it.kind === "vip") { stroke = "#C9A227"; sw = 5; }
     if (it.kind === "extra") { dash = [7, 5]; sw = 2.5; stroke = b ? stroke : TC.ink; }
-    const body = new Konva.Rect({ name: "body", x: -SEAT_W / 2, y: -SEAT_H / 2, width: SEAT_W, height: SEAT_H, cornerRadius: [12, 12, 6, 6], fill: it.kind === "extra" && !b ? TC.paper : fill, stroke, strokeWidth: sw, dash });
-    body.setAttr("baseStroke", stroke); body.setAttr("baseSW", sw);
-    g.add(body);
-    // sırtlık: izleyici yerel −y yönüne baktığı için sırtlık +y tarafındadır
-    g.add(new Konva.Rect({ x: -SEAT_W / 2 + 4, y: SEAT_H / 2 - 11, width: SEAT_W - 8, height: 7, cornerRadius: 3, fill: "rgba(0,0,0,.28)", listening: false }));
-    if (it.kind === "accessible") {
-      g.add(new Konva.Text({ text: "♿", x: -SEAT_W / 2, y: -SEAT_H / 2 + 6, width: SEAT_W, align: "center", fontSize: 22, fill: txt, listening: false }));
-    } else {
-      // etiket "Sıra-No" (A-12); sıra adı yoksa yalnızca numara. Yazı tipi eşit genişlikli, uzun etiket küçültülerek sığdırılır.
-      const label = it.row ? it.row + "-" + (it.num ?? "") : String(it.num ?? "");
-      const fontSize = Math.min(15, (SEAT_W - 6) / (0.6 * Math.max(1, label.length)));
-      g.add(new Konva.Text({ text: label, x: -SEAT_W / 2, y: -SEAT_H / 2, width: SEAT_W, height: SEAT_H - 12, align: "center", verticalAlign: "middle", fontSize, fontFamily: TC.mono, fill: it.kind === "extra" && !b ? TC.ink : txt, listening: false }));
-    }
+    const plainExtra = it.kind === "extra" && !b;
+    const body = KrokiCizim.drawSeat(g, it, { fill: plainExtra ? TC.paper : b ? b.color : TC.seat, text: b ? "#FFFFFF" : TC.ink, stroke, strokeWidth: sw, dash }, TC);
     if (sel) { body.stroke(TC.accent); body.strokeWidth(5); }
     return g;
   }
-  const w = it.w || 100, h = it.h || 100;
-  let body;
-  if (it.type === "stage") {
-    body = new Konva.Rect({ name: "body", x: -w / 2, y: -h / 2, width: w, height: h, fill: TC.stage, cornerRadius: 8 });
-    g.add(body);
-    g.add(new Konva.Text({ text: it.label || "", x: -w / 2, y: -20, width: w, align: "center", fontSize: 40, fontStyle: "600", letterSpacing: 8, fontFamily: TC.font, fill: TC.stageText, listening: false }));
-  } else if (it.type === "area") {
-    const col = it.color || "#64748B";
-    body = new Konva.Rect({ name: "body", x: -w / 2, y: -h / 2, width: w, height: h, fill: col + "1F", stroke: col, strokeWidth: 3, dash: [16, 10], cornerRadius: 6 });
-    g.add(body);
-    g.add(new Konva.Text({ text: it.label || "", x: -w / 2 + 16, y: -h / 2 + 14, fontSize: 30, fontStyle: "600", fontFamily: TC.font, fill: col, listening: false }));
-  } else if (it.type === "wall") {
-    body = new Konva.Rect({ name: "body", x: -w / 2, y: -h / 2, width: w, height: h, fill: TC.ink });
-    g.add(body);
-  } else if (it.type === "door") {
-    const col = it.kind === "exit" ? TC.exit : TC.ink;
-    body = new Konva.Rect({ name: "body", x: -w / 2, y: -h / 2, width: w, height: h, fill: TC.paper, stroke: col, strokeWidth: 3 });
-    g.add(body);
-    g.add(new Konva.Arc({ x: -w / 2, y: -h / 2, innerRadius: w - 1, outerRadius: w, angle: 90, rotation: 270, fill: col, opacity: .6, listening: false }));
-    g.add(new Konva.Line({ points: [-w / 2, -h / 2, -w / 2, -h / 2 - w], stroke: col, strokeWidth: 2, listening: false }));
-    g.add(new Konva.Text({ text: it.label || "", x: -w / 2 - 40, y: h / 2 + 8, width: w + 80, align: "center", fontSize: 24, fontStyle: "600", fontFamily: TC.font, fill: col, listening: false }));
-  } else if (it.type === "column") {
-    body = new Konva.Ellipse({ name: "body", radiusX: w / 2, radiusY: h / 2, fill: TC.muted, stroke: TC.ink, strokeWidth: 2 });
-    g.add(body);
-  } else if (it.type === "text") {
-    body = new Konva.Text({ name: "body", text: it.label || "", fontSize: it.size || 40, fontStyle: "600", fontFamily: TC.font, fill: TC.ink, padding: 4 });
-    body.offsetX(body.width() / 2); body.offsetY(body.height() / 2);
-    g.add(body);
-  }
-  if (body) { body.setAttr("baseStroke", body.stroke()); body.setAttr("baseSW", body.strokeWidth()); }
+  const body = KrokiCizim.drawFixture(g, it, TC);
   if (sel && body && it.type !== "text") { body.stroke(TC.accent); body.strokeWidth(Math.max(4, body.strokeWidth())); body.dash(null); }
   return g;
 }
 
-const ORDER = { area: 0, stage: 1, wall: 2, column: 3, door: 4, seat: 5, text: 6 };
 function render() {
   tr.nodes([]); tr.remove(); marquee.remove(); keyBox.remove();
   layer.destroyChildren(); nodes.clear();
@@ -378,15 +316,7 @@ function resize() {
 }
 new ResizeObserver(resize).observe(host);
 
-function setZoom(scale, center) {
-  scale = Math.max(0.05, Math.min(4, scale));
-  const old = stage.scaleX();
-  center = center || { x: stage.width() / 2, y: stage.height() / 2 };
-  const wp = { x: (center.x - stage.x()) / old, y: (center.y - stage.y()) / old };
-  stage.scale({ x: scale, y: scale });
-  stage.position({ x: center.x - wp.x * scale, y: center.y - wp.y * scale });
-  viewChanged();
-}
+function setZoom(scale, center) { KrokiCizim.zoomAt(stage, scale, center); viewChanged(); }
 function viewChanged() {
   const s = stage.scaleX();
   $("zoomVal").textContent = Math.round(s * 100) + "%";
@@ -397,20 +327,10 @@ function viewChanged() {
   gridLayer.batchDraw(); uiLayer.batchDraw();
 }
 function fit() {
-  const its = levelItems();
-  if (!its.length) { stage.scale({ x: .3, y: .3 }); stage.position({ x: 40, y: 40 }); viewChanged(); return; }
+  if (!levelItems().length) { stage.scale({ x: .3, y: .3 }); stage.position({ x: 40, y: 40 }); viewChanged(); return; }
   layer.draw();
-  const r = layer.getClientRect({ relativeTo: layer, skipTransform: false });
-  const box = { x: Infinity, y: Infinity, X: -Infinity, Y: -Infinity };
-  for (const n of nodes.values()) {
-    const c = n.getClientRect({ relativeTo: layer });
-    box.x = Math.min(box.x, c.x); box.y = Math.min(box.y, c.y); box.X = Math.max(box.X, c.x + c.width); box.Y = Math.max(box.Y, c.y + c.height);
-  }
-  if (!isFinite(box.x)) Object.assign(box, { x: r.x, y: r.y, X: r.x + r.width, Y: r.y + r.height });
-  const pad = 40, W = stage.width() - pad * 2, H = stage.height() - pad * 2 - 30;
-  const s = Math.max(0.05, Math.min(2, Math.min(W / (box.X - box.x), H / (box.Y - box.y))));
-  stage.scale({ x: s, y: s });
-  stage.position({ x: pad + (W - (box.X - box.x) * s) / 2 - box.x * s, y: pad + (H - (box.Y - box.y) * s) / 2 - box.y * s });
+  const box = KrokiCizim.boxOf(nodes.values(), layer);
+  if (box) KrokiCizim.fitBox(stage, box);
   viewChanged();
 }
 
@@ -526,16 +446,7 @@ function endPointer(evt) {
   if (drawing) { const d = drawing; drawing = null; preview.destroyChildren(); uiLayer.batchDraw(); finishDraw(d); }
 }
 
-stage.on("wheel", (e) => {
-  e.evt.preventDefault();
-  const p = stage.getPointerPosition();
-  if (e.evt.ctrlKey || e.evt.metaKey || !e.evt.shiftKey && Math.abs(e.evt.deltaX) < 1 && e.evt.deltaMode === 0 && Math.abs(e.evt.deltaY) >= 1) {
-    const f = Math.exp(-e.evt.deltaY * (e.evt.ctrlKey ? 0.01 : 0.0015));
-    setZoom(stage.scaleX() * f, p);
-  } else {
-    stage.position({ x: stage.x() - e.evt.deltaX, y: stage.y() - e.evt.deltaY }); viewChanged();
-  }
-});
+stage.on("wheel", (e) => KrokiCizim.wheel(stage, e.evt, viewChanged));
 
 function handlePinch(evt) {
   evt.preventDefault();

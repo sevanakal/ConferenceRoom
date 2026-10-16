@@ -321,6 +321,53 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.ToTable("Events", (string)null);
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.EventSeatMap", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("AssignedSeats")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("MapJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<int>("OnlineSeats")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UpdatedByStaffUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .IsUnique();
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("UpdatedByStaffUserId");
+
+                    b.ToTable("EventSeatMaps", (string)null);
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Events.EventSession", b =>
                 {
                     b.Property<int>("Id")
@@ -635,6 +682,29 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.Navigation("EventType");
 
                     b.Navigation("Hall");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Events.EventSeatMap", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Events.Event", null)
+                        .WithOne()
+                        .HasForeignKey("ConferenceRoom.Domain.Events.EventSeatMap", "EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByStaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("ConferenceRoom.Domain.Events.EventSession", b =>
