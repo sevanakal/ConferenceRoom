@@ -432,7 +432,10 @@
     "hallHasNoPlan": "This hall has no floor plan yet. Draw and save the hall's plan before adding sessions.",
     "doorsAfterStart": "Doors must open before the start time.",
     "removeSession": "Remove session",
-    "sessionPlan": "Floor plan v{0}"
+    "sessionPlan": "Floor plan v{0}",
+    "posterPreview": "Poster preview",
+    "posterNone": "No poster",
+    "posterClear": "Clear selection"
   },
   "eventTypes": {
     "title": "Event types",

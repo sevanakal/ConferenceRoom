@@ -432,7 +432,10 @@
     "hallHasNoPlan": "Bu salonun henüz krokisi yok. Seans eklemek için önce salonun krokisini çizip kaydedin.",
     "doorsAfterStart": "Kapı açılış saati, başlangıçtan önce olmalı.",
     "removeSession": "Seansı kaldır",
-    "sessionPlan": "Kroki sürüm {0}"
+    "sessionPlan": "Kroki sürüm {0}",
+    "posterPreview": "Afiş önizlemesi",
+    "posterNone": "Afiş yok",
+    "posterClear": "Seçimi kaldır"
   },
   "eventTypes": {
     "title": "Etkinlik türleri",

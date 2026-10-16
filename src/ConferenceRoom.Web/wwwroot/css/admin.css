@@ -143,8 +143,15 @@
 }
 
 /* ---- Etkinlik formu: afiş önizlemesi ve seans satırları ---- */
-.poster-preview { display: flex; gap: 14px; align-items: center; }
-.poster-preview img { width: 96px; height: 128px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); }
+.poster-picker { display: flex; gap: 16px; align-items: flex-start; }
+.poster-thumb {
+    flex: none; width: 120px; height: 160px; display: grid; place-items: center; overflow: hidden;
+    border: 1px dashed var(--color-border); border-radius: 10px; background: var(--color-bg);
+}
+.poster-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.poster-empty { padding: 8px; color: var(--color-muted); font-size: .8rem; text-align: center; }
+.poster-controls { flex: 1; min-width: 0; display: grid; gap: 8px; }
+@media (max-width: 480px) { .poster-thumb { width: 96px; height: 128px; } }
 .form-section-title { margin: 8px 0 0; font-size: 1rem; }
 .session-list { display: grid; gap: 10px; }
 .session-row {
