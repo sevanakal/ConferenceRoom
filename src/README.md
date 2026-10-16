@@ -70,6 +70,26 @@ dotnet tool restore
 dotnet ef migrations add DegisiklikAdi -p ConferenceRoom.Infrastructure -s ConferenceRoom.Infrastructure -o Persistence/Migrations
 ```
 
+## Kroki editörü
+
+Yönetim panelinde Salonlar → Krokiyi aç. Dosyalar: `Pages/Yonetim/Salonlar/Kroki.cshtml` (sayfa ve kaydetme),
+`wwwroot/js/kroki-editor.js` (editör), `wwwroot/css/kroki-editor.css`, `wwwroot/lib/konva` (çizim kütüphanesi, internet gerektirmez).
+Metinler dil dosyalarının `planEditor` bölümündedir.
+
+- **Çizim:** tek koltuk (S), koltuk sırası (R), koltuk bloğu (B), sahne (P), bölge (A), duvar (W), kapı/acil çıkış (D), sütun (C), yazı (T).
+- **Kavisli sıra:** seçenek çubuğundaki "Kavis" değeri sırayı sahneye dönük bir yaya çevirir.
+- **Seçim:** bir koltuğa tıklamak bloğun tamamını seçer; Alt+tık tek koltuk, Shift ekle/çıkar, boş alanda sürükleme alan seçimi.
+- **Düzenleme:** taşıma, döndürme, boyutlandırma, hizalama, eşit dağıtma, yansıtma, gruplama (Ctrl+G), çoğaltma (Ctrl+D), geri al/yinele.
+- **Numaralama:** sıralı, tek ya da çift numara; soldan sağa ya da sağdan sola; sıra harflerini yeniden verme.
+- **Koltuk türleri:** normal, VIP/protokol, engelli yeri, ekstra sandalye. Kapasite özeti bunları ayrı sayar.
+- **Katlar:** Parter, Balkon gibi katlar sekme olarak eklenir; bloklar kata bağlıdır.
+- **Kaydetme:** Kaydet ya da Ctrl+S yeni sürüm oluşturur; değişiklik yoksa sürüm eklenmez. Editör açıldıktan sonra
+  başkası yeni sürüm kaydettiyse kayıt reddedilir (üzerine yazılmasın diye). "{ }" penceresinde JSON kopyalama,
+  içe aktarma ve örnek salon vardır.
+
+Kroki verisi her sürümde tek bir JSON olarak saklanır (`HallPlanVersions.PlanJson`); yapısı ve sunucudaki denetimi
+`ConferenceRoom.Domain/Halls/HallPlan.cs` içinde anlatılır. Ölçüler santimetre, `x,y` nesnenin merkezidir.
+
 ## Adresler
 
 | Adres | İçerik |
@@ -78,6 +98,7 @@ dotnet ef migrations add DegisiklikAdi -p ConferenceRoom.Infrastructure -s Confe
 | `/giris`, `/kayit` | Bilet alan izleyicinin girişi ve kaydı |
 | `/yonetim/giris` | Yönetim paneli girişi (ayrı sayfa, ayrı çerez) |
 | `/yonetim` | Yönetim paneli: rolün yetkili olduğu bölümler |
+| `/yonetim/salonlar` | Salonlar; `/yonetim/salonlar/{id}/kroki` kroki editörü, `?surum=N` eski sürüm ("Salonlar ve kroki" yetkisi) |
 | `/yonetim/kullanicilar`, `/yonetim/roller` | Yönetim kullanıcıları ve roller ("Kullanıcılar ve roller" yetkisi) |
 | `/health` | Sağlık kontrolü (veritabanı dahil) |
 | `/api/languages` | Kullanılabilir diller |

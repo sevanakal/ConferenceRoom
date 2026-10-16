@@ -1,0 +1,90 @@
+@page "/yonetim/salonlar/{id:int}/kroki"
+@model ConferenceRoom.Web.Pages.Yonetim.Salonlar.KrokiModel
+@using System.Globalization
+@using System.Text.Json
+@*
+    Kroki editörü: tam ekran, yönetim şablonu kullanılmaz (tuval tüm alanı kaplar).
+    İşleyiş wwwroot/js/kroki-editor.js, stil wwwroot/css/kroki-editor.css, çizim kütüphanesi wwwroot/lib/konva.
+    Durağan metinler burada dil dosyasından yazılır; seçime göre değişen panel metinlerini editör kendisi üretir
+    (aynı "planEditor" bölümünden, #editorConfig içinde gelir).
+*@
+@{
+    Layout = null;
+    string Tx(string key) => T["planEditor." + key];
+    // JSON'un </script> ile sayfayı kırmaması için.
+    static string Safe(string json) => json.Replace("</", "<\\/", StringComparison.Ordinal);
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@Model.HallName · @Tx("appName") · @T["app.name"]</title>
+    <link rel="stylesheet" href="~/css/kroki-editor.css" asp-append-version="true" />
+</head>
+<body>
+<div class="app">
+    <header class="top">
+        <a class="ibtn back" href="/yonetim/salonlar" title="@Tx("back")" aria-label="@Tx("back")"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <div class="brand"><b>@Model.HallName</b><span id="saveState" role="status"></span></div>
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="spacer"></div>
+        <div class="group">
+            <button class="ibtn" id="undoBtn" title="@Tx("undo")" aria-label="@Tx("undo")"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+            <button class="ibtn" id="redoBtn" title="@Tx("redo")" aria-label="@Tx("redo")"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        </div>
+        <div class="group">
+            <button class="ibtn" id="zoomOut" title="@Tx("zoomOut")" aria-label="@Tx("zoomOut")"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <span class="zoomval" id="zoomVal">100%</span>
+            <button class="ibtn" id="zoomIn" title="@Tx("zoomIn")" aria-label="@Tx("zoomIn")"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button class="ibtn" id="fitBtn" title="@Tx("fit")" aria-label="@Tx("fit")"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+        </div>
+        <div class="group">
+            <button class="ibtn" id="snapBtn" aria-pressed="true" title="@Tx("snap")" aria-label="@Tx("snap")"><svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM4 12h16M12 4v16"/></svg></button>
+            <button class="ibtn" id="dataBtn" title="@Tx("data")" aria-label="@Tx("data")"><svg viewBox="0 0 24 24"><path d="M8 4H6a2 2 0 0 0-2 2v4l-2 2 2 2v4a2 2 0 0 0 2 2h2M16 4h2a2 2 0 0 1 2 2v4l2 2-2 2v4a2 2 0 0 1-2 2h-2"/></svg></button>
+            <button class="ibtn paneltoggle" id="panelBtn" title="@Tx("panel")" aria-label="@Tx("panel")"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM14 5v14"/></svg></button>
+        </div>
+        <button class="savebtn" id="saveBtn" title="@Tx("saveTitle")"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></svg>@Tx("save")</button>
+        <p class="notice" id="oldVersion" @(Model.OpenedVersion is null ? "hidden" : null)>@T["planEditor.oldVersion", Model.OpenedVersion ?? 0, Model.LatestVersion]</p>
+    </header>
+
+    <div class="optbar" id="optbar"></div>
+
+    <div class="main">
+        <nav class="tools" id="tools"></nav>
+        <div class="canvas-wrap">
+            <div id="stage"></div>
+            <div class="hud"><span id="hoverInfo" hidden></span><span class="scalebar"><i id="scaleBar"></i><b id="scaleLbl" style="font-weight:500">1 m</b></span><span id="posInfo">x 0 · y 0</span></div>
+        </div>
+        <aside class="panel" id="panel">
+            <section class="sec" id="propSec"></section>
+            <section class="sec" id="blockSec"></section>
+            <section class="sec" id="statSec"></section>
+        </aside>
+    </div>
+</div>
+
+<div class="modal" id="modal" hidden>
+    <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+        <h2 id="dlgTitle">@Tx("dataTitle")</h2>
+        <p class="note">@Tx("dataNote")</p>
+        <textarea id="jsonArea" spellcheck="false"></textarea>
+        <div class="btns">
+            <button class="btn primary" id="copyJson">@Tx("copy")</button>
+            <button class="btn" id="importJson">@Tx("importPasted")</button>
+            <label class="btn"><span>@Tx("importFile")</span><input type="file" id="fileIn" accept=".json,application/json" hidden></label>
+            <button class="btn" id="loadSample">@Tx("loadSample")</button>
+            <button class="btn" id="newBlank">@Tx("newBlank")</button>
+            <span class="spacer"></span>
+            <button class="btn" id="closeModal">@Tx("close")</button>
+        </div>
+    </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script type="application/json" id="editorConfig">@Html.Raw(Safe(JsonSerializer.Serialize(Model.EditorConfig)))</script>
+<script type="application/json" id="planData">@Html.Raw(Safe(Model.PlanJson))</script>
+<script src="~/lib/konva/konva.min.js" asp-append-version="true"></script>
+<script src="~/js/kroki-editor.js" asp-append-version="true"></script>
+</body>
+</html>

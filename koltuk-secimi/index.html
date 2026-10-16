@@ -2,9 +2,9 @@
 <!--
   Koltuk Seçimi ve Bilet (prototip, tek dosya)
   ============================================
-  İzleyicinin salon krokisinden koltuk seçip bilet aldığı ekran. Editörün (salon-kroki-editoru/)
-  ürettiği kroki verisini kullanır; aynı tarayıcıda editörde kayıtlı kroki varsa onu açar,
-  yoksa örnek salonu yükler. "Kroki yükle" ile editörden dışa aktarılan JSON da açılabilir.
+  İzleyicinin salon krokisinden koltuk seçip bilet aldığı ekran. Yönetim panelindeki kroki editörünün
+  (/yonetim/salonlar → Krokiyi aç) ürettiği kroki verisini kullanır. Açılışta örnek salonu yükler;
+  editörün "{ }" penceresinden kopyalanan JSON "Kroki yükle" ile açılabilir.
   Sunucu gerektirmez. Tek dış bağımlılık Konva.js (CDN).
 
   Dosyanın bölümleri:
@@ -287,7 +287,7 @@ let lang = "tr";
 const t = (k, v) => { let s = I18N[lang][k] ?? I18N.tr[k] ?? k; if (v && typeof s === "string") for (const x in v) s = s.split("{" + x + "}").join(v[x]); return s; };
 
 /* ------------------------------------------------------------------
-   Kroki geometrisi ve örnek salon. Editördeki (salon-kroki-editoru/index.html) kodun aynısı;
+   Kroki geometrisi ve örnek salon. Editördeki (src/ConferenceRoom.Web/wwwroot/js/kroki-editor.js) kodun aynısı;
    ana projede kroki veritabanından geleceği için bu kopya yalnızca prototipte durur.
 ------------------------------------------------------------------ */
 const SEAT_W = 48, SEAT_H = 44;
@@ -741,9 +741,7 @@ function start(d) {
   selected.clear(); stopHold(); step = 1; lastOrder = null;
   readTheme(); render(); applyI18n(); fit();
 }
-let initial = null;
-try { const raw = localStorage.getItem("salon-krokisi-v1"); if (raw) { const o = JSON.parse(raw); if (o && o.doc && Array.isArray(o.doc.levels) && o.doc.levels.length) initial = o.doc; } } catch (e) {}
-start(initial || sampleDoc());
+start(sampleDoc());
 if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { readTheme(); render(); });
 window.__bilet = { get doc() { return doc; }, get ev() { return ev; }, selected: () => [...selected.keys()], stage, findBest };
 })();

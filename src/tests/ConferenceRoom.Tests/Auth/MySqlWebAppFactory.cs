@@ -30,6 +30,15 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
         builder.UseSetting("Auth:LoginAttemptsPerMinute", "1000");   // testler aynı "IP"den çok giriş yapar
     }
 
+    /// <summary>Yönetim paneline giriş yapmış bir istemci döner (varsayılan: ilk yönetici hesabı).</summary>
+    public async Task<HttpClient> SignInStaffAsync(string email = AdminEmail, string password = AdminPassword)
+    {
+        var client = CreateClient();
+        var html = await Forms.PostAsync(client, "/yonetim/giris", [new("Input.Email", email), new("Input.Password", password)]);
+        Assert.Contains("Hoş geldiniz", html);
+        return client;
+    }
+
     /// <summary>Testte doğrudan veritabanına kayıt eklemek için.</summary>
     public async Task WithDbAsync(Func<AppDbContext, Task> action)
     {

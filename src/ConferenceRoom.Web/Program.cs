@@ -23,6 +23,7 @@ builder.Services.AddRazorPages(o =>
     // Bölüm klasörleri ayrıca kendi yetkisini ister (yetki kodları: Domain/Accounts/Permissions.cs).
     o.Conventions.AuthorizeFolder("/Yonetim/Kullanicilar", AuthPolicies.Permission(Permissions.UsersManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Roller", AuthPolicies.Permission(Permissions.UsersManage));
+    o.Conventions.AuthorizeFolder("/Yonetim/Salonlar", AuthPolicies.Permission(Permissions.HallsManage));
 });
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
