@@ -21,6 +21,12 @@ public class StaffUser : Entity, IOrganizationScoped
 
     public bool IsActive { get; set; } = true;
 
+    /// <summary>
+    /// Koltuk kısıtlaması. false: satış yetkisi varsa tüm koltukları satar (tam yetkili). true: yalnızca satış yetkileri
+    /// ekranında kendisine verilen koltukları satar (<see cref="Sales.SeatScope"/>); verilmemişse o salonda hiç satamaz.
+    /// </summary>
+    public bool SeatsRestricted { get; set; }
+
     public DateTime? LastLoginAtUtc { get; set; }
 
     public ICollection<StaffUserRole> Roles { get; set; } = [];

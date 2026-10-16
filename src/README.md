@@ -104,6 +104,7 @@ Kroki verisi her sürümde tek bir JSON olarak saklanır (`HallPlanVersions.Plan
 | `/yonetim/fiyatlandirma` | Etkinliklerin koltuk ayarları özeti; `/yonetim/fiyatlandirma/{id}` kategori, fiyat ve online koltuk ekranı ("Fiyatlandırma" yetkisi) |
 | `/afisler/{dosya}` | Yüklenen afiş görselleri (Docker'da `posters` volume'u) |
 | `/yonetim/kullanicilar`, `/yonetim/roller` | Yönetim kullanıcıları ve roller ("Kullanıcılar ve roller" yetkisi) |
+| `/yonetim/satis-yetkileri` | Satış yapabilen personel; `/yonetim/satis-yetkileri/salon/{id}` ve `/etkinlik/{id}` kısıtlı personele krokiden koltuk verme ("Kullanıcılar ve roller" yetkisi) |
 | `/health` | Sağlık kontrolü (veritabanı dahil) |
 | `/api/languages` | Kullanılabilir diller |
 | `/api/languages/{dil}` | Bir dilin tüm metinleri (mobil uygulama için) |

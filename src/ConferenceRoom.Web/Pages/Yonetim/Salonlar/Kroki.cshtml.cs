@@ -4,6 +4,7 @@ using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Common;
 using ConferenceRoom.Web.Halls;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
@@ -20,8 +21,6 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Salonlar;
 /// </summary>
 public class KrokiModel(AppDbContext db, LanguageCatalog catalog, IStringLocalizer localizer, IAntiforgery antiforgery) : PageModel
 {
-    private const string TextPrefix = "planEditor.";
-
     [BindProperty(SupportsGet = true)]
     public int Id { get; set; }
 
@@ -69,9 +68,7 @@ public class KrokiModel(AppDbContext db, LanguageCatalog catalog, IStringLocaliz
         }
 
         // Editör metinleri: dil dosyalarının "planEditor" bölümü, önek atılarak ("planEditor.tool.select" → "tool.select").
-        var texts = catalog.GetAll(CultureInfo.CurrentUICulture)
-            .Where(p => p.Key.StartsWith(TextPrefix, StringComparison.Ordinal))
-            .ToDictionary(p => p.Key[TextPrefix.Length..], p => p.Value);
+        var texts = ScreenData.Texts(catalog, "planEditor");
         EditorConfig = new
         {
             hallName = hall.Name,

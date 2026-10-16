@@ -2,6 +2,7 @@ using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Events;
 using ConferenceRoom.Domain.Halls;
 using ConferenceRoom.Domain.Organizations;
+using ConferenceRoom.Domain.Sales;
 using Microsoft.EntityFrameworkCore;
 
 namespace ConferenceRoom.Infrastructure.Persistence;
@@ -31,6 +32,9 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Event> Events => Set<Event>();
     public DbSet<EventSession> EventSessions => Set<EventSession>();
     public DbSet<EventSeatMap> EventSeatMaps => Set<EventSeatMap>();
+
+    // ---- Satış: personelin satabileceği koltuklar ----
+    public DbSet<SeatScope> SeatScopes => Set<SeatScope>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

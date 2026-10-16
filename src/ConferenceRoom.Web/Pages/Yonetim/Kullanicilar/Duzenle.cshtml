@@ -82,6 +82,16 @@
         }
     </div>
 
+    @* Koltuk kısıtlaması: işaretliyse satış yetkileri ekranında verilen koltuklar dışında satış yapamaz. *@
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.SeatsRestricted" value="true" @(Model.Input.SeatsRestricted ? "checked" : null) />
+            <span>@T["users.seatsRestricted"]</span>
+        </label>
+        <input type="hidden" name="Input.SeatsRestricted" value="false" />
+        <p class="field-hint">@T["users.seatsRestrictedHint"] <a href="/yonetim/satis-yetkileri">@T["salesScope.title"]</a></p>
+    </div>
+
     <div class="form-actions">
         <button type="submit" class="btn-primary btn-inline">@T["admin.save"]</button>
         <a class="btn-secondary" href="/yonetim/kullanicilar">@T["admin.cancel"]</a>

@@ -1,0 +1,153 @@
+@page "/yonetim/satis-yetkileri"
+@model ConferenceRoom.Web.Pages.Yonetim.SatisYetkileri.IndexModel
+@using ConferenceRoom.Web.Common
+@*
+    Satış yetkileri: satış yapabilen personel, salonların genel koltuk kapsamı ve etkinliğe özel kapsamlar.
+    Koltuk verme ekranı Koltuklar.cshtml (salon ya da etkinlik).
+*@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["salesScope.title"];
+    ViewData["AdminNav"] = "salesScope";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["salesScope.title"]</h1>
+        <p>@T["salesScope.intro"]</p>
+    </div>
+</header>
+
+<section class="list-section">
+    <h2>@T["salesScope.sellers"]</h2>
+    <p class="muted">@T["salesScope.sellersHint"]</p>
+    @if (Model.Sellers.Count == 0)
+    {
+        <div class="empty-state"><p>@T["salesScope.noSellers"]</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@T["users.fullName"]</th>
+                        <th scope="col">@T["salesScope.seatAccess"]</th>
+                        <th scope="col"><span class="visually-hidden">@T["admin.edit"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model.Sellers)
+                    {
+                        <tr>
+                            <td><a class="row-title" href="/yonetim/kullanicilar/duzenle/@s.Id">@s.FullName</a></td>
+                            <td>
+                                @if (s.SeatsRestricted)
+                                {
+                                    <span class="pill pill-soft">@T["salesScope.restricted"]</span>
+                                }
+                                else
+                                {
+                                    <span class="pill pill-ok">@T["salesScope.fullAccess"]</span>
+                                }
+                            </td>
+                            <td class="actions"><a href="/yonetim/kullanicilar/duzenle/@s.Id">@T["admin.edit"]</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="list-section">
+    <h2>@T["salesScope.halls"]</h2>
+    <p class="muted">@T["salesScope.hallsHint"]</p>
+    @if (Model.Halls.Count == 0)
+    {
+        <div class="empty-state"><p>@T["salesScope.noHalls"]</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@T["halls.name"]</th>
+                        <th scope="col">@T["salesScope.staffWithSeats"]</th>
+                        <th scope="col"><span class="visually-hidden">@T["salesScope.editSeats"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.Halls)
+                    {
+                        <tr>
+                            <td>
+                                @if (h.HasPlan)
+                                {
+                                    <a class="row-title" href="/yonetim/satis-yetkileri/salon/@h.Id">@h.Name</a>
+                                }
+                                else
+                                {
+                                    <span class="row-title">@h.Name</span>
+                                    <div class="row-sub">@T["halls.noPlan"]</div>
+                                }
+                            </td>
+                            <td>@(h.StaffCount == 0 ? T["salesScope.noneGiven"] : T["salesScope.staffCount", h.StaffCount])</td>
+                            <td class="actions">
+                                @if (h.HasPlan)
+                                {
+                                    <a href="/yonetim/satis-yetkileri/salon/@h.Id">@T["salesScope.editSeats"]</a>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+<section class="list-section">
+    <h2>@T["salesScope.events"]</h2>
+    <p class="muted">@T["salesScope.eventsHint"]</p>
+    @if (Model.Events.Count == 0)
+    {
+        <div class="empty-state"><p>@T["salesScope.noEvents"]</p></div>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th scope="col">@T["events.eventTitle"]</th>
+                        <th scope="col">@T["salesScope.scope"]</th>
+                        <th scope="col"><span class="visually-hidden">@T["salesScope.editSeats"]</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var e in Model.Events)
+                    {
+                        <tr>
+                            <td>
+                                <a class="row-title" href="/yonetim/satis-yetkileri/etkinlik/@e.Id">@e.Title</a>
+                                <div class="row-sub">@e.HallName@(e.FirstStartUtc is { } start ? " · " + DisplayTime.Format(start) : "")</div>
+                            </td>
+                            <td>
+                                @if (e.IsEventSpecific)
+                                {
+                                    <span class="pill pill-ok">@T["salesScope.eventSpecific"]</span>
+                                }
+                                else
+                                {
+                                    <span class="pill pill-soft">@T["salesScope.usesHall"]</span>
+                                }
+                            </td>
+                            <td class="actions"><a href="/yonetim/satis-yetkileri/etkinlik/@e.Id">@T["salesScope.editSeats"]</a></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

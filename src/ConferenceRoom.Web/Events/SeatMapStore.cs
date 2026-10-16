@@ -80,8 +80,8 @@ public static class SeatMapStore
         return new SaveResult(Outcome.Saved, map.Revision);
     }
 
-    /// <summary>Etkinliğin seanslarının bağlı olduğu kroki sürümleri, eskiden yeniye.</summary>
-    private static async Task<List<HallPlanVersion>> PlanVersionsAsync(AppDbContext db, int eventId, CancellationToken cancellationToken)
+    /// <summary>Etkinliğin seanslarının bağlı olduğu kroki sürümleri, eskiden yeniye (satış yetkileri ekranı da kullanır).</summary>
+    internal static async Task<List<HallPlanVersion>> PlanVersionsAsync(AppDbContext db, int eventId, CancellationToken cancellationToken)
     {
         var ids = db.EventSessions.Where(s => s.EventId == eventId).Select(s => s.HallPlanVersionId);
         return await db.HallPlanVersions.Where(v => ids.Contains(v.Id)).OrderBy(v => v.Version).ToListAsync(cancellationToken);

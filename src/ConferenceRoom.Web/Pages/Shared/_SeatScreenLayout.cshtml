@@ -1,0 +1,85 @@
+@*
+    Koltuk seçici ekranlarının ortak şablonu: tam ekran, yönetim şablonu kullanılmaz (tuval tüm alanı kaplar).
+    Kullananlar: etkinlik koltuk ayarları (Yonetim/Fiyatlandirma/Koltuklar) ve satış yetkileri (Yonetim/SatisYetkileri/Koltuklar).
+    Üstte geri düğmesi, başlık, kat sekmeleri, araçlar, geri al/yinele, yakınlaştırma ve Kaydet; solda tuval, sağda panel.
+    Panelin ilk bölümü (#selSec, seçim) ortaktır; sayfa kendi bölümlerini ve JSON bloklarını gövdesine yazar,
+    ekran betiğini "Scripts" bölümünde verir. İşleyiş wwwroot/js/koltuk-secici.js, stil kroki-editor.css + koltuk-ayarlari.css.
+
+    ViewData: Title (sekme başlığı), ScreenTitle, ScreenSubtitle, BackUrl, Notice (isteğe bağlı üst not),
+    EmptyMessage (doluysa kroki yerine yalnızca bu mesaj gösterilir, ör. seansı olmayan etkinlik).
+*@
+@using System.Globalization
+@{
+    string Tx(string key) => T["seatEditor." + key];
+    var backUrl = ViewData["BackUrl"] as string ?? "/yonetim";
+}
+<!DOCTYPE html>
+<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>@ViewData["Title"] · @T["app.name"]</title>
+    <link rel="stylesheet" href="~/css/kroki-editor.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/koltuk-ayarlari.css" asp-append-version="true" />
+</head>
+<body>
+@if (ViewData["EmptyMessage"] is string emptyMessage)
+{
+    IgnoreBody();
+    IgnoreSection("Scripts");
+    <main class="seat-empty">
+        <h1>@ViewData["ScreenTitle"]</h1>
+        <p>@emptyMessage</p>
+        <p><a href="@backUrl">← @Tx("back")</a></p>
+    </main>
+}
+else
+{
+<div class="app seat-app">
+    <header class="top">
+        <a class="ibtn back" href="@backUrl" title="@Tx("back")" aria-label="@Tx("back")"><svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg></a>
+        <div class="brand"><b>@ViewData["ScreenTitle"]</b><span>@ViewData["ScreenSubtitle"]</span><span id="saveState" role="status"></span></div>
+        <div class="tabs" id="tabs" role="tablist"></div>
+        <div class="spacer"></div>
+        <div class="group">
+            <button class="ibtn" id="toolSelect" aria-pressed="true" title="@Tx("toolSelect")" aria-label="@Tx("toolSelect")"><svg viewBox="0 0 24 24"><path d="M5 3l14 8-6 2-3 6z"/></svg></button>
+            <button class="ibtn" id="toolHand" aria-pressed="false" title="@Tx("toolHand")" aria-label="@Tx("toolHand")"><svg viewBox="0 0 24 24"><path d="M8 13V5a1.5 1.5 0 0 1 3 0v6M11 11V4a1.5 1.5 0 0 1 3 0v7M14 11V5.5a1.5 1.5 0 0 1 3 0V14a6 6 0 0 1-6 6h-1a6 6 0 0 1-5-2.7L3 14a1.5 1.5 0 0 1 2.5-1.6L8 15"/></svg></button>
+        </div>
+        <div class="group">
+            <button class="ibtn" id="undoBtn" title="@Tx("undo")" aria-label="@Tx("undo")"><svg viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/></svg></button>
+            <button class="ibtn" id="redoBtn" title="@Tx("redo")" aria-label="@Tx("redo")"><svg viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H13"/></svg></button>
+        </div>
+        <div class="group">
+            <button class="ibtn" id="zoomOut" title="@Tx("zoomOut")" aria-label="@Tx("zoomOut")"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+            <span class="zoomval" id="zoomVal">100%</span>
+            <button class="ibtn" id="zoomIn" title="@Tx("zoomIn")" aria-label="@Tx("zoomIn")"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+            <button class="ibtn" id="fitBtn" title="@Tx("fit")" aria-label="@Tx("fit")"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+            <button class="ibtn paneltoggle" id="panelBtn" title="@Tx("panel")" aria-label="@Tx("panel")"><svg viewBox="0 0 24 24"><path d="M4 5h16v14H4zM14 5v14"/></svg></button>
+        </div>
+        <button class="savebtn" id="saveBtn" title="@Tx("saveTitle")"><svg viewBox="0 0 24 24"><path d="M5 4h11l3 3v13H5zM8 4v5h7V4M8 20v-6h8v6"/></svg>@Tx("save")</button>
+        @if (ViewData["Notice"] is string notice)
+        {
+            <p class="notice">@notice</p>
+        }
+    </header>
+
+    <div class="main">
+        <div class="canvas-wrap">
+            <div id="stage"></div>
+            <div class="hud"><span id="hoverInfo" hidden></span></div>
+        </div>
+        <aside class="panel" id="panel">
+            <section class="sec" id="selSec"></section>
+            @RenderBody()
+        </aside>
+    </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="~/lib/konva/konva.min.js" asp-append-version="true"></script>
+<script src="~/js/kroki-cizim.js" asp-append-version="true"></script>
+<script src="~/js/koltuk-secici.js" asp-append-version="true"></script>
+@await RenderSectionAsync("Scripts")
+}
+</body>
+</html>

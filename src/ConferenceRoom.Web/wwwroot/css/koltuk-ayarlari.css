@@ -1,8 +1,12 @@
 /*
-  Etkinlik koltuk ayarları ekranının kendine özgü stili (Pages/Yonetim/Fiyatlandirma/Koltuklar.cshtml).
+  Koltuk seçici ekranlarının stili (Pages/Shared/_SeatScreenLayout.cshtml): etkinlik koltuk ayarları
+  (Yonetim/Fiyatlandirma/Koltuklar) ve satış yetkileri (Yonetim/SatisYetkileri/Koltuklar).
   Çerçeve (başlık, düğmeler, sekmeler, panel) ve renk değişkenleri kroki-editor.css'ten gelir.
-  Yerleşim: üstte başlık, solda kroki tuvali, sağda panel (seçim, kategoriler, internet satışı, özet).
+  Yerleşim: üstte başlık, solda kroki tuvali, sağda panel (seçim + ekranın kendi bölümleri).
 */
+
+/* Satış yetkileri ekranındaki renkler (satis-yetkileri.js de buradan okur): seçili personelin koltuğu, başka personelin koltuğu */
+:root { --scope-own: #0F766E; --scope-own-text: #FFFFFF; --scope-other: #CBE5E1; --scope-other-text: #14322E; }
 
 /* Ana alan: araç çubuğu yok, panel biraz daha geniş */
 .seat-app { grid-template-rows: auto 1fr; }
@@ -29,6 +33,16 @@
 .note.warn { color: var(--accent); }
 .legend .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--exit); border: 0; }
 .legend .proto { border: 2px dashed var(--ink); }
+
+/* Satış yetkileri: personel listesi (ad + koltuk sayısı, Ver, Al), lejant renkleri satis-yetkileri.js ile aynı */
+.staff-list { display: grid; gap: 6px; }
+.staff { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
+.staff.on { border-color: var(--scope-own); box-shadow: inset 3px 0 0 var(--scope-own); }
+.staff-name { display: grid; text-align: left; border: 0; background: none; padding: 2px 4px; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; min-width: 0; }
+.staff-name span { font-family: var(--font-data); font-size: 11px; font-weight: 400; color: var(--muted); }
+.legend .own { background: var(--scope-own); border: 0; }
+.legend .other { background: var(--scope-other); border: 1px solid var(--scope-own); }
+.scope-info form { margin: 8px 0 0; }
 
 /* Seansı olmayan etkinlik */
 .seat-empty { max-width: 560px; margin: 15vh auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 24px; font-size: 15px; }

@@ -102,10 +102,11 @@
 .status-on { color: var(--color-ok); }
 .status-off { color: var(--color-muted); }
 
-/* ---- Salon düzenleme: kroki sürümleri ---- */
-.versions { display: grid; gap: 10px; max-width: 760px; }
-.versions h2 { margin: 8px 0 0; font-size: 1.15rem; }
-.versions > p { margin: 0; }
+/* ---- Başlıklı liste bölümü (salon kroki sürümleri, satış yetkileri) ---- */
+.versions, .list-section { display: grid; gap: 10px; }
+.versions { max-width: 760px; }
+.versions h2, .list-section h2 { margin: 8px 0 0; font-size: 1.15rem; }
+.versions > p, .list-section > p { margin: 0; }
 
 /* ---- Düzenleme formu ---- */
 .form-card { display: grid; gap: 22px; max-width: 760px; padding: 24px; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; }
