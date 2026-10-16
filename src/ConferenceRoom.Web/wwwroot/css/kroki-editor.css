@@ -2,8 +2,9 @@
   Salon kroki editörü stili (Pages/Yonetim/Salonlar/Kroki.cshtml, wwwroot/js/kroki-editor.js).
   Yerleşim: üstte başlık (geri, salon adı, kayıt durumu, kat sekmeleri, düğmeler) ve araç seçenekleri,
   solda araç çubuğu, ortada kroki tuvali, sağda özellik paneli.
+  Etkinlik koltuk ayarları ekranı da aynı çerçeveyi (başlık, düğmeler, sekmeler, panel) kullanır; kendine özgü kuralları koltuk-ayarlari.css'te.
   Tüm renkler aşağıdaki değişkenlerden gelir; koyu tema aynı değişkenleri yeniden tanımlar.
-  Tuval de renklerini bu değişkenlerden okur (kroki-editor.js: themeColors).
+  Tuval de renklerini bu değişkenlerden okur (kroki-cizim.js: themeColors).
 */
 :root {
   --chrome: #E7E9EC;      /* uygulama çerçevesi */

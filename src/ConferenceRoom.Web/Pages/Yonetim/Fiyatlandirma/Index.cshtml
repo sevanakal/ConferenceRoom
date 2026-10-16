@@ -1,0 +1,70 @@
+@page "/yonetim/fiyatlandirma"
+@model ConferenceRoom.Web.Pages.Yonetim.Fiyatlandirma.IndexModel
+@using ConferenceRoom.Web.Common
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["pricing.title"];
+    ViewData["AdminNav"] = "pricing";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["pricing.title"]</h1>
+        <p>@T["pricing.intro"]</p>
+    </div>
+</header>
+
+@if (Model.Events.Count == 0)
+{
+    <div class="empty-state">
+        <p>@T["pricing.empty"]</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">@T["events.eventTitle"]</th>
+                    <th scope="col">@T["events.sessions"]</th>
+                    <th scope="col">@T["pricing.seatSettings"]</th>
+                    <th scope="col"><span class="visually-hidden">@T["pricing.openSeats"]</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model.Events)
+                {
+                    <tr>
+                        <td>
+                            <a class="row-title" href="/yonetim/fiyatlandirma/@e.Id">@e.Title</a>
+                            <div class="row-sub">@e.HallName · @T[$"events.state{e.State}"]</div>
+                        </td>
+                        <td>
+                            @if (e.SessionCount == 0)
+                            {
+                                <span class="muted">@T["events.noSessions"]</span>
+                            }
+                            else
+                            {
+                                <span>@T["events.sessionCount", e.SessionCount]</span>
+                                <div class="row-sub">@DisplayTime.Format(e.FirstStartUtc!.Value)</div>
+                            }
+                        </td>
+                        <td>
+                            @if (e.AssignedSeats is not { } assigned || assigned == 0)
+                            {
+                                <span class="pill pill-soft">@T["pricing.notSet"]</span>
+                            }
+                            else
+                            {
+                                <span>@T["pricing.assignedSeats", assigned]</span>
+                                <div class="row-sub">@(e.OnlineEnabled ? T["pricing.onlineSeats", e.OnlineSeats ?? 0] : T["pricing.onlineOff"])</div>
+                            }
+                        </td>
+                        <td class="actions"><a href="/yonetim/fiyatlandirma/@e.Id">@T["pricing.openSeats"]</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

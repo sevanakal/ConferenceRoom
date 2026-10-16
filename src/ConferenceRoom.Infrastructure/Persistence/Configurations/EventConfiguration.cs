@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace ConferenceRoom.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// EventTypes (etkinlik türleri), Events (etkinlikler) ve EventSessions (seanslar) tabloları.
+/// EventTypes (etkinlik türleri), Events (etkinlikler), EventSessions (seanslar) ve EventSeatMaps (koltuk ayarları) tabloları.
 /// Durum ve satış türü veritabanında okunabilsin diye metin olarak saklanır ("Published", "Sale").
 /// </summary>
 internal sealed class EventTypeConfiguration : IEntityTypeConfiguration<EventType>
@@ -60,5 +60,19 @@ internal sealed class EventSessionConfiguration : IEntityTypeConfiguration<Event
         builder.ToTable("EventSessions");
         builder.HasIndex(s => s.StartsAtUtc);   // pano: yaklaşan seanslar
         builder.HasOne(s => s.HallPlanVersion).WithMany().HasForeignKey(s => s.HallPlanVersionId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+internal sealed class EventSeatMapConfiguration : IEntityTypeConfiguration<EventSeatMap>
+{
+    public void Configure(EntityTypeBuilder<EventSeatMap> builder)
+    {
+        builder.ToTable("EventSeatMaps");
+        builder.HasIndex(m => m.EventId).IsUnique();   // etkinlik başına bir kayıt
+        builder.Property(m => m.MapJson).HasColumnType("longtext").IsRequired();
+        builder.Property(m => m.Revision).IsConcurrencyToken();   // aynı anda iki kayıt: ikincisi DbUpdateConcurrencyException alır
+        builder.HasOne<Organization>().WithMany().HasForeignKey(m => m.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Event>().WithOne().HasForeignKey<EventSeatMap>(m => m.EventId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(m => m.UpdatedBy).WithMany().HasForeignKey(m => m.UpdatedByStaffUserId).OnDelete(DeleteBehavior.Restrict);
     }
 }

@@ -100,6 +100,17 @@ public static class HallPlan
         return new HallPlanResult(null, root.ToJsonString(), fixedSeats + extraChairs);
     }
 
+    /// <summary>Kaydedilmiş (denetlenmiş) kroki verisindeki koltukların kimlikleri; etkinlik koltuk ayarları bunlara bağlanır.</summary>
+    public static IEnumerable<string> SeatIds(string planJson)
+    {
+        using var document = JsonDocument.Parse(planJson);
+        foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
+        {
+            if (item.GetProperty("type").GetString() == "seat")
+                yield return item.GetProperty("id").GetString()!;
+        }
+    }
+
     /// <summary>Henüz krokisi olmayan salon için editörün açılacağı boş kroki (tek kat).</summary>
     public static string Blank(string hallName, string firstLevelName) => new JsonObject
     {

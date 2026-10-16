@@ -4,7 +4,7 @@
 @using System.Text.Json
 @*
     Kroki editörü: tam ekran, yönetim şablonu kullanılmaz (tuval tüm alanı kaplar).
-    İşleyiş wwwroot/js/kroki-editor.js, stil wwwroot/css/kroki-editor.css, çizim kütüphanesi wwwroot/lib/konva.
+    İşleyiş wwwroot/js/kroki-editor.js (ortak çizim kroki-cizim.js), stil wwwroot/css/kroki-editor.css, çizim kütüphanesi wwwroot/lib/konva.
     Durağan metinler burada dil dosyasından yazılır; seçime göre değişen panel metinlerini editör kendisi üretir
     (aynı "planEditor" bölümünden, #editorConfig içinde gelir).
 *@
@@ -85,6 +85,7 @@
 <script type="application/json" id="editorConfig">@Html.Raw(Safe(JsonSerializer.Serialize(Model.EditorConfig)))</script>
 <script type="application/json" id="planData">@Html.Raw(Safe(Model.PlanJson))</script>
 <script src="~/lib/konva/konva.min.js" asp-append-version="true"></script>
+<script src="~/js/kroki-cizim.js" asp-append-version="true"></script>
 <script src="~/js/kroki-editor.js" asp-append-version="true"></script>
 </body>
 </html>
