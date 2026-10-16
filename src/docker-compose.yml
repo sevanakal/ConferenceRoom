@@ -15,8 +15,10 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-gelistirme}
     # Türkçe sıralama (ı/i, ş, ğ...) için Türkçe karşılaştırma kuralı.
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_tr_0900_ai_ci"]
+    # Bilgisayarda kurulu bir MySQL 3306'yı kullanıyor olabilir; çakışmasın diye dışarıya 3307'den açılır.
+    # Başka port için: MYSQL_PORT=3310 docker compose up
     ports:
-      - "3306:3306"
+      - "${MYSQL_PORT:-3307}:3306"
     volumes:
       - mysql-data:/var/lib/mysql
     healthcheck:

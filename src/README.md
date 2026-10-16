@@ -33,6 +33,8 @@ Tarayıcıda http://localhost:8080 adresini açın. MySQL de birlikte başlar, t
 3. Başlangıç projesi `ConferenceRoom.Web`, F5 ile çalıştırın. Geliştirme ortamında tablolar açılışta otomatik oluşur.
 
 Bağlantı metni `ConferenceRoom.Web/appsettings.json` içindedir (kullanıcı `konferans`, şifre `gelistirme`).
+Docker'daki MySQL bilgisayara **3307** portundan açılır; böylece bilgisayarda zaten kurulu bir MySQL (3306) ile çakışmaz.
+MySQL Workbench gibi bir araçla bağlanırken de `localhost:3307` kullanın.
 
 ### İlk giriş
 
