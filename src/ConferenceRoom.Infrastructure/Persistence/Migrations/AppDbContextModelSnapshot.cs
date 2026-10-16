@@ -160,6 +160,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         new
                         {
                             RoleId = 1,
+                            Permission = "sales.sell"
+                        },
+                        new
+                        {
+                            RoleId = 1,
                             Permission = "sales.view"
                         },
                         new
@@ -181,6 +186,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 3,
                             Permission = "pricing.manage"
+                        },
+                        new
+                        {
+                            RoleId = 3,
+                            Permission = "sales.sell"
                         },
                         new
                         {
@@ -221,6 +231,9 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("varchar(200)");
+
+                    b.Property<bool>("SeatsRestricted")
+                        .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
 
@@ -598,6 +611,57 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.SeatScope", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int?>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EventKey")
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("int")
+                        .HasComputedColumnSql("COALESCE(`EventId`, 0)", true);
+
+                    b.Property<int>("HallId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
+
+                    b.Property<string>("ScopeJson")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UpdatedByStaffUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("UpdatedByStaffUserId");
+
+                    b.HasIndex("HallId", "EventKey")
+                        .IsUnique();
+
+                    b.ToTable("SeatScopes", (string)null);
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Customer", b =>
                 {
                     b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
@@ -757,6 +821,38 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.SeatScope", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Events.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("ConferenceRoom.Domain.Halls.Hall", "Hall")
+                        .WithMany()
+                        .HasForeignKey("HallId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", "UpdatedBy")
+                        .WithMany()
+                        .HasForeignKey("UpdatedByStaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("Hall");
+
+                    b.Navigation("UpdatedBy");
                 });
 
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Role", b =>

@@ -4,6 +4,7 @@ using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Common;
 using ConferenceRoom.Web.Events;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
@@ -15,14 +16,12 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Fiyatlandirma;
 
 /// <summary>
 /// Etkinlik koltuk ayarları (/yonetim/fiyatlandirma/{id}): bilet kategorileri ve fiyatları, koltuklara kategori atama,
-/// internetten satışa açık koltukların seçimi. Ekranın kendisi wwwroot/js/koltuk-ayarlari.js dosyasındadır; kroki
-/// çizimi kroki editörüyle ortaktır (kroki-cizim.js). Kaydet düğmesi ayarları "Save" işleyicisine gönderir.
+/// internetten satışa açık koltukların seçimi. Ekranın kendisi wwwroot/js/koltuk-ayarlari.js dosyasındadır; kroki,
+/// seçim ve kaydetme satış yetkileri ekranıyla ortaktır (koltuk-secici.js, _SeatScreenLayout). Kaydet düğmesi ayarları "Save" işleyicisine gönderir.
 /// "pricing.manage" yetkisi ister (Program.cs).
 /// </summary>
 public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLocalizer localizer, IAntiforgery antiforgery) : PageModel
 {
-    private const string TextPrefix = "seatEditor.";
-
     [BindProperty(SupportsGet = true)]
     public int Id { get; set; }
 
@@ -54,10 +53,6 @@ public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLoc
         MapJson = snapshot.MapJson;
         PlanVersionCount = snapshot.PlanVersions.Count;
 
-        // Ekran metinleri: dil dosyalarının "seatEditor" bölümü, önek atılarak ("seatEditor.save" → "save").
-        var texts = catalog.GetAll(CultureInfo.CurrentUICulture)
-            .Where(p => p.Key.StartsWith(TextPrefix, StringComparison.Ordinal))
-            .ToDictionary(p => p.Key[TextPrefix.Length..], p => p.Value);
         EditorConfig = new
         {
             eventTitle = ev.Title,
@@ -66,7 +61,7 @@ public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLoc
             culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
             saveUrl = $"/yonetim/fiyatlandirma/{ev.Id}?handler=Save",
             token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken,
-            texts,
+            texts = ScreenData.Texts(catalog, "seatEditor"),   // "seatEditor.save" → "save"
         };
         return Page();
     }

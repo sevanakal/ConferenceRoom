@@ -22,6 +22,7 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
         public string? Email { get; set; }
         public string? Password { get; set; }
         public bool IsActive { get; set; } = true;
+        public bool SeatsRestricted { get; set; }
         public List<int> RoleIds { get; set; } = [];
     }
 
@@ -51,7 +52,7 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
             var user = await FindAsync(cancellationToken);
             if (user is null)
                 return NotFound();
-            Input = new UserInput { FullName = user.FullName, Email = user.Email, IsActive = user.IsActive, RoleIds = user.Roles.Select(r => r.RoleId).ToList() };
+            Input = new UserInput { FullName = user.FullName, Email = user.Email, IsActive = user.IsActive, SeatsRestricted = user.SeatsRestricted, RoleIds = user.Roles.Select(r => r.RoleId).ToList() };
         }
         await LoadRolesAsync(cancellationToken);
         return Page();
@@ -83,6 +84,7 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
         user.FullName = fullName;
         user.Email = email;
         user.IsActive = Input.IsActive;
+        user.SeatsRestricted = Input.SeatsRestricted;
         if (password.Length > 0)
             user.PasswordHash = passwords.Hash(password);
         var selected = Roles.Select(r => r.Id).Where(Input.RoleIds.Contains).ToHashSet();   // yalnızca kurumun rolleri

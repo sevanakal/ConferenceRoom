@@ -1,0 +1,44 @@
+@page "/yonetim/satis-yetkileri/{kind:regex(^(salon|etkinlik)$)}/{id:int}"
+@model ConferenceRoom.Web.Pages.Yonetim.SatisYetkileri.KoltuklarModel
+@using System.Text.Json
+@using ConferenceRoom.Web.Common
+@*
+    Satış yetkileri: koltuk kısıtlaması olan personele krokiden koltuk verme. Çerçeve (başlık, araçlar, tuval,
+    seçim bölümü) ortak şablondan gelir (_SeatScreenLayout); burada panelin ekrana özgü bölümleri ve ekranın verisi var.
+    İşleyiş wwwroot/js/satis-yetkileri.js; panel metinleri "seatScope" bölümünden (#editorConfig içinde).
+*@
+@{
+    Layout = "_SeatScreenLayout";
+    ViewData["Title"] = $"{Model.Title} · {T["seatScope.appName"]}";
+    ViewData["ScreenTitle"] = Model.Title;
+    ViewData["ScreenSubtitle"] = Model.IsEvent ? $"{Model.HallName} · {T["seatScope.appName"]}" : T["seatScope.appName"].Value;
+    ViewData["BackUrl"] = "/yonetim/satis-yetkileri";
+    if (Model.PlanJson is null)
+        ViewData["EmptyMessage"] = T["seatScope.noPlan"].Value;
+}
+<section class="sec scope-info">
+    @if (!Model.IsEvent)
+    {
+        <p class="note">@T["seatScope.hallNote"]</p>
+    }
+    else if (Model.IsEventSpecific)
+    {
+        <p class="note">@T["seatScope.eventSpecificNote"]</p>
+        <form method="post" asp-page-handler="Reset" onsubmit="return confirm(this.dataset.confirm)" data-confirm="@T["seatScope.resetConfirm"]">
+            <button type="submit" class="btn">@T["seatScope.reset"]</button>
+        </form>
+    }
+    else
+    {
+        <p class="note">@T["seatScope.eventUsesHallNote"]</p>
+    }
+</section>
+<section class="sec" id="staffSec"></section>
+<section class="sec" id="statSec"></section>
+
+@section Scripts {
+    <script type="application/json" id="editorConfig">@Html.Raw(ScreenData.ForScript(JsonSerializer.Serialize(Model.EditorConfig)))</script>
+    <script type="application/json" id="planData">@Html.Raw(ScreenData.ForScript(Model.PlanJson!))</script>
+    <script type="application/json" id="seatData">@Html.Raw(ScreenData.ForScript(Model.ScopeJson))</script>
+    <script src="~/js/satis-yetkileri.js" asp-append-version="true"></script>
+}

@@ -19,6 +19,12 @@ public static class Permissions
     /// <summary>Bilet fiyatları, fiyat grupları ve koltuk kategorileri.</summary>
     public const string PricingManage = "pricing.manage";
 
+    /// <summary>
+    /// Bilet satışı ve rezervasyon yapma. Hangi koltukları satabileceği ayrıca kişiye göre sınırlanabilir
+    /// (<see cref="StaffUser.SeatsRestricted"/>, <see cref="Sales.SeatScope"/>); bu yetki yalnızca "satış yapabilir" der.
+    /// </summary>
+    public const string SalesSell = "sales.sell";
+
     /// <summary>Satışları ve rezervasyonları görüntüleme.</summary>
     public const string SalesView = "sales.view";
 
@@ -26,5 +32,5 @@ public static class Permissions
     public const string UsersManage = "users.manage";
 
     /// <summary>Tüm yetkiler, panelde gösterilecek sırayla.</summary>
-    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesView, UsersManage];
+    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, UsersManage];
 }

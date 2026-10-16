@@ -95,7 +95,8 @@
     "formErrors": "Formda düzeltilmesi gereken alanlar var.",
     "navHalls": "Salonlar",
     "navEvents": "Etkinlikler",
-    "navPricing": "Fiyatlandırma"
+    "navPricing": "Fiyatlandırma",
+    "navSalesScope": "Satış yetkileri"
   },
   "roles": {
     "title": "Roller",
@@ -142,7 +143,9 @@
     "isActiveHint": "Pasif yapılan kullanıcının açık oturumu da hemen kapanır.",
     "saved": "Kullanıcı kaydedildi.",
     "emailTaken": "Bu e-posta adresiyle başka bir kullanıcı var.",
-    "selfDeactivate": "Kendi hesabınızı pasif yapamazsınız."
+    "selfDeactivate": "Kendi hesabınızı pasif yapamazsınız.",
+    "seatsRestricted": "Koltuk kısıtlaması: yalnızca kendisine verilen koltukları satabilir",
+    "seatsRestrictedHint": "İşaretli değilse satış yetkisi olan kullanıcı tüm koltukları satar. Koltuklar şu ekrandan verilir:"
   },
   "halls": {
     "title": "Salonlar",
@@ -559,6 +562,66 @@
     "settingsNote": "Ayarlar etkinliğin tüm seanslarında geçerlidir.",
     "protocolTitle": "Protokol koltukları satışa kapalıdır"
   },
+  "salesScope": {
+    "title": "Satış yetkileri",
+    "intro": "Satış yapabilen personelin hangi koltukları satabileceğini buradan belirlersiniz. Kısıtlaması olmayan personel tüm koltukları satar.",
+    "sellers": "Satış yapabilen personel",
+    "sellersHint": "Rolünde satış yetkisi olan aktif kullanıcılar. Koltuk kısıtlaması kullanıcı düzenleme sayfasından açılır.",
+    "noSellers": "Satış yetkisi olan aktif kullanıcı yok. Rollerden birine \"Satış ve rezervasyon\" yetkisi verin.",
+    "seatAccess": "Koltuklar",
+    "restricted": "Yalnızca verilen koltuklar",
+    "fullAccess": "Tam yetkili",
+    "halls": "Salonlar",
+    "hallsHint": "Salon için verilen koltuklar o salondaki tüm etkinliklerde geçerlidir.",
+    "noHalls": "Henüz aktif salon yok.",
+    "staffWithSeats": "Koltuk verilen personel",
+    "noneGiven": "Henüz verilmedi",
+    "staffCount": "{0} personel",
+    "editSeats": "Koltukları düzenle",
+    "events": "Etkinliğe özel",
+    "eventsHint": "Bir etkinlikte farklı bir dağılım gerekiyorsa o etkinliğe özel kayıt açın; o etkinlikte salonun kaydı yerine bu geçer.",
+    "noEvents": "Yaklaşan etkinlik yok.",
+    "scope": "Geçerli kayıt",
+    "eventSpecific": "Etkinliğe özel",
+    "usesHall": "Salon geneli"
+  },
+  "seatScope": {
+    "appName": "Satış yetkileri",
+    "noPlan": "Bu salonun henüz krokisi yok. Önce kroki çizilmeli.",
+    "hallNote": "Burada verilen koltuklar bu salondaki tüm etkinliklerde geçerlidir (etkinliğe özel kaydı olanlar hariç).",
+    "eventUsesHallNote": "Bu etkinlik şu an salonun genel kaydını kullanıyor; aşağıda o gösteriliyor. Kaydederseniz bu etkinlik için ayrı bir kayıt açılır, salonun kaydı değişmez.",
+    "eventSpecificNote": "Bu etkinliğin kendine özel kaydı var; bu etkinlikte salonun genel kaydı kullanılmaz.",
+    "reset": "Salon geneline dön",
+    "resetConfirm": "Bu etkinliğe özel kayıt silinsin ve salonun genel kaydı kullanılsın mı?",
+    "staffTitle": "Personel",
+    "staffHint": "Bir personelin adına tıklayınca koltukları krokide koyu renkle görünür. Koltukları seçip Ver ya da Al'a basın. Aynı koltuk birden çok personele verilebilir.",
+    "give": "Ver",
+    "giveTitle": "Seçili koltukları bu personele ver",
+    "take": "Al",
+    "takeTitle": "Seçili koltukları bu personelden al",
+    "givenToast": "{name} kişisine {n} koltuk verildi",
+    "takenToast": "{name} kişisinden {n} koltuk alındı",
+    "seatCount": "{n} koltuk",
+    "noRestricted": "Koltuk kısıtlaması olan personel yok. Kullanıcı düzenleme sayfasında \"Koltuk kısıtlaması\" işaretlenen satış personeli burada listelenir.",
+    "fullAccess": "Tam yetkili (tüm koltuklar)",
+    "restrictHint": "Kısıtlamayı açıp kapatmak için kullanıcı düzenleme sayfasını kullanın.",
+    "soldBy": "Satabilen: {names}",
+    "onlyFullAccess": "Yalnızca tam yetkili personel satar",
+    "selectOwn": "Personelin koltukları",
+    "selectNotGiven": "Kimseye verilmemişler",
+    "summary": "Özet",
+    "totalSeats": "Toplam koltuk",
+    "givenSeats": "Personele verilmiş",
+    "notGivenSeats": "Yalnızca tam yetkili satar",
+    "legendOwn": "Seçili personelin",
+    "legendOther": "Başka personelin",
+    "legendNone": "Verilmemiş",
+    "needSelection": "Önce krokiden koltuk seçin.",
+    "invalid": "Satış yetkisi verisi okunamadı.",
+    "tooLarge": "Satış yetkisi verisi çok büyük.",
+    "unknownSeat": "Krokide olmayan bir koltuk var. Sayfayı yenileyip tekrar deneyin.",
+    "unknownStaff": "Listede olmayan bir kullanıcı var. Sayfayı yenileyip tekrar deneyin."
+  },
   "permission": {
     "halls": {
       "manage": {
@@ -579,6 +642,10 @@
       }
     },
     "sales": {
+      "sell": {
+        "name": "Satış ve rezervasyon",
+        "description": "Bilet satma ve yer ayırma. Hangi koltukları satabileceği kişiye göre sınırlanabilir."
+      },
       "view": {
         "name": "Satışlar",
         "description": "Satılan biletleri ve rezervasyonları görüntüleme."

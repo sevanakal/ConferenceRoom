@@ -46,6 +46,7 @@ internal sealed class RolePermissionConfiguration : IEntityTypeConfiguration<Rol
                     new RolePermission { RoleId = Role.HallManagerId, Permission = Permissions.HallsManage },
                     new RolePermission { RoleId = Role.HallManagerId, Permission = Permissions.EventsManage },
                     new RolePermission { RoleId = Role.SalesManagerId, Permission = Permissions.PricingManage },
+                    new RolePermission { RoleId = Role.SalesManagerId, Permission = Permissions.SalesSell },
                     new RolePermission { RoleId = Role.SalesManagerId, Permission = Permissions.SalesView },
                 ]));
     }

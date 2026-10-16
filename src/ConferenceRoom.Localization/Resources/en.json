@@ -95,7 +95,8 @@
     "formErrors": "Some fields need to be corrected.",
     "navHalls": "Halls",
     "navEvents": "Events",
-    "navPricing": "Pricing"
+    "navPricing": "Pricing",
+    "navSalesScope": "Sales permissions"
   },
   "roles": {
     "title": "Roles",
@@ -142,7 +143,9 @@
     "isActiveHint": "An inactive user's open session is closed immediately too.",
     "saved": "User saved.",
     "emailTaken": "Another user already has this email address.",
-    "selfDeactivate": "You cannot deactivate your own account."
+    "selfDeactivate": "You cannot deactivate your own account.",
+    "seatsRestricted": "Seat restriction: can only sell the seats given to them",
+    "seatsRestrictedHint": "If unchecked, a user who can sell may sell every seat. Seats are given on this screen:"
   },
   "halls": {
     "title": "Halls",
@@ -559,6 +562,66 @@
     "settingsNote": "Settings apply to every session of the event.",
     "protocolTitle": "Protocol seats are not for sale"
   },
+  "salesScope": {
+    "title": "Sales permissions",
+    "intro": "Decide which seats each salesperson may sell. Staff without a restriction can sell every seat.",
+    "sellers": "Staff who can sell",
+    "sellersHint": "Active users whose role allows selling. The seat restriction is switched on from the user edit page.",
+    "noSellers": "No active user can sell. Give the \"Sales and reservations\" permission to a role.",
+    "seatAccess": "Seats",
+    "restricted": "Only given seats",
+    "fullAccess": "Full access",
+    "halls": "Halls",
+    "hallsHint": "Seats given for a hall apply to every event in that hall.",
+    "noHalls": "No active halls yet.",
+    "staffWithSeats": "Staff with seats",
+    "noneGiven": "None given yet",
+    "staffCount": "{0} staff",
+    "editSeats": "Edit seats",
+    "events": "Event specific",
+    "eventsHint": "If one event needs a different split, open an event-specific record; it replaces the hall's record for that event.",
+    "noEvents": "No upcoming events.",
+    "scope": "Record in use",
+    "eventSpecific": "Event specific",
+    "usesHall": "Hall-wide"
+  },
+  "seatScope": {
+    "appName": "Sales permissions",
+    "noPlan": "This hall has no seating plan yet. Draw the plan first.",
+    "hallNote": "Seats given here apply to every event in this hall (except events with their own record).",
+    "eventUsesHallNote": "This event currently uses the hall's record, shown below. Saving creates a separate record for this event; the hall's record stays as it is.",
+    "eventSpecificNote": "This event has its own record; the hall's record is not used for it.",
+    "reset": "Back to hall-wide",
+    "resetConfirm": "Delete this event's own record and use the hall's record?",
+    "staffTitle": "Staff",
+    "staffHint": "Click a name to show their seats in a dark colour on the plan. Select seats and press Give or Take. A seat can be given to more than one person.",
+    "give": "Give",
+    "giveTitle": "Give the selected seats to this person",
+    "take": "Take",
+    "takeTitle": "Take the selected seats from this person",
+    "givenToast": "{n} seats given to {name}",
+    "takenToast": "{n} seats taken from {name}",
+    "seatCount": "{n} seats",
+    "noRestricted": "No staff have a seat restriction. Salespeople with \"Seat restriction\" ticked on the user edit page are listed here.",
+    "fullAccess": "Full access (all seats)",
+    "restrictHint": "Use the user edit page to switch the restriction on or off.",
+    "soldBy": "Can be sold by: {names}",
+    "onlyFullAccess": "Only full-access staff can sell",
+    "selectOwn": "This person's seats",
+    "selectNotGiven": "Not given to anyone",
+    "summary": "Summary",
+    "totalSeats": "Total seats",
+    "givenSeats": "Given to staff",
+    "notGivenSeats": "Only full-access staff sell",
+    "legendOwn": "Selected person",
+    "legendOther": "Someone else",
+    "legendNone": "Not given",
+    "needSelection": "Select seats on the plan first.",
+    "invalid": "The sales permission data could not be read.",
+    "tooLarge": "The sales permission data is too large.",
+    "unknownSeat": "There is a seat that is not on the plan. Reload the page and try again.",
+    "unknownStaff": "There is a user that is not in the list. Reload the page and try again."
+  },
   "permission": {
     "halls": {
       "manage": {
@@ -579,6 +642,10 @@
       }
     },
     "sales": {
+      "sell": {
+        "name": "Sales and reservations",
+        "description": "Selling tickets and reserving seats. Which seats a person may sell can be limited per person."
+      },
       "view": {
         "name": "Sales",
         "description": "View sold tickets and bookings."
