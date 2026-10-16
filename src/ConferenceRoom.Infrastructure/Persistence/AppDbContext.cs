@@ -1,4 +1,5 @@
 using ConferenceRoom.Domain.Accounts;
+using ConferenceRoom.Domain.Events;
 using ConferenceRoom.Domain.Halls;
 using ConferenceRoom.Domain.Organizations;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     // ---- Salonlar ve kroki sürümleri ----
     public DbSet<Hall> Halls => Set<Hall>();
     public DbSet<HallPlanVersion> HallPlanVersions => Set<HallPlanVersion>();
+
+    // ---- Etkinlikler, türleri ve seansları ----
+    public DbSet<EventType> EventTypes => Set<EventType>();
+    public DbSet<Event> Events => Set<Event>();
+    public DbSet<EventSession> EventSessions => Set<EventSession>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

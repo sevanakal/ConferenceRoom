@@ -1,9 +1,9 @@
 using System.Globalization;
-using System.Security.Claims;
 using ConferenceRoom.Domain.Halls;
 using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
+using ConferenceRoom.Web.Auth;
 using ConferenceRoom.Web.Halls;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
@@ -100,8 +100,7 @@ public class KrokiModel(AppDbContext db, LanguageCatalog catalog, IStringLocaliz
         using var reader = new StreamReader(Request.Body);
         var json = await reader.ReadToEndAsync(cancellationToken);
 
-        var staffUserId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!, CultureInfo.InvariantCulture);
-        return Answer(await HallPlanStore.SaveAsync(db, hall, json, baseVersion, staffUserId, cancellationToken));
+        return Answer(await HallPlanStore.SaveAsync(db, hall, json, baseVersion, User.UserId(), cancellationToken));
     }
 
     // ---- Yardımcılar ----

@@ -1,0 +1,70 @@
+@page "/yonetim/etkinlikler"
+@model ConferenceRoom.Web.Pages.Yonetim.Etkinlikler.IndexModel
+@using ConferenceRoom.Web.Common
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["events.title"];
+    ViewData["AdminNav"] = "events";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["events.title"]</h1>
+        <p>@T["events.intro"]</p>
+    </div>
+    <div class="form-actions">
+        <a class="btn-secondary" href="/yonetim/etkinlikler/turler">@T["eventTypes.title"]</a>
+        <a class="btn-secondary" href="/pano" target="_blank">@T["events.openBoard"]</a>
+        <a class="btn-primary btn-inline" href="/yonetim/etkinlikler/duzenle">@T["events.new"]</a>
+    </div>
+</header>
+
+<partial name="_Flash" model="Model.Flash" />
+
+@if (Model.Events.Count == 0)
+{
+    <div class="empty-state">
+        <p>@T["events.empty"]</p>
+        <a class="btn-primary btn-inline" href="/yonetim/etkinlikler/duzenle">@T["events.new"]</a>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">@T["events.eventTitle"]</th>
+                    <th scope="col">@T["events.hall"]</th>
+                    <th scope="col">@T["events.sessions"]</th>
+                    <th scope="col">@T["halls.status"]</th>
+                    <th scope="col"><span class="visually-hidden">@T["admin.edit"]</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var e in Model.Events)
+                {
+                    <tr>
+                        <td>
+                            <a class="row-title" href="/yonetim/etkinlikler/duzenle/@e.Id">@e.Title</a>
+                            <div class="row-sub">@e.TypeName@(e.Organizer is null ? "" : " · " + e.Organizer)</div>
+                        </td>
+                        <td>@e.HallName</td>
+                        <td>
+                            @if (e.SessionCount == 0)
+                            {
+                                <span class="muted">@T["events.noSessions"]</span>
+                            }
+                            else
+                            {
+                                <span>@T["events.sessionCount", e.SessionCount]</span>
+                                <div class="row-sub">@DisplayTime.Format(e.FirstStartUtc!.Value)@(e.SessionCount > 1 ? " – " + DisplayTime.Format(e.LastStartUtc!.Value) : "")</div>
+                            }
+                        </td>
+                        <td><span class="pill @Model.PillClass(e.State)">@T[$"events.state{e.State}"]</span></td>
+                        <td class="actions"><a href="/yonetim/etkinlikler/duzenle/@e.Id">@T["admin.edit"]</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

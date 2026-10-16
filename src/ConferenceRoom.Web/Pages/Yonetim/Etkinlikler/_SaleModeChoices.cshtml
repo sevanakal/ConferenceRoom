@@ -1,0 +1,15 @@
+@* Satış türü seçimi (rezervasyon / satış) kartları; etkinlik ve etkinlik türü formlarında ortak. Model: seçili değer. *@
+@using ConferenceRoom.Domain.Events
+@model SaleMode
+<fieldset class="choice-group">
+    <legend>@T["events.saleMode"]</legend>
+    <div class="choice-grid">
+        @foreach (var mode in Enum.GetValues<SaleMode>())
+        {
+            <label class="choice">
+                <input type="radio" name="Input.SaleMode" value="@mode" @(Model == mode ? "checked" : null) />
+                <span><b>@T[$"events.saleMode{mode}"]</b><small>@T[$"events.saleMode{mode}Hint"]</small></span>
+            </label>
+        }
+    </div>
+</fieldset>

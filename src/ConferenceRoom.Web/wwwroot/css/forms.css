@@ -4,13 +4,15 @@
 */
 .field { display: grid; gap: 6px; }
 .field label { font-size: .88rem; font-weight: 600; }
-.field input {
+.field input, .field select, .field textarea {
     width: 100%; height: 48px; padding: 0 14px; border: 1px solid var(--color-border); border-radius: 10px;
     background: var(--color-surface); color: var(--color-text); font: inherit; transition: border-color .15s, box-shadow .15s;
 }
-.field input:hover { border-color: color-mix(in srgb, var(--color-text) 30%, var(--color-border)); }
-.field input:focus { outline: none; border-color: var(--btn-bg, var(--color-accent)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--btn-bg, var(--color-accent)) 18%, transparent); }
-.field input[aria-invalid="true"] { border-color: var(--color-fail); }
+.field textarea { height: auto; min-height: 120px; padding: 12px 14px; resize: vertical; line-height: 1.5; }
+.field input[type="file"] { height: auto; padding: 10px 14px; }
+.field input:hover, .field select:hover, .field textarea:hover { border-color: color-mix(in srgb, var(--color-text) 30%, var(--color-border)); }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--btn-bg, var(--color-accent)); box-shadow: 0 0 0 4px color-mix(in srgb, var(--btn-bg, var(--color-accent)) 18%, transparent); }
+.field [aria-invalid="true"] { border-color: var(--color-fail); }
 .field-error { margin: 0; color: var(--color-fail); font-size: .84rem; }
 .field-hint { margin: 0; color: var(--color-muted); font-size: .84rem; }
 .password-wrap { position: relative; }

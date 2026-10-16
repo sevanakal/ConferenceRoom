@@ -18,6 +18,9 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
 
     private readonly string _database = $"conferenceroom_test_{Guid.NewGuid():N}"[..40];
 
+    /// <summary>Testlerde yüklenen afişler geçici bir klasöre yazılır, test bitince silinir.</summary>
+    private readonly string _posters = Path.Combine(Path.GetTempPath(), $"conferenceroom_posters_{Guid.NewGuid():N}");
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         var server = Environment.GetEnvironmentVariable(MySqlFactAttribute.EnvironmentVariable) ?? "";
@@ -27,7 +30,8 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
         builder.UseSetting("Admin:Email", AdminEmail);
         builder.UseSetting("Admin:Password", AdminPassword);
         builder.UseSetting("Admin:FullName", "Test Yöneticisi");
-        builder.UseSetting("Auth:LoginAttemptsPerMinute", "1000");   // testler aynı "IP"den çok giriş yapar
+        builder.UseSetting("Auth:LoginAttemptsPerMinute", "1000");
+        builder.UseSetting("Storage:PostersPath", _posters);   // testler aynı "IP"den çok giriş yapar
     }
 
     /// <summary>Yönetim paneline giriş yapmış bir istemci döner (varsayılan: ilk yönetici hesabı).</summary>
@@ -51,5 +55,7 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
         if (Environment.GetEnvironmentVariable(MySqlFactAttribute.EnvironmentVariable) is not null)
             await WithDbAsync(db => db.Database.EnsureDeletedAsync());
         await base.DisposeAsync();
+        if (Directory.Exists(_posters))
+            Directory.Delete(_posters, recursive: true);
     }
 }

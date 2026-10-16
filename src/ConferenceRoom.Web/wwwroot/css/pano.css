@@ -1,0 +1,72 @@
+/*
+  Etkinlik panosu (/pano). Lobideki ekranda uzaktan okunacak şekilde koyu zemin ve büyük yazı.
+  Renkler kendi değişkenlerinde; tasarım değişince yalnızca bu blok değişir.
+*/
+.board {
+    --board-bg: #0F1419;
+    --board-surface: #182028;
+    --board-text: #F1F4F7;
+    --board-muted: #9AA6B2;
+    --board-line: #2A3440;
+    --board-accent: #E0566F;
+    --board-ok: #3FB57A;
+    --board-warn: #E3A23B;
+    --board-off: #7C8894;
+    background: var(--board-bg); color: var(--board-text); min-height: 100vh; color-scheme: dark;
+}
+
+/* ---- Üst bant: logo, başlık, saat ---- */
+.board-head {
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 16px;
+    padding: 20px clamp(16px, 4vw, 48px); border-bottom: 1px solid var(--board-line);
+}
+.board-brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; font-weight: 600; }
+.board-brand svg { width: 32px; height: 32px; }
+.board-head h1 { margin: 0; font-size: clamp(1.3rem, 2.6vw, 2.2rem); letter-spacing: .02em; }
+.board-clock { justify-self: end; text-align: right; display: grid; }
+.board-clock time { font-size: clamp(1.6rem, 3.4vw, 2.8rem); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.board-clock span { color: var(--board-muted); font-size: .9rem; }
+
+/* ---- Günler ve seanslar ---- */
+.board-main { padding: 12px clamp(16px, 4vw, 48px) 48px; display: grid; gap: 28px; }
+.board-empty { color: var(--board-muted); font-size: 1.3rem; text-align: center; padding: 80px 0; }
+.board-day h2 { margin: 16px 0 12px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: var(--board-accent); }
+.board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.board-item {
+    display: grid; grid-template-columns: 110px 64px 1fr auto; gap: 18px; align-items: center;
+    padding: 14px 18px; background: var(--board-surface); border-radius: 12px; border-left: 4px solid var(--board-ok);
+}
+.board-time strong { display: block; font-size: 1.9rem; font-variant-numeric: tabular-nums; line-height: 1; }
+.board-time span { color: var(--board-muted); font-size: .95rem; }
+.board-poster { width: 64px; height: 84px; object-fit: cover; border-radius: 6px; background: var(--board-line); }
+.board-poster--empty { display: grid; place-items: center; font-size: 1.8rem; font-weight: 700; color: var(--board-muted); }
+.board-info { min-width: 0; }
+.board-info h3 { margin: 0 0 4px; font-size: 1.35rem; line-height: 1.25; }
+.board-info p { margin: 0; color: var(--board-muted); }
+.board-info .board-doors { margin-top: 2px; font-size: .92rem; }
+.board-badge {
+    padding: 6px 14px; border-radius: 999px; font-weight: 600; font-size: .92rem; white-space: nowrap;
+    background: color-mix(in srgb, var(--board-ok) 18%, transparent); color: var(--board-ok);
+}
+
+/* Duruma göre renk: satışta/rezervasyon yeşil, yakında/gişe sarı, şu anda vurgu, kapalı gri, iptal kırmızı ve soluk */
+.board-item[data-badge="SalesSoon"], .board-item[data-badge="BoxOffice"] { border-left-color: var(--board-warn); }
+.board-item[data-badge="SalesSoon"] .board-badge, .board-item[data-badge="BoxOffice"] .board-badge { background: color-mix(in srgb, var(--board-warn) 18%, transparent); color: var(--board-warn); }
+.board-item[data-badge="Now"] { border-left-color: var(--board-accent); }
+.board-item[data-badge="Now"] .board-badge { background: var(--board-accent); color: #fff; }
+.board-item[data-badge="SalesClosed"] { border-left-color: var(--board-off); }
+.board-item[data-badge="SalesClosed"] .board-badge { background: color-mix(in srgb, var(--board-off) 22%, transparent); color: var(--board-muted); }
+.board-item[data-badge="Cancelled"] { border-left-color: var(--board-accent); opacity: .7; }
+.board-item[data-badge="Cancelled"] h3 { text-decoration: line-through; }
+.board-item[data-badge="Cancelled"] .board-badge { background: color-mix(in srgb, var(--board-accent) 22%, transparent); color: var(--board-accent); }
+
+/* ---- Telefon ---- */
+@media (max-width: 700px) {
+    .board-head { grid-template-columns: 1fr auto; }
+    .board-head h1 { grid-column: 1 / -1; grid-row: 2; }
+    .board-brand span { display: none; }
+    .board-item { grid-template-columns: 64px 1fr; gap: 6px 14px; }
+    .board-time { grid-column: 1 / -1; display: flex; gap: 8px; align-items: baseline; }
+    .board-time strong { font-size: 1.5rem; }
+    .board-badge { grid-column: 1 / -1; justify-self: start; }
+}

@@ -16,6 +16,8 @@ RUN dotnet publish ConferenceRoom.Web/ConferenceRoom.Web.csproj -c Release -o /a
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
+# Etkinlik afişlerinin klasörü (docker-compose.yml'de ayrı birim). Uygulama "app" kullanıcısıyla çalıştığı için ona ait olmalı.
+RUN mkdir -p /app/data/posters && chown -R app:app /app/data
 ENV ASPNETCORE_URLS=http://+:8080
 EXPOSE 8080
 USER app

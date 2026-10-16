@@ -1,7 +1,7 @@
 # Uygulamayı MySQL ile birlikte tek komutla çalıştırır (src klasöründe):
 #   docker compose up --build
 # Ardından tarayıcıda: http://localhost:8080
-# Veritabanı verileri "mysql-data" biriminde kalır; silmek için: docker compose down -v
+# Veritabanı verileri "mysql-data", afişler "posters" biriminde kalır; ikisini de silmek için: docker compose down -v
 #
 # Şifreler yalnızca yerel geliştirme içindir. Canlı sunucuda .env dosyası ya da gizli değişkenlerle değiştirilmelidir.
 
@@ -40,6 +40,10 @@ services:
       Admin__Password: ${ADMIN_PASSWORD:-Yonetici.2026}
     ports:
       - "8080:8080"
+    # Yüklenen etkinlik afişleri; imaj yeniden derlense de kalır.
+    volumes:
+      - posters:/app/data/posters
 
 volumes:
   mysql-data:
+  posters:

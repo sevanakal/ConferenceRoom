@@ -11,8 +11,15 @@ public static class DisplayTime
     private static readonly TimeZoneInfo Zone = FindZone();
 
     /// <summary>Ör. "15.10.2026 19:42" (Türkçe) / "15/10/2026 19:42" (İngilizce): geçerli dilin kısa tarih biçimi.</summary>
-    public static string Format(DateTime utc) =>
-        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zone).ToString("g", CultureInfo.CurrentCulture);
+    public static string Format(DateTime utc) => ToLocal(utc).ToString("g", CultureInfo.CurrentCulture);
+
+    /// <summary>UTC zamanı Türkiye saatine çevirir (formlarda varsayılan değer, panoda gün başlıkları için).</summary>
+    public static DateTime ToLocal(DateTime utc) =>
+        TimeZoneInfo.ConvertTimeFromUtc(DateTime.SpecifyKind(utc, DateTimeKind.Utc), Zone);
+
+    /// <summary>Formdan gelen Türkiye saatini veritabanında saklanacak UTC zamana çevirir.</summary>
+    public static DateTime ToUtc(DateTime local) =>
+        TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(local, DateTimeKind.Unspecified), Zone);
 
     private static TimeZoneInfo FindZone()
     {

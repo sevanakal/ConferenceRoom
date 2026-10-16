@@ -14,3 +14,6 @@ coverage*/
 # Yerel ortam dosyaları (şifreler buraya yazılır, depoya girmez)
 .env
 appsettings.*.local.json
+
+# Yüklenen dosyalar (afişler); Docker'da birimde, yerelde bu klasörde durur
+src/ConferenceRoom.Web/data/

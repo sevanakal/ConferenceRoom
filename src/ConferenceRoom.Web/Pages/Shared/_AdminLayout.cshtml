@@ -3,7 +3,7 @@
     Bu şablonu kullanan sayfalar /yonetim altındadır ve Program.cs'teki kural gereği yalnızca
     yönetim girişi yapmış kullanıcılar tarafından açılabilir (User burada yönetim kullanıcısıdır).
     Üst çubuğun altındaki bölüm menüsü yalnızca kullanıcının yetkili olduğu bölümleri gösterir;
-    sayfa ViewData["AdminNav"] ile hangi bölümde olduğunu söyler ("dashboard", "halls", "users", "roles").
+    sayfa ViewData["AdminNav"] ile hangi bölümde olduğunu söyler ("dashboard", "halls", "events", "users", "roles").
     Stil: wwwroot/css/admin.css, form alanları forms.css
 *@
 @using System.Globalization
@@ -19,6 +19,7 @@
     {
         ("dashboard", "/yonetim", "admin.navDashboard", null),
         ("halls", "/yonetim/salonlar", "admin.navHalls", Permissions.HallsManage),
+        ("events", "/yonetim/etkinlikler", "admin.navEvents", Permissions.EventsManage),
         ("users", "/yonetim/kullanicilar", "admin.navUsers", Permissions.UsersManage),
         ("roles", "/yonetim/roller", "admin.navRoles", Permissions.UsersManage),
     };

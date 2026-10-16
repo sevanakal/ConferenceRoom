@@ -1,0 +1,50 @@
+@page "/yonetim/etkinlikler/turler/duzenle/{id:int?}"
+@model ConferenceRoom.Web.Pages.Yonetim.Etkinlikler.Turler.DuzenleModel
+@{
+    Layout = "_AdminLayout";
+    var title = Model.Id is null ? T["eventTypes.newTitle"] : T["eventTypes.editTitle"];
+    ViewData["Title"] = title;
+    ViewData["AdminNav"] = "events";
+}
+<header class="page-head">
+    <div>
+        <a class="back-link" href="/yonetim/etkinlikler/turler">← @T["eventTypes.title"]</a>
+        <h1>@title</h1>
+    </div>
+</header>
+
+<form method="post" class="form-card" novalidate>
+    <div class="field">
+        <label for="Input_Name">@T["eventTypes.name"]</label>
+        <input id="Input_Name" name="Input.Name" value="@Model.Input.Name" maxlength="100" required
+               aria-invalid="@(Model.Errors.ContainsKey("Name") ? "true" : null)" />
+        @if (Model.Errors.TryGetValue("Name", out var nameError))
+        {
+            <p class="field-error">@T[nameError]</p>
+        }
+    </div>
+
+    <partial name="../_SaleModeChoices.cshtml" model="Model.Input.SaleMode" />
+
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.RequiresApproval" value="true" @(Model.Input.RequiresApproval ? "checked" : null) />
+            <span>@T["events.requiresApproval"]</span>
+        </label>
+        <input type="hidden" name="Input.RequiresApproval" value="false" />
+        <p class="field-hint">@T["eventTypes.defaultsHint"]</p>
+    </div>
+
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.IsActive" value="true" @(Model.Input.IsActive ? "checked" : null) />
+            <span>@T["eventTypes.isActive"]</span>
+        </label>
+        <input type="hidden" name="Input.IsActive" value="false" />
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-primary btn-inline">@T["admin.save"]</button>
+        <a class="btn-secondary" href="/yonetim/etkinlikler/turler">@T["admin.cancel"]</a>
+    </div>
+</form>
