@@ -119,21 +119,31 @@
         <label for="Input_Description">@T["events.description"]</label>
         <textarea id="Input_Description" name="Input.Description" maxlength="4000" rows="5">@Model.Input.Description</textarea>
     </div>
+    @* Afiş: solda önizleme (kayıtlı afiş ya da yeni seçilen dosya), sağda dosya seçimi. Önizlemeyi sayfa sonundaki betik günceller. *@
+    @{ var savedPoster = Model.PosterFileName is null ? null : PosterStore.Url(Model.PosterFileName); }
     <div class="field">
         <label for="Input_Poster">@T["events.poster"]</label>
-        @if (Model.PosterFileName is not null)
-        {
-            <div class="poster-preview">
-                <img src="@PosterStore.Url(Model.PosterFileName)" alt="@T["events.poster"]" />
-                <label class="check">
-                    <input type="checkbox" name="Input.RemovePoster" value="true" />
-                    <span>@T["events.removePoster"]</span>
-                </label>
+        <div class="poster-picker">
+            <div class="poster-thumb" id="poster-thumb" data-saved="@savedPoster">
+                <img id="poster-img" src="@savedPoster" alt="@T["events.posterPreview"]" hidden="@(savedPoster is null)" />
+                <span class="poster-empty" id="poster-empty" hidden="@(savedPoster is not null)">@T["events.posterNone"]</span>
             </div>
-        }
-        <input id="Input_Poster" name="Input.Poster" type="file" accept="image/jpeg,image/png,image/webp" aria-invalid="@Invalid("Poster")" />
-        <p class="field-hint">@T["events.posterHint"]</p>
-        @{ Error("Poster"); }
+            <div class="poster-controls">
+                <input id="Input_Poster" name="Input.Poster" type="file" accept="image/jpeg,image/png,image/webp" aria-invalid="@Invalid("Poster")" />
+                <div class="poster-selected" id="poster-selected" hidden>
+                    <button type="button" class="btn-ghost" id="poster-clear">@T["events.posterClear"]</button>
+                </div>
+                @if (savedPoster is not null)
+                {
+                    <label class="check">
+                        <input type="checkbox" id="Input_RemovePoster" name="Input.RemovePoster" value="true" />
+                        <span>@T["events.removePoster"]</span>
+                    </label>
+                }
+                <p class="field-hint">@T["events.posterHint"]</p>
+                @{ Error("Poster"); }
+            </div>
+        </div>
     </div>
 
     @* ---- Seanslar: dinamik satırlar, "+" ile eklenir ---- *@
@@ -253,6 +263,42 @@
                 list.appendChild(removed);
             }
             row.remove();
+        });
+    })();
+
+    // Afiş önizlemesi: seçilen dosya hemen gösterilir; "Seçimi kaldır" kayıtlı afişe döner.
+    // "Afişi kaldır" işaretliyken yeni dosya seçilmemişse boş kutu gösterilir.
+    (function () {
+        var input = document.getElementById("Input_Poster");
+        var thumb = document.getElementById("poster-thumb");
+        var img = document.getElementById("poster-img");
+        var empty = document.getElementById("poster-empty");
+        var selected = document.getElementById("poster-selected");
+        var remove = document.getElementById("Input_RemovePoster");
+        var objectUrl = null;
+        function show(src) {
+            img.hidden = !src;
+            empty.hidden = !!src;
+            if (src) img.src = src; else img.removeAttribute("src");
+        }
+        function refresh() {
+            if (objectUrl) { URL.revokeObjectURL(objectUrl); objectUrl = null; }
+            var file = input.files && input.files[0];
+            selected.hidden = !file;
+            if (file) {
+                objectUrl = URL.createObjectURL(file);
+                show(objectUrl);
+            } else {
+                show(remove && remove.checked ? null : thumb.dataset.saved);
+            }
+        }
+        img.addEventListener("error", function () { show(null); });   // görsel olmayan dosya
+        input.addEventListener("change", refresh);
+        if (remove) remove.addEventListener("change", refresh);
+        document.getElementById("poster-clear").addEventListener("click", function () {
+            input.value = "";
+            refresh();
+            input.focus();
         });
     })();
 </script>
