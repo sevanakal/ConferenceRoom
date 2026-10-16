@@ -20,6 +20,51 @@
             <p class="field-error">@T[error]</p>
         }
     }
+
+    // Bir seans satırı. key: satırın form anahtarı (SessionRows[key]); "+" ile eklenen satırlar
+    // sayfa sonundaki şablondan "__key__" yerine yeni anahtar konarak üretilir.
+    private void SessionRow(string key, DuzenleModel.SessionInput row, string? errorKey)
+    {
+        var prefix = $"SessionRows[{key}]";
+        var id = $"Session_{key}";
+        // Hatalı alan işaretlenir: kapı saati hatasında kapı alanı, diğerlerinde tarih ve başlangıç.
+        var doorsInvalid = errorKey == "events.doorsAfterStart" ? "true" : null;
+        var invalid = errorKey is null || doorsInvalid is not null ? null : "true";
+        <div class="session-row" data-session-id="@row.Id">
+            <input type="hidden" name="SessionRows.Index" value="@key" />
+            @if (row.Id is not null)
+            {
+                <input type="hidden" name="@(prefix).Id" value="@row.Id" />
+            }
+            <div class="field">
+                <label for="@(id)_Date">@T["events.sessionDate"]</label>
+                <input id="@(id)_Date" name="@(prefix).Date" type="date" value="@row.Date?.ToString("yyyy-MM-dd")" aria-invalid="@invalid" />
+            </div>
+            <div class="field">
+                <label for="@(id)_Start">@T["events.sessionStart"]</label>
+                <input id="@(id)_Start" name="@(prefix).Start" type="time" value="@row.Start?.ToString("HH:mm")" aria-invalid="@invalid" />
+            </div>
+            <div class="field">
+                <label for="@(id)_End">@T["events.sessionEnd"]</label>
+                <input id="@(id)_End" name="@(prefix).End" type="time" value="@row.End?.ToString("HH:mm")" />
+            </div>
+            <div class="field">
+                <label for="@(id)_Doors">@T["events.doorsOpen"]</label>
+                <input id="@(id)_Doors" name="@(prefix).DoorsOpen" type="time" value="@row.DoorsOpen?.ToString("HH:mm")" aria-invalid="@doorsInvalid" />
+            </div>
+            <button type="button" class="session-remove" data-remove-session aria-label="@T["events.removeSession"]" title="@T["events.removeSession"]">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+            </button>
+            @if (row.Id is { } sessionId && Model.PlanVersions.TryGetValue(sessionId, out var version))
+            {
+                <p class="field-hint session-meta">@T["events.sessionPlan", version]</p>
+            }
+            @if (errorKey is not null)
+            {
+                <p class="field-error session-meta">@T[errorKey]</p>
+            }
+        </div>
+    }
 }
 <header class="page-head">
     <div>
@@ -34,7 +79,7 @@
     <div class="form-alert" role="alert">@T["admin.formErrors"]</div>
 }
 
-@* ---- 1. Etkinlik bilgileri ---- *@
+@* ---- Etkinlik bilgileri, seanslar ve satış kuralları: tek form, tek kayıt ---- *@
 <form method="post" class="form-card" enctype="multipart/form-data" novalidate>
     <div class="field">
         <label for="Input_Title">@T["events.eventTitle"]</label>
@@ -91,6 +136,28 @@
         @{ Error("Poster"); }
     </div>
 
+    @* ---- Seanslar: dinamik satırlar, "+" ile eklenir ---- *@
+    <h2 class="form-section-title" id="seanslar">@T["events.sessions"]</h2>
+    <p class="field-hint">@T["events.sessionsHint"]</p>
+    @{ Error("Sessions"); }
+    <div class="session-list" id="session-list">
+        @for (var i = 0; i < Model.SessionRows.Count; i++)
+        {
+            SessionRow(i.ToString(System.Globalization.CultureInfo.InvariantCulture), Model.SessionRows[i], Model.Errors.GetValueOrDefault($"Session.{i}"));
+        }
+        @foreach (var removed in Model.RemovedSessionIds)
+        {
+            <input type="hidden" name="RemovedSessionIds" value="@removed" />
+        }
+    </div>
+    <div>
+        <button type="button" class="btn-secondary session-add" id="session-add">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" /></svg>
+            @T["events.addSession"]
+        </button>
+    </div>
+    <template id="session-template">@{ SessionRow("__key__", new DuzenleModel.SessionInput(), null); }</template>
+
     <h2 class="form-section-title">@T["events.salesRules"]</h2>
     <partial name="_SaleModeChoices" model="Model.Input.SaleMode" />
     <div class="check-group">
@@ -143,80 +210,10 @@
     </div>
 
     <div class="form-actions">
-        <button type="submit" class="btn-primary btn-inline">@(Model.Id is null ? T["events.createAndAddSessions"] : T["admin.save"])</button>
+        <button type="submit" class="btn-primary btn-inline">@T["admin.save"]</button>
         <a class="btn-secondary" href="/yonetim/etkinlikler">@T["admin.cancel"]</a>
     </div>
 </form>
-
-@* ---- 2. Seanslar (yalnızca kayıtlı etkinlikte) ---- *@
-@if (Model.Id is not null)
-{
-    <section class="sessions" id="seanslar">
-        <h2>@T["events.sessions"]</h2>
-        <p class="muted">@T["events.sessionsHint"]</p>
-        @{ Error("Session.Delete"); }
-
-        @if (Model.Sessions.Count > 0)
-        {
-            <div class="table-wrap">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">@T["events.sessionStart"]</th>
-                            <th scope="col">@T["events.sessionEnd"]</th>
-                            <th scope="col">@T["events.doorsOpen"]</th>
-                            <th scope="col">@T["halls.plan"]</th>
-                            <th scope="col"><span class="visually-hidden">@T["events.deleteSession"]</span></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var session in Model.Sessions)
-                        {
-                            <tr>
-                                <td>@DisplayTime.Format(session.StartsAtUtc)</td>
-                                <td>@(session.EndsAtUtc is { } end ? DisplayTime.Format(end) : "–")</td>
-                                <td>@(session.DoorsOpenAtUtc is { } doors ? DisplayTime.Format(doors) : "–")</td>
-                                <td>@T["halls.versionN", session.PlanVersion]</td>
-                                <td class="actions">
-                                    <form method="post" asp-page-handler="DeleteSession" asp-route-sessionId="@session.Id" class="inline-form" data-confirm="@T["events.deleteSessionConfirm"]">
-                                        <button type="submit" class="link-button">@T["events.deleteSession"]</button>
-                                    </form>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        }
-        else
-        {
-            <p class="muted">@T["events.noSessions"]</p>
-        }
-
-        <form method="post" asp-page-handler="AddSession" class="form-card session-form" novalidate>
-            <div class="field">
-                <label for="NewSession_Date">@T["events.sessionDate"]</label>
-                <input id="NewSession_Date" name="NewSession.Date" type="date" value="@Model.NewSession.Date?.ToString("yyyy-MM-dd")" required aria-invalid="@Invalid("Session.Start")" />
-            </div>
-            <div class="field">
-                <label for="NewSession_Start">@T["events.sessionStart"]</label>
-                <input id="NewSession_Start" name="NewSession.Start" type="time" value="@Model.NewSession.Start?.ToString("HH:mm")" required aria-invalid="@Invalid("Session.Start")" />
-            </div>
-            <div class="field">
-                <label for="NewSession_End">@T["events.sessionEnd"]</label>
-                <input id="NewSession_End" name="NewSession.End" type="time" value="@Model.NewSession.End?.ToString("HH:mm")" />
-            </div>
-            <div class="field">
-                <label for="NewSession_DoorsOpen">@T["events.doorsOpen"]</label>
-                <input id="NewSession_DoorsOpen" name="NewSession.DoorsOpen" type="time" value="@Model.NewSession.DoorsOpen?.ToString("HH:mm")" aria-invalid="@Invalid("Session.DoorsOpen")" />
-            </div>
-            <div class="form-actions">
-                @{ Error("Session.Start"); Error("Session.DoorsOpen"); }
-                <button type="submit" class="btn-primary btn-inline">@T["events.addSession"]</button>
-            </div>
-        </form>
-    </section>
-}
 
 <script>
     // Yeni etkinlikte tür seçilince satış türü ve onay kuralı türün varsayılanına çekilir (sunucudaki OnGet ile aynı kural).
@@ -228,6 +225,34 @@
             var radio = document.querySelector('input[name="Input.SaleMode"][value="' + option.dataset.saleMode + '"]');
             if (radio) radio.checked = true;
             document.getElementById("Input_RequiresApproval").checked = option.dataset.approval === "true";
+        });
+    })();
+
+    // Seans satırları: "+" şablondan yeni satır ekler; kaldırılan kayıtlı seansın kimliği gizli alana yazılır, kayıtta silinir.
+    (function () {
+        var list = document.getElementById("session-list");
+        var template = document.getElementById("session-template");
+        var next = 0;
+        document.getElementById("session-add").addEventListener("click", function () {
+            var key = "n" + (next++);
+            var holder = document.createElement("div");
+            holder.innerHTML = template.innerHTML.replace(/__key__/g, key);
+            var row = holder.firstElementChild;
+            list.appendChild(row);
+            row.querySelector("input[type=date]").focus();
+        });
+        list.addEventListener("click", function (e) {
+            var button = e.target.closest("[data-remove-session]");
+            if (!button) return;
+            var row = button.closest(".session-row");
+            if (row.dataset.sessionId) {
+                var removed = document.createElement("input");
+                removed.type = "hidden";
+                removed.name = "RemovedSessionIds";
+                removed.value = row.dataset.sessionId;
+                list.appendChild(removed);
+            }
+            row.remove();
         });
     })();
 </script>
