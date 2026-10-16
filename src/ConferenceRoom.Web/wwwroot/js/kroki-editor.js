@@ -33,7 +33,7 @@ function t(key, vars) {
    doc: krokinin tamamı (kaydedilen veri). selected: seçili öğe id'leri.
    opts: araç seçenek çubuğundaki değerler.
 ------------------------------------------------------------------ */
-const SEAT_W = 48, SEAT_H = 44;               // cm
+const SEAT_W = 52, SEAT_H = 48;               // cm; koltuk üstünde "A-12" gibi sıra-numara etiketi sığacak kadar
 const SNAP = 10;                              // cm
 const BLOCK_COLORS = ["#0F766E", "#B4531A", "#6D3FC0", "#1D5FBF", "#B0306A", "#4D7C0F", "#0E7490", "#8A5A12"];
 const RESIZABLE = new Set(["stage", "area", "wall", "door", "column"]);
@@ -43,6 +43,7 @@ let doc, levelId, tool = "select";
 let selected = new Set();
 let undoStack = [], redoStack = [], lastSnap = "";
 let clipboard = null;
+let keyIds = null;        // hizalamada ana nesne (Illustrator'daki "key object"): seçili birimlerden birinin öğe id'leri
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -240,6 +241,8 @@ const tr = new Konva.Transformer({
   anchorSize: 9, rotateAnchorOffset: 26, flipEnabled: false, keepRatio: false, padding: 4
 });
 const marquee = new Konva.Rect({ visible: false, listening: false, strokeWidth: 1, dash: [4, 4] });
+// ana nesnenin çevresindeki kalın çerçeve (ekrandaki kalınlığı yakınlaştırmayla değişmez)
+const keyBox = new Konva.Rect({ visible: false, listening: false, strokeWidth: 3, strokeScaleEnabled: false });
 const preview = new Konva.Group({ listening: false });
 const guide = new Konva.Group({ listening: false });
 uiLayer.add(preview, guide);
@@ -273,7 +276,10 @@ function makeNode(it) {
     if (it.kind === "accessible") {
       g.add(new Konva.Text({ text: "♿", x: -SEAT_W / 2, y: -SEAT_H / 2 + 6, width: SEAT_W, align: "center", fontSize: 22, fill: txt, listening: false }));
     } else {
-      g.add(new Konva.Text({ text: String(it.num ?? ""), x: -SEAT_W / 2, y: -SEAT_H / 2 + 9, width: SEAT_W, align: "center", fontSize: 16, fontFamily: TC.mono, fill: it.kind === "extra" && !b ? TC.ink : txt, listening: false }));
+      // etiket "Sıra-No" (A-12); sıra adı yoksa yalnızca numara. Yazı tipi eşit genişlikli, uzun etiket küçültülerek sığdırılır.
+      const label = it.row ? it.row + "-" + (it.num ?? "") : String(it.num ?? "");
+      const fontSize = Math.min(15, (SEAT_W - 6) / (0.6 * Math.max(1, label.length)));
+      g.add(new Konva.Text({ text: label, x: -SEAT_W / 2, y: -SEAT_H / 2, width: SEAT_W, height: SEAT_H - 12, align: "center", verticalAlign: "middle", fontSize, fontFamily: TC.mono, fill: it.kind === "extra" && !b ? TC.ink : txt, listening: false }));
     }
     if (sel) { body.stroke(TC.accent); body.strokeWidth(5); }
     return g;
@@ -314,11 +320,11 @@ function makeNode(it) {
 
 const ORDER = { area: 0, stage: 1, wall: 2, column: 3, door: 4, seat: 5, text: 6 };
 function render() {
-  tr.nodes([]); tr.remove(); marquee.remove();
+  tr.nodes([]); tr.remove(); marquee.remove(); keyBox.remove();
   layer.destroyChildren(); nodes.clear();
   const items = levelItems().sort((a, b) => ORDER[a.type] - ORDER[b.type]);
   for (const it of items) { const n = makeNode(it); layer.add(n); nodes.set(it.id, n); }
-  layer.add(tr, marquee);
+  layer.add(keyBox, tr, marquee);
   syncTransformer();
   layer.batchDraw(); gridLayer.batchDraw();
   renderTabs(); renderPanel(); renderStats(); updateHistoryBtns();
@@ -337,6 +343,17 @@ function syncTransformer() {
   });
   tr.nodes(tool === "select" ? ns : []);
   tr.getLayer() && tr.moveToTop();
+  drawKeyBox();
+}
+
+/* Ana nesne çerçevesi: ana nesne hâlâ seçiliyse ve yanında başka seçili öğe varsa gösterilir, yoksa ana nesne düşer. */
+function drawKeyBox() {
+  if (keyIds && !(keyIds.every((id) => selected.has(id) && nodes.has(id)) && selected.size > keyIds.length)) keyIds = null;
+  keyBox.visible(!!keyIds && tool === "select");
+  if (keyBox.visible()) {
+    const r = unionRect(keyIds), pad = 10;
+    keyBox.setAttrs({ x: r.x - pad, y: r.y - pad, width: r.width + pad * 2, height: r.height + pad * 2, stroke: TC.accent });
+  }
 }
 
 function refreshSelection() {
@@ -400,7 +417,7 @@ function fit() {
 /* ---------- Fare / dokunma etkileşimi ----------
    Seç aracında: öğeye tıklama seçim yapar (grup üyeleriyle), boş alanda sürükleme alan seçimidir.
    Çizim araçlarında: basılınca başlangıç noktası alınır, bırakınca finishDraw() öğeyi üretir. */
-let spaceDown = false, panning = null, drawing = null, marqueeStart = null, pinch = null;
+let spaceDown = false, panning = null, drawing = null, marqueeStart = null, pinch = null, keyClick = null;
 const worldPos = () => layer.getRelativePointerPosition();
 const itemIdOf = (target) => { let n = target; while (n && n !== stage) { const id = n.getAttr && n.getAttr("itemId"); if (id) return id; n = n.getParent(); } return null; };
 const isTransformerPart = (target) => { let n = target; while (n) { if (n === tr) return true; n = n.getParent(); } return false; };
@@ -434,9 +451,12 @@ stage.on("mousedown touchstart", (e) => {
         const allIn = ids.every((x) => selected.has(x));
         ids.forEach((x) => (allIn ? selected.delete(x) : selected.add(x)));
       } else if (!selected.has(id)) {
-        selected = new Set(ids);
+        selected = new Set(ids); keyIds = null;
       } else if (evt.altKey) {
-        selected = new Set(ids);
+        selected = new Set(ids); keyIds = null;
+      } else {
+        // zaten seçili bir öğeye Shift'siz tıklama: fare sürüklemeden bırakılırsa ana nesne seçilir (endPointer)
+        keyClick = { id, x: e.evt.clientX ?? 0, y: e.evt.clientY ?? 0 };
       }
       refreshSelection();
     } else {
@@ -481,6 +501,11 @@ window.addEventListener("mouseup", endPointer);
 window.addEventListener("touchend", endPointer);
 function endPointer(evt) {
   pinch = null;
+  if (keyClick) {
+    const k = keyClick; keyClick = null;
+    const moved = Math.hypot((evt.clientX ?? k.x) - k.x, (evt.clientY ?? k.y) - k.y) > 4;
+    if (!moved && selected.has(k.id)) toggleKey(k.id);
+  }
   if (panning) { panning = null; host.classList.remove("panning"); return; }
   if (marqueeStart) {
     const box = marquee.getClientRect({ relativeTo: layer });
@@ -493,7 +518,7 @@ function endPointer(evt) {
         if (["wall", "stage", "area"].includes(it.type) ? inside(box, r) : Konva.Util.haveIntersection(box, r)) hits.push(id);
       }
     }
-    if (!marqueeStart.add) selected = new Set();
+    if (!marqueeStart.add) { selected = new Set(); keyIds = null; }
     hits.forEach((id) => selected.add(id));
     marquee.visible(false); marqueeStart = null;
     refreshSelection(); return;
@@ -526,6 +551,7 @@ function handlePinch(evt) {
 let dragRef = null;
 layer.on("dragstart", (e) => {
   const id = e.target.getAttr("itemId"); if (!id) return;
+  keyBox.visible(false);
   if (!dragRef) { const it = itemById(id); dragRef = { id, x: it.x, y: it.y }; }
 });
 layer.on("dragmove", (e) => {
@@ -691,36 +717,78 @@ function finishDraw(d) {
 
 /* ---------- Seçim işlemleri: hizala, dağıt, döndür, yansıt, grupla, kopyala, numaralandır ---------- */
 function rectOf(id) { return nodes.get(id).getClientRect({ relativeTo: layer }); }
+function unionRect(ids) {
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const id of ids) { const r = rectOf(id); x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.width); y1 = Math.max(y1, r.y + r.height); }
+  return { x: x0, y: y0, width: x1 - x0, height: y1 - y0 };
+}
+
+/* Hizalama birimleri (Illustrator'daki gibi): grubun tamamı seçiliyse grup tek birimdir ve içi bozulmadan bütün olarak
+   taşınır. Grubu olmayan öğe ya da grubundan yalnızca bir kısmı seçili öğeler (Alt+tıkla) tek başına birimdir. */
+function selUnits() {
+  const its = selItems().filter((i) => i.levelId === levelId && nodes.has(i.id));
+  const total = new Map();
+  for (const i of levelItems()) if (i.groupId) total.set(i.groupId, (total.get(i.groupId) || 0) + 1);
+  const picked = new Map();
+  for (const i of its) if (i.groupId) { if (!picked.has(i.groupId)) picked.set(i.groupId, []); picked.get(i.groupId).push(i.id); }
+  const units = [], done = new Set();
+  for (const i of its) {
+    if (i.groupId && picked.get(i.groupId).length === total.get(i.groupId)) {
+      if (!done.has(i.groupId)) { done.add(i.groupId); units.push({ ids: picked.get(i.groupId) }); }
+    } else units.push({ ids: [i.id] });
+  }
+  units.forEach((u) => (u.r = unionRect(u.ids)));
+  return units;
+}
+
+/* Ana nesne: birden çok birim seçiliyken seçili birine tıklanınca o birim ana nesne olur; hizalama ona göre yapılır,
+   kendisi yerinden oynamaz. Aynı birime yeniden tıklamak ana nesneyi kaldırır. */
+function toggleKey(id) {
+  const units = selUnits();
+  const u = units.length > 1 && units.find((x) => x.ids.includes(id));
+  if (!u) return;
+  keyIds = keyIds && keyIds.includes(id) ? null : u.ids;
+  refreshSelection();
+  toast(t(keyIds ? "keySet" : "keyCleared"));
+}
+const keyUnitOf = (units) => (keyIds ? units.find((u) => u.ids.includes(keyIds[0])) : null);
+function moveUnit(u, dx, dy) {
+  dx = Math.round(dx); dy = Math.round(dy);
+  if (!dx && !dy) return;
+  for (const id of u.ids) { const it = itemById(id); it.x += dx; it.y += dy; }
+}
+
+/* Hizala: ana nesne varsa onun kenarına/merkezine, yoksa tüm seçimin sınırlarına göre. Her birim bütün olarak kayar. */
 function alignSel(mode) {
-  const ids = [...selected].filter((id) => nodes.has(id)); if (ids.length < 2) return;
-  const rs = ids.map((id) => [id, rectOf(id)]);
-  const minX = Math.min(...rs.map(([, r]) => r.x)), maxX = Math.max(...rs.map(([, r]) => r.x + r.width));
-  const minY = Math.min(...rs.map(([, r]) => r.y)), maxY = Math.max(...rs.map(([, r]) => r.y + r.height));
-  for (const [id, r] of rs) {
-    const it = itemById(id);
-    if (mode === "left") it.x += minX - r.x;
-    if (mode === "right") it.x += maxX - (r.x + r.width);
-    if (mode === "hcenter") it.x += (minX + maxX) / 2 - (r.x + r.width / 2);
-    if (mode === "top") it.y += minY - r.y;
-    if (mode === "bottom") it.y += maxY - (r.y + r.height);
-    if (mode === "vmiddle") it.y += (minY + maxY) / 2 - (r.y + r.height / 2);
-    it.x = Math.round(it.x); it.y = Math.round(it.y);
+  const units = selUnits(); if (units.length < 2) return;
+  const key = keyUnitOf(units);
+  const ref = key ? key.r : unionRect(units.flatMap((u) => u.ids));
+  for (const u of units) {
+    if (u === key) continue;
+    const r = u.r;
+    let dx = 0, dy = 0;
+    if (mode === "left") dx = ref.x - r.x;
+    if (mode === "right") dx = ref.x + ref.width - (r.x + r.width);
+    if (mode === "hcenter") dx = ref.x + ref.width / 2 - (r.x + r.width / 2);
+    if (mode === "top") dy = ref.y - r.y;
+    if (mode === "bottom") dy = ref.y + ref.height - (r.y + r.height);
+    if (mode === "vmiddle") dy = ref.y + ref.height / 2 - (r.y + r.height / 2);
+    moveUnit(u, dx, dy);
   }
   commit();
 }
+/* Eşit dağıt: en baştaki ve en sondaki birim yerinde kalır, aradakilerin merkezleri eşit aralıkla dizilir. */
 function distributeSel(axis) {
-  const its = selItems().filter((i) => i.levelId === levelId); if (its.length < 3) return;
-  const k = axis === "h" ? "x" : "y";
-  its.sort((a, b) => a[k] - b[k]);
-  const a = its[0][k], b = its[its.length - 1][k], step = (b - a) / (its.length - 1);
-  its.forEach((it, i) => (it[k] = Math.round(a + i * step)));
+  const units = selUnits(); if (units.length < 3) return;
+  const c = (u) => (axis === "h" ? u.r.x + u.r.width / 2 : u.r.y + u.r.height / 2);
+  units.sort((a, b) => c(a) - c(b));
+  const a = c(units[0]), step = (c(units[units.length - 1]) - a) / (units.length - 1);
+  units.forEach((u, i) => { const d = a + i * step - c(u); moveUnit(u, axis === "h" ? d : 0, axis === "h" ? 0 : d); });
   commit();
 }
 function selCenter() {
-  const ids = [...selected].filter((id) => nodes.has(id));
-  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-  ids.forEach((id) => { const r = rectOf(id); x0 = Math.min(x0, r.x); y0 = Math.min(y0, r.y); x1 = Math.max(x1, r.x + r.width); y1 = Math.max(y1, r.y + r.height); });
-  return { x: (x0 + x1) / 2, y: (y0 + y1) / 2 };
+  const r = unionRect([...selected].filter((id) => nodes.has(id)));
+  return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
 }
 function rotateSel(deg) {
   const its = selItems(); if (!its.length) return;
@@ -914,7 +982,7 @@ function renderPanel() {
   }
   if (single) h += `<div class="fld"><span>${esc(t("rotation"))} (°)</span><input type="number" id="p_rot" step="1" value="${Math.round(single.rotation || 0)}"></div>`;
   if (its.length > 1) {
-    h += `<h3>${esc(t("alignTitle"))}</h3><div class="btns">${ib("al-left", "left", t("align.left"))}${ib("al-hcenter", "hcenter", t("align.hcenter"))}${ib("al-right", "right", t("align.right"))}${ib("al-top", "top", t("align.top"))}${ib("al-vmiddle", "vmiddle", t("align.vmiddle"))}${ib("al-bottom", "bottom", t("align.bottom"))}${ib("dist-h", "dh", t("distribute.h"))}${ib("dist-v", "dv", t("distribute.v"))}</div>`;
+    h += `<h3>${esc(t("alignTitle"))}</h3><p class="note">${esc(t(keyIds ? "alignTo.key" : "alignTo.selection"))}</p><div class="btns">${ib("al-left", "left", t("align.left"))}${ib("al-hcenter", "hcenter", t("align.hcenter"))}${ib("al-right", "right", t("align.right"))}${ib("al-top", "top", t("align.top"))}${ib("al-vmiddle", "vmiddle", t("align.vmiddle"))}${ib("al-bottom", "bottom", t("align.bottom"))}${ib("dist-h", "dh", t("distribute.h"))}${ib("dist-v", "dv", t("distribute.v"))}</div>`;
   }
   h += `<h3>${esc(t("transform"))}</h3><div class="btns">${ib("rot-ccw", "ccw", t("rotate.ccw"))}${ib("rot-cw", "cw", t("rotate.cw"))}${ib("flip", "flip", t("flip"))}${its.length > 1 ? ib("group", "group", t("group")) : ""}${its.some((i) => i.groupId) ? ib("ungroup", "ungroup", t("ungroup")) : ""}${ib("dup", "dup", t("duplicate"))}${ib("del", "del", t("del"))}</div>`;
   if (seats.length > 1) {

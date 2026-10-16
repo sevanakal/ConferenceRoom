@@ -220,7 +220,7 @@
       "extra": "Extra chair"
     },
     "hint": {
-      "select": "Click: select · Shift: add/remove · Alt+click: single seat inside a group · Drag on empty space: box select · Space: pan",
+      "select": "Click: select · Shift: add/remove · Click a selected group: key object for aligning · Alt+click: single seat inside a group · Drag on empty space: box select · Space: pan",
       "seat": "Click to place a seat or an extra chair.",
       "row": "Drag from the start of the row to its end. Curve bends the row into an arc facing the stage.",
       "grid": "Drag a rectangle for the area the block will cover.",
@@ -243,6 +243,10 @@
     "label": "Label",
     "color": "Colour",
     "alignTitle": "Align",
+    "alignTo": {
+      "selection": "To the selection bounds. Click a selected group to make it the key object.",
+      "key": "To the framed key object, which stays in place."
+    },
     "align": {
       "left": "Align left",
       "hcenter": "Centre horizontally",
@@ -255,6 +259,8 @@
       "h": "Distribute horizontally",
       "v": "Distribute vertically"
     },
+    "keySet": "Key object set: aligning will use it",
+    "keyCleared": "Key object cleared",
     "transform": "Rotate / mirror",
     "rotate": {
       "ccw": "Rotate 90° left",

@@ -220,7 +220,7 @@
       "extra": "Ekstra sandalye"
     },
     "hint": {
-      "select": "Tıkla: seç · Shift: ekle/çıkar · Alt+tıkla: grup içinden tek koltuk · Boş alanda sürükle: alan seçimi · Boşluk tuşu: kaydır",
+      "select": "Tıkla: seç · Shift: ekle/çıkar · Seçili bir gruba tıkla: hizalamada ana nesne · Alt+tıkla: grup içinden tek koltuk · Boş alanda sürükle: alan seçimi · Boşluk tuşu: kaydır",
       "seat": "Tıklayarak koltuk ya da ekstra sandalye koyun.",
       "row": "Sıranın başından sonuna sürükleyin. Kavis değeri sırayı sahneye doğru yay şeklinde büker.",
       "grid": "Bloğun kaplayacağı alanı dikdörtgen olarak sürükleyin.",
@@ -243,6 +243,10 @@
     "label": "Etiket",
     "color": "Renk",
     "alignTitle": "Hizala",
+    "alignTo": {
+      "selection": "Seçimin sınırlarına göre. Ana nesne için seçili bir gruba tıklayın.",
+      "key": "Çerçeveli ana nesneye göre; o yerinde kalır."
+    },
     "align": {
       "left": "Sola hizala",
       "hcenter": "Yatay ortala",
@@ -255,6 +259,8 @@
       "h": "Yatayda eşit dağıt",
       "v": "Dikeyde eşit dağıt"
     },
+    "keySet": "Ana nesne seçildi: hizalama buna göre yapılacak",
+    "keyCleared": "Ana nesne kaldırıldı",
     "transform": "Döndür / yansıt",
     "rotate": {
       "ccw": "90° sola döndür",
