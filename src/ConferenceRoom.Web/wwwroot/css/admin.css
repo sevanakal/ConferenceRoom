@@ -142,13 +142,26 @@
     .data-table th:nth-child(4), .data-table td:nth-child(4) { display: none; }   /* dar ekranda son giriş sütunu gizlenir */
 }
 
-/* ---- Etkinlik formu: afiş önizlemesi ve seans listesi ---- */
+/* ---- Etkinlik formu: afiş önizlemesi ve seans satırları ---- */
 .poster-preview { display: flex; gap: 14px; align-items: center; }
 .poster-preview img { width: 96px; height: 128px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border); }
 .form-section-title { margin: 8px 0 0; font-size: 1rem; }
-.sessions { margin-top: 36px; max-width: 760px; display: grid; gap: 16px; }
-.sessions h2 { margin: 0; }
-.session-form { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); align-items: end; }
-.session-form .form-actions { grid-column: 1 / -1; }
-.inline-form { display: inline; }
-.link-button { border: 0; background: none; padding: 0; color: var(--color-fail); font: inherit; cursor: pointer; text-decoration: underline; }
+.session-list { display: grid; gap: 10px; }
+.session-row {
+    display: grid; gap: 10px 12px; align-items: end; padding: 12px; border: 1px solid var(--color-border); border-radius: 10px;
+    grid-template-columns: minmax(150px, 1.4fr) repeat(3, minmax(100px, 1fr)) auto;
+}
+.session-meta { grid-column: 1 / -1; }
+.session-remove {
+    width: 48px; height: 48px; display: grid; place-items: center; border: 1px solid var(--color-border); border-radius: 10px;
+    background: transparent; color: var(--color-muted); cursor: pointer;
+}
+.session-remove:hover { color: var(--color-fail); border-color: var(--color-fail); }
+.session-add { gap: 8px; }
+:is(.session-remove, .session-add) svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+@media (max-width: 640px) {
+    /* Dar ekranda tarih tam genişlik, saatler ikişer; kaldır düğmesi sağ üst köşede (etiket satırının yanında). */
+    .session-row { position: relative; grid-template-columns: 1fr 1fr; }
+    .session-row .field:first-of-type { grid-column: 1 / -1; }
+    .session-remove { position: absolute; top: 6px; right: 6px; width: 34px; height: 34px; }
+}

@@ -24,7 +24,7 @@ public partial class EventManagementTests(MySqlWebAppFactory factory) : IClassFi
         var hallId = await CreateHallAsync(planVersions: 2);
 
         var eventId = await CreateEventAsync(admin, hallId);
-        await AddSessionAsync(admin, eventId, "2030-05-20", "20:00");
+        await AddSessionAsync(admin, eventId, hallId, "2030-05-20", "20:00");
 
         await factory.WithDbAsync(async db =>
         {
@@ -43,7 +43,7 @@ public partial class EventManagementTests(MySqlWebAppFactory factory) : IClassFi
         var hallId = await CreateHallAsync(planVersions: 0);
         var eventId = await CreateEventAsync(admin, hallId);
 
-        var html = await AddSessionAsync(admin, eventId, "2030-05-20", "20:00");
+        var html = await AddSessionAsync(admin, eventId, hallId, "2030-05-20", "20:00");
 
         Assert.Contains("henüz krokisi yok", html);
         await factory.WithDbAsync(async db => Assert.False(await db.EventSessions.AnyAsync(s => s.EventId == eventId)));
@@ -71,7 +71,7 @@ public partial class EventManagementTests(MySqlWebAppFactory factory) : IClassFi
         var cancelled = await CreateEventAsync(admin, hallId);
         var draft = await CreateEventAsync(admin, hallId);
         foreach (var id in new[] { published, cancelled, draft })
-            await AddSessionAsync(admin, id, "2030-06-01", "19:30");
+            await AddSessionAsync(admin, id, hallId, "2030-06-01", "19:30");
         await SaveEventAsync(admin, published, hallId, "Published");
         await SaveEventAsync(admin, cancelled, hallId, "Cancelled");
 
@@ -120,6 +120,50 @@ public partial class EventManagementTests(MySqlWebAppFactory factory) : IClassFi
         Assert.Contains("/yonetim/yetkisiz", response.RequestMessage!.RequestUri!.ToString());
     }
 
+    [MySqlFact]
+    public async Task Yeni_etkinlik_birden_cok_seansla_tek_kayitta_olusturulur_bos_satir_yok_sayilir()
+    {
+        var admin = await factory.SignInStaffAsync();
+        var hallId = await CreateHallAsync(planVersions: 1);
+        var title = $"Etkinlik {Guid.NewGuid():N}"[..24];
+
+        await Forms.PostAsync(admin, "/yonetim/etkinlikler/duzenle",
+        [
+            .. EventFields(title, hallId, "Published"),
+            .. SessionFields("0", "2030-07-01", "20:00"), .. SessionFields("n3", "2030-07-02", "15:00"),
+            new("SessionRows.Index", "n4"), new("SessionRows[n4].Date", ""), new("SessionRows[n4].Start", ""),
+        ]);
+
+        await factory.WithDbAsync(async db =>
+        {
+            var ev = await db.Events.Include(e => e.Sessions).SingleAsync(e => e.Title == title);
+            Assert.Equal(EventStatus.Published, ev.Status);
+            Assert.Equal([new DateTime(2030, 7, 1, 17, 0, 0), new DateTime(2030, 7, 2, 12, 0, 0)], ev.Sessions.Select(s => s.StartsAtUtc).Order());
+        });
+    }
+
+    [MySqlFact]
+    public async Task Kayitli_seansin_saati_degistirilir_kaldirilan_seans_silinir()
+    {
+        var admin = await factory.SignInStaffAsync();
+        var hallId = await CreateHallAsync(planVersions: 1);
+        var eventId = await CreateEventAsync(admin, hallId);
+        await AddSessionAsync(admin, eventId, hallId, "2030-05-20", "20:00");
+        await AddSessionAsync(admin, eventId, hallId, "2030-05-21", "20:00");
+        int[] ids = [];
+        await factory.WithDbAsync(async db => ids = await db.EventSessions.Where(s => s.EventId == eventId).OrderBy(s => s.StartsAtUtc).Select(s => s.Id).ToArrayAsync());
+
+        await Forms.PostAsync(admin, $"/yonetim/etkinlikler/duzenle/{eventId}",
+            [.. EventFields(TitleOf(eventId), hallId, "Draft"), .. SessionFields("0", "2030-05-20", "21:30", ids[0]), new("RemovedSessionIds", ids[1].ToString())]);
+
+        await factory.WithDbAsync(async db =>
+        {
+            var session = Assert.Single(await db.EventSessions.Where(s => s.EventId == eventId).ToListAsync());
+            Assert.Equal(ids[0], session.Id);
+            Assert.Equal(new DateTime(2030, 5, 20, 18, 30, 0), session.StartsAtUtc);
+        });
+    }
+
     // ---- Yardımcılar ----
 
     private readonly Dictionary<int, string> _titles = [];
@@ -156,10 +200,16 @@ public partial class EventManagementTests(MySqlWebAppFactory factory) : IClassFi
     private Task<string> SaveEventAsync(HttpClient admin, int eventId, int hallId, string status) =>
         Forms.PostAsync(admin, $"/yonetim/etkinlikler/duzenle/{eventId}", EventFields(TitleOf(eventId), hallId, status));
 
-    private static Task<string> AddSessionAsync(HttpClient admin, int eventId, string date, string start) =>
+    /// <summary>Etkinlik formunu tek yeni seans satırıyla kaydeder (kayıtlı seanslar formda gönderilmezse olduğu gibi kalır).</summary>
+    private Task<string> AddSessionAsync(HttpClient admin, int eventId, int hallId, string date, string start) =>
         Forms.PostAsync(admin, $"/yonetim/etkinlikler/duzenle/{eventId}",
-            [new("NewSession.Date", date), new("NewSession.Start", start)],
-            postUrl: $"/yonetim/etkinlikler/duzenle/{eventId}?handler=AddSession");
+            [.. EventFields(TitleOf(eventId), hallId, "Draft"), .. SessionFields("n0", date, start)]);
+
+    private static List<KeyValuePair<string, string>> SessionFields(string key, string date, string start, int? id = null) =>
+    [
+        new("SessionRows.Index", key), new($"SessionRows[{key}].Date", date), new($"SessionRows[{key}].Start", start),
+        .. id is null ? [] : new KeyValuePair<string, string>[] { new($"SessionRows[{key}].Id", id.Value.ToString()) },
+    ];
 
     private static List<KeyValuePair<string, string>> EventFields(string title, int hallId, string status) =>
     [
