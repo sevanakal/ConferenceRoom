@@ -184,7 +184,7 @@
     "redo": "Yinele (Ctrl+Shift+Z)",
     "zoomIn": "Yakınlaştır (+)",
     "zoomOut": "Uzaklaştır (−)",
-    "fit": "Ekrana sığdır (0)",
+    "fit": "Krokiyi ekrana sığdır ve ortala (0)",
     "snap": "Izgaraya yasla",
     "data": "Kroki verisi (JSON)",
     "panel": "Panel",

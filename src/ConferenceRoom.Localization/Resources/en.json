@@ -184,7 +184,7 @@
     "redo": "Redo (Ctrl+Shift+Z)",
     "zoomIn": "Zoom in (+)",
     "zoomOut": "Zoom out (−)",
-    "fit": "Fit to screen (0)",
+    "fit": "Fit and centre the plan on screen (0)",
     "snap": "Snap to grid",
     "data": "Plan data (JSON)",
     "panel": "Panel",
