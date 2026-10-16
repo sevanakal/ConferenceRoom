@@ -866,14 +866,20 @@ const ICONS = {
   wall: '<path d="M3 7h18v4H3zM3 11h18v4H3zM9 7v4M15 11v4M7 15v4h10v-4"/>',
   door: '<path d="M5 20V4h9v16"/><path d="M14 20a9 9 0 0 0-9-9"/><path d="M3 20h18"/>',
   column: '<circle cx="12" cy="12" r="6"/>',
-  text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>'
+  text: '<path d="M5 6V4h14v2M12 4v16M9 20h6"/>',
+  fit: '<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><circle cx="12" cy="12" r="2.5"/>'
 };
 const TOOLS = [["select", "V"], ["hand", "H"], "|", ["seat", "S"], ["row", "R"], ["grid", "B"], "|", ["stage", "P"], ["area", "A"], ["wall", "W"], ["door", "D"], ["column", "C"], ["text", "T"]];
 function renderTools() {
   $("tools").innerHTML = TOOLS.map((x) => x === "|" ? '<div class="sep"></div>' :
-    `<button class="tool" data-tool="${x[0]}" aria-pressed="${tool === x[0]}" title="${esc(t("tool." + x[0]))} (${x[1]})" aria-label="${esc(t("tool." + x[0]))}"><svg viewBox="0 0 24 24">${ICONS[x[0]]}</svg><kbd>${x[1]}</kbd></button>`).join("");
+    `<button class="tool" data-tool="${x[0]}" aria-pressed="${tool === x[0]}" title="${esc(t("tool." + x[0]))} (${x[1]})" aria-label="${esc(t("tool." + x[0]))}"><svg viewBox="0 0 24 24">${ICONS[x[0]]}</svg><kbd>${x[1]}</kbd></button>`).join("") +
+    // araç değil, tek seferlik işlem: yakınlaştırma/kaydırmada kroki gözden kaybolursa tamamını ekrana sığdırıp ortalar
+    `<div class="sep"></div><button class="tool" data-action="fit" title="${esc(t("fit"))}" aria-label="${esc(t("fit"))}"><svg viewBox="0 0 24 24">${ICONS.fit}</svg><kbd>0</kbd></button>`;
 }
-$("tools").addEventListener("click", (e) => { const b = e.target.closest("[data-tool]"); if (b) setTool(b.dataset.tool); });
+$("tools").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tool],[data-action]"); if (!b) return;
+  if (b.dataset.action === "fit") fit(); else setTool(b.dataset.tool);
+});
 
 function setTool(name, keepSel) {
   tool = name;
