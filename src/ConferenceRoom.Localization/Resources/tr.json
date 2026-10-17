@@ -574,7 +574,8 @@
     "settingsNote": "Ayarlar etkinliğin tüm seanslarında geçerlidir.",
     "protocolTitle": "Protokol koltukları satışa kapalıdır",
     "reservation": "Rezervasyon",
-    "reservationTitle": "Fiyatsız rezervasyon: fiyat girilmez ve gösterilmez (ör. online rezervasyonda fiyatı göstermek istemiyorsanız)"
+    "showOnlinePrice": "Online satışta fiyatı göster",
+    "showOnlinePriceHint": "İşaretli değilse internetten bilet alan ya da yer ayırtan izleyici fiyatı görmez. Fiyatlar yine burada girilir ve personel satışında kullanılır; isterseniz 0 bırakabilirsiniz (0 fiyat ekranlarda \"Rezervasyon\" diye görünür)."
   },
   "salesScope": {
     "title": "Satış yetkileri",

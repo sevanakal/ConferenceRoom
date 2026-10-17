@@ -17,7 +17,7 @@
 .seat-app .main { grid-template-columns: 1fr 340px; }
 .seat-app .brand span#saveState::before { content: "· "; }
 
-/* Kategori listesi: renk, ad, Ata düğmesi; altında fiyat; rezervasyon ve protokol işaretleri, koltuk sayısı, sil */
+/* Kategori listesi: renk, ad, Ata düğmesi; altında fiyat, protokol, koltuk sayısı, sil */
 .cats { display: grid; gap: 6px; }
 .cat {
   display: grid; grid-template-columns: 30px 1fr auto; grid-template-areas: "color name assign" "price price price" "proto cnt del";
@@ -28,14 +28,14 @@
 .cat [data-act=assign] { grid-area: assign; }
 .cat .price { grid-area: price; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
 .cat .price input { font-family: var(--font-data); text-align: right; }
-.cat .flags { grid-area: proto; display: flex; flex-wrap: wrap; gap: 4px 12px; }
-.cat .check { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+.cat .check { grid-area: proto; display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
 .cat .cnt { grid-area: cnt; justify-self: end; font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .icon-del { grid-area: del; border: 0; background: transparent; color: var(--muted); padding: 3px; border-radius: 5px; display: grid; place-items: center; }
 .icon-del:hover { color: var(--accent); background: var(--accent-soft); }
 .icon-del svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .btn:disabled { opacity: .45; cursor: default; border-color: var(--line); }
 .note.warn { color: var(--accent); }
+.online-price { display: flex; gap: 8px; align-items: center; margin: 10px 0 0; font-weight: 600; }
 .legend .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--exit); border: 0; }
 .legend .proto { border: 2px dashed var(--ink); }
 
