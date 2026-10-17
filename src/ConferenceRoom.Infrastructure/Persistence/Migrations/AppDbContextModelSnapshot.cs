@@ -179,6 +179,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         new
                         {
                             RoleId = 1,
+                            Permission = "sales.manage"
+                        },
+                        new
+                        {
+                            RoleId = 1,
                             Permission = "sales.notify"
                         },
                         new

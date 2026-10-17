@@ -191,13 +191,14 @@ public static class SalesDesk
 
     /// <summary>
     /// Satıştan ya da rezervasyondan sonra ödeme durumunu değiştirir (ödeme sonradan alındı ya da yanlış işaretlendi).
-    /// Yalnızca işlemi yapan personel değiştirebilir; toplamı 0 olan işlemde ödeme sorulmadığı için değişmez.
-    /// İşlem bulunamazsa ya da değiştirilemezse false döner.
+    /// İşlemi yapan personel değiştirir (satış bölümü, Satışlarım); "Satış kayıtlarını düzeltme" yetkisi olan kullanıcı
+    /// (<paramref name="anySeller"/>, yönetimdeki satış raporu) herkesin işlemini değiştirir. Toplamı 0 olan işlemde ödeme
+    /// sorulmadığı için değişmez. İşlem bulunamazsa ya da değiştirilemezse false döner.
     /// </summary>
-    public static async Task<bool> SetPaymentAsync(AppDbContext db, int staffUserId, int orderId, bool paid, CancellationToken cancellationToken)
+    public static async Task<bool> SetPaymentAsync(AppDbContext db, int staffUserId, int orderId, bool paid, CancellationToken cancellationToken, bool anySeller = false)
     {
         var order = await db.Orders.FirstOrDefaultAsync(o => o.Id == orderId && o.OrganizationId == Organization.DefaultId
-            && o.SoldByStaffUserId == staffUserId, cancellationToken);
+            && (anySeller || o.SoldByStaffUserId == staffUserId), cancellationToken);
         if (order is null || order.Payment == PaymentStatus.NotRequired)
             return false;
         order.Payment = paid ? PaymentStatus.Received : PaymentStatus.Pending;

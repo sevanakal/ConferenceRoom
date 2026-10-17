@@ -28,6 +28,12 @@ public static class Permissions
     /// <summary>Satışları ve rezervasyonları görüntüleme (satış raporu: etkinlik ve seans bazında satılan, kalan koltuklar).</summary>
     public const string SalesView = "sales.view";
 
+    /// <summary>
+    /// Satış kayıtlarını düzeltme: başka personelin yaptığı satış ya da rezervasyonun ödeme durumunu değiştirme (satış raporunda).
+    /// Personel kendi işleminin ödemesini bu yetki olmadan da değiştirir (/satis/satislarim).
+    /// </summary>
+    public const string SalesManage = "sales.manage";
+
     /// <summary>Bilet satışı ya da rezervasyon yapıldığında panelde bildirim alma.</summary>
     public const string SalesNotify = "sales.notify";
 
@@ -35,5 +41,5 @@ public static class Permissions
     public const string UsersManage = "users.manage";
 
     /// <summary>Tüm yetkiler, panelde gösterilecek sırayla.</summary>
-    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, SalesNotify, UsersManage];
+    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, SalesManage, SalesNotify, UsersManage];
 }

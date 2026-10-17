@@ -9,7 +9,8 @@ namespace ConferenceRoom.Tests.Sales;
 
 /// <summary>
 /// Satışlarım (gerçek MySQL): satış personeli kendi işlemlerini görür, ödemeyi sonradan günceller; başkasının işlemini ve
-/// ücretsiz işlemi değiştiremez (Pages/Satis/Satislarim, SalesDesk.SetPaymentAsync).
+/// ücretsiz işlemi değiştiremez (Pages/Satis/Satislarim, SalesDesk.SetPaymentAsync). "Satış kayıtlarını düzeltme" yetkisi
+/// olan yönetim kullanıcısı her işlemin ödemesini satış raporundan değiştirir (Pages/Yonetim/Satislar/Seans).
 /// </summary>
 [Collection(MySqlCollection.Name)]
 public class MyOrdersTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWebAppFactory>
@@ -60,7 +61,40 @@ public class MyOrdersTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWebA
         Assert.Equal(PaymentStatus.Pending, await PaymentAsync(paidOrder));
     }
 
+    [MySqlFact]
+    public async Task Duzeltme_yetkisi_olan_yonetici_baskasinin_islem_odemesini_rapordan_degistirir_yalnizca_rapor_goren_degistiremez()
+    {
+        var sessionId = await SalesTestData.CreateSessionAsync(factory, SaleMode.Sale);
+        var (sellerEmail, _) = await factory.CreateStaffAsync([Permissions.SalesSell]);
+        var seller = await factory.SignInSellerAsync(sellerEmail, MySqlWebAppFactory.StaffPassword);
+        await SalesTestData.SellAsync(seller, sessionId, new { seats = new[] { "s1" }, buyerName = "Ali", paid = false });
+        await SalesTestData.SellAsync(seller, sessionId, new { seats = new[] { "s2" }, buyerName = "Ayşe" });
+        var paidOrder = await OrderIdAsync(sessionId, "s1");
+        var freeOrder = await OrderIdAsync(sessionId, "s2");
+        var report = $"/yonetim/satislar/seans/{sessionId}";
+
+        // Yalnızca rapor gören (Bildirim rolü): düğme yok, istek gönderse de değişmez.
+        var (notifierEmail, _) = await factory.CreateStaffInRoleAsync(Role.NotifierId);
+        var notifier = await factory.SignInStaffAsync(notifierEmail, MySqlWebAppFactory.StaffPassword);
+        Assert.DoesNotContain("handler=Payment", await notifier.GetStringAsync(report));
+        await SetReportPaymentAsync(notifier, report, paidOrder, paid: true);
+        Assert.Equal(PaymentStatus.Pending, await PaymentAsync(paidOrder));
+
+        // Yönetici (tüm yetkiler, sales.manage dahil): başkasının işlemini alındı yapar, geri alır; ücretsiz işlem değişmez.
+        var admin = await factory.SignInStaffAsync();
+        Assert.Contains("handler=Payment", await admin.GetStringAsync(report));
+        await SetReportPaymentAsync(admin, report, paidOrder, paid: true);
+        Assert.Equal(PaymentStatus.Received, await PaymentAsync(paidOrder));
+        await SetReportPaymentAsync(admin, report, paidOrder, paid: false);
+        Assert.Equal(PaymentStatus.Pending, await PaymentAsync(paidOrder));
+        await SetReportPaymentAsync(admin, report, freeOrder, paid: true);
+        Assert.Equal(PaymentStatus.NotRequired, await PaymentAsync(freeOrder));
+    }
+
     // ---- Yardımcılar ----
+
+    private static Task<string> SetReportPaymentAsync(HttpClient client, string report, int orderId, bool paid) =>
+        Forms.PostAsync(client, report, [new("orderId", orderId.ToString()), new("paid", paid ? "true" : "false")], $"{report}?handler=Payment");
 
     private static Task<string> SetPaymentAsync(HttpClient client, int orderId, bool paid) =>
         Forms.PostAsync(client, "/satis/satislarim", [new("orderId", orderId.ToString()), new("paid", paid ? "true" : "false")],
