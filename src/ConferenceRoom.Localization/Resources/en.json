@@ -586,7 +586,7 @@
     "selection": "Selection",
     "selCount": "{n} seats selected",
     "selNone": "No seats selected",
-    "selHint": "Click a seat; Shift-click to add or remove. Drag on an empty area to select a region.",
+    "selHint": "Click a seat, or hold and drag across seats; Shift adds or removes. Drag on an empty area to select a region.",
     "selectLevel": "All seats on this level",
     "selectUnassigned": "Without category",
     "selectOnline": "Select online seats",
