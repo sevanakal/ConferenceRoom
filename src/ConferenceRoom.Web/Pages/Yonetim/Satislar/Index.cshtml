@@ -14,7 +14,13 @@
         <h1>@T["report.title"]</h1>
         <p>@T["report.intro"]</p>
     </div>
-    <a class="btn-link" href="@(Model.IncludePast ? "/yonetim/satislar" : "/yonetim/satislar?gecmis=true")">@(Model.IncludePast ? T["report.hidePast"] : T["report.showPast"])</a>
+    <div class="page-head__actions">
+        <a class="btn-link" href="@(Model.IncludePast ? "/yonetim/satislar" : "/yonetim/satislar?gecmis=true")">@(Model.IncludePast ? T["report.hidePast"] : T["report.showPast"])</a>
+        @if (Model.Sessions.Count > 0)
+        {
+            <a class="btn-ghost" href="/yonetim/satislar?handler=Excel@(Model.IncludePast ? "&gecmis=true" : "")" download>@T["report.excel"]</a>
+        }
+    </div>
 </header>
 
 @if (Model.Sessions.Count == 0)

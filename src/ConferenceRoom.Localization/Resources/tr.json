@@ -777,7 +777,19 @@
     "paymentReceived": "Alındı",
     "paymentPending": "Alınmadı",
     "paymentNotRequired": "Ücretsiz",
-    "online": "İnternetten"
+    "online": "İnternetten",
+    "excel": "Excel'e aktar",
+    "sheetSessions": "Seanslar",
+    "sheetOrders": "İşlemler",
+    "event": "Etkinlik",
+    "hall": "Salon",
+    "status": "Durum",
+    "orderNoColumn": "İşlem no",
+    "kind": "Tür",
+    "phone": "Telefon",
+    "seatCount": "Koltuk sayısı",
+    "note": "Açıklama",
+    "totalRow": "Toplam"
   },
   "notify": {
     "title": "Bildirimler",
