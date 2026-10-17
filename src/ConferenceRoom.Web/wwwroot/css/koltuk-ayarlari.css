@@ -5,8 +5,12 @@
   Yerleşim: üstte başlık, solda kroki tuvali, sağda panel (seçim + ekranın kendi bölümleri).
 */
 
-/* Satış yetkileri ekranındaki renkler (satis-yetkileri.js de buradan okur): seçili personelin koltuğu, başka personelin koltuğu */
-:root { --scope-own: #0F766E; --scope-own-text: #FFFFFF; --scope-other: #CBE5E1; --scope-other-text: #14322E; }
+/* Satış yetkileri ekranında personel renkleri (koltuk üstündeki etiket ve listedeki rozet; satis-yetkileri.js sırayla dağıtır).
+   Kategori renkleriyle karışmasın diye canlı tonlar; etiketin yazısı beyazdır. */
+:root {
+  --staff-1: #E11D48; --staff-2: #2563EB; --staff-3: #16A34A; --staff-4: #9333EA;
+  --staff-5: #EA580C; --staff-6: #0891B2; --staff-7: #CA8A04; --staff-8: #DB2777;
+}
 
 /* Ana alan: araç çubuğu yok, panel biraz daha geniş */
 .seat-app { grid-template-rows: auto 1fr; }
@@ -34,14 +38,14 @@
 .legend .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--exit); border: 0; }
 .legend .proto { border: 2px dashed var(--ink); }
 
-/* Satış yetkileri: personel listesi (ad + koltuk sayısı, Ver, Al), lejant renkleri satis-yetkileri.js ile aynı */
+/* Satış yetkileri: personel listesi (renkli baş harf rozeti, ad + koltuk sayısı, Ver, Al) */
 .staff-list { display: grid; gap: 6px; }
 .staff { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); }
-.staff.on { border-color: var(--scope-own); box-shadow: inset 3px 0 0 var(--scope-own); }
-.staff-name { display: grid; text-align: left; border: 0; background: none; padding: 2px 4px; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; min-width: 0; }
+.staff.on { border-color: var(--ink); box-shadow: inset 3px 0 0 var(--ink); }
+.staff-name { display: grid; grid-template-columns: auto 1fr; column-gap: 8px; align-items: center; text-align: left; border: 0; background: none; padding: 2px 4px; font: inherit; font-weight: 600; color: var(--ink); cursor: pointer; min-width: 0; }
+.staff-name .swatch { grid-row: span 2; min-width: 28px; height: 22px; padding: 0 4px; border-radius: 6px; color: #FFFFFF; font-style: normal; font-size: 12px; font-weight: 700; display: grid; place-items: center; }
+.staff-name b, .staff-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .staff-name span { font-family: var(--font-data); font-size: 11px; font-weight: 400; color: var(--muted); }
-.legend .own { background: var(--scope-own); border: 0; }
-.legend .other { background: var(--scope-other); border: 1px solid var(--scope-own); }
 .scope-info form { margin: 8px 0 0; }
 
 /* Seansı olmayan etkinlik */

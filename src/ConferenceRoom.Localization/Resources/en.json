@@ -594,7 +594,7 @@
     "reset": "Back to hall-wide",
     "resetConfirm": "Delete this event's own record and use the hall's record?",
     "staffTitle": "Staff",
-    "staffHint": "Click a name to show their seats in a dark colour on the plan. Select seats and press Give or Take. A seat can be given to more than one person.",
+    "staffHint": "Staff who can sell a seat appear above it as a small label with their initials in their own colour. Click a name to bring their labels forward; the others fade. Select seats and press Give or Take. A seat can be given to several people (the label shows +1 and so on).",
     "give": "Give",
     "giveTitle": "Give the selected seats to this person",
     "take": "Take",
@@ -613,14 +613,16 @@
     "totalSeats": "Total seats",
     "givenSeats": "Given to staff",
     "notGivenSeats": "Only full-access staff sell",
-    "legendOwn": "Selected person",
-    "legendOther": "Someone else",
-    "legendNone": "Not given",
     "needSelection": "Select seats on the plan first.",
     "invalid": "The sales permission data could not be read.",
     "tooLarge": "The sales permission data is too large.",
     "unknownSeat": "There is a seat that is not on the plan. Reload the page and try again.",
-    "unknownStaff": "There is a user that is not in the list. Reload the page and try again."
+    "unknownStaff": "There is a user that is not in the list. Reload the page and try again.",
+    "categoriesTitle": "Categories",
+    "categoryEvent": "Show categories of",
+    "categoryPreviewNote": "Seat colours come from the selected event's pricing. This is only a view and does not change sales permissions.",
+    "noCategoriesHall": "No categories have been defined for this hall's events yet, so seats are grey. Categories are defined on the Pricing screen.",
+    "noCategoriesEvent": "No categories have been defined for this event yet, so seats are grey. Categories are defined on the Pricing screen."
   },
   "permission": {
     "halls": {

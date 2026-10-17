@@ -1,5 +1,6 @@
 using System.Net;
 using ConferenceRoom.Domain.Accounts;
+using ConferenceRoom.Domain.Events;
 using ConferenceRoom.Tests.Auth;
 using ConferenceRoom.Tests.Database;
 using ConferenceRoom.Tests.Events;
@@ -88,6 +89,26 @@ public class SalesScopeTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWe
         await factory.WithDbAsync(async db => Assert.True(await db.StaffUsers.Where(u => u.Id == staff).Select(u => u.SeatsRestricted).SingleAsync()));
         var page = await admin.GetStringAsync("/yonetim/satis-yetkileri");
         Assert.Contains("Yalnızca verilen koltuklar", page);
+    }
+
+    [MySqlFact]
+    public async Task Satis_yetkileri_ekrani_fiyatlandirmadaki_kategorileri_gosterir_iptal_edilen_etkinliginkileri_gostermez()
+    {
+        var admin = await factory.SignInStaffAsync();
+        var (eventId, hallId) = await SeatScreens.CreateEventAsync(factory, withSession: true);
+        var map = """{ "schema": 1, "categories": [{ "id": "c1", "name": "Ön Sıralar", "price": 500, "color": "#ABC123", "protocol": false }], "seats": { "s1": "c1" }, "online": [] }""";
+        await SeatScreens.SaveAsync(admin, $"/yonetim/fiyatlandirma/{eventId}", map, 0);
+
+        Assert.Contains("#ABC123", await admin.GetStringAsync($"/yonetim/satis-yetkileri/salon/{hallId}"));
+        Assert.Contains("#ABC123", await admin.GetStringAsync($"/yonetim/satis-yetkileri/etkinlik/{eventId}"));
+
+        await factory.WithDbAsync(async db =>
+        {
+            var ev = await db.Events.SingleAsync(e => e.Id == eventId);
+            ev.Status = EventStatus.Cancelled;
+            await db.SaveChangesAsync();
+        });
+        Assert.DoesNotContain("#ABC123", await admin.GetStringAsync($"/yonetim/satis-yetkileri/salon/{hallId}"));
     }
 
     // ---- Yardımcılar ----

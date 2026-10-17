@@ -13,6 +13,7 @@
   verdiği kancalardan (hooks) gelir:
     seatStyle(it)        → koltuğun dolgu/kenar/yazı rengi (KrokiCizim.drawSeat biçiminde)
     seatDot(it)          → koltuğun köşesine yeşil nokta konsun mu
+    seatBadge(it, TC)    → koltuğun üstündeki küçük etiket { text, color, faded } ya da null (ör. satış yetkilisinin baş harfleri)
     hoverParts(it)       → fare altındaki koltuk için ek bilgiler (dizi)
     quickSelect          → seçim bölümüne eklenecek düğmeler: [{ act, label, seats: () => koltuklar }]
     renderPanel()        → ekranın kendi panel bölümlerini yazar (seçim değiştikçe çağrılır)
@@ -73,7 +74,8 @@ function redo() { if (!redoStack.length) return; undoStack.push(lastSnap); resto
 
 /* ------------------------------------------------------------------
    Çizim (Konva). Katmanlar: gridLayer (ızgara), layer (kroki), uiLayer (alan seçimi kutusu).
-   Koltuğun rengi ekrandan gelir (seatStyle); seatDot doğruysa sağ üst köşede yeşil nokta olur.
+   Koltuğun rengi ekrandan gelir (seatStyle); seatDot doğruysa sağ üst köşede yeşil nokta olur,
+   seatBadge bir etiket verirse koltuğun önünde (sahne tarafında) renkli küçük bir etiket çizilir.
    Seçili koltuk kalın vurgu kenarlıdır.
 ------------------------------------------------------------------ */
 const host = $("stage");
@@ -94,7 +96,20 @@ function makeSeat(it) {
   g.setAttr("seatId", it.id);
   KrokiCizim.drawSeat(g, it, hooks.seatStyle(it, TC), TC);
   if (hooks.seatDot?.(it)) g.add(new Konva.Circle({ x: SEAT_W / 2 - 9, y: -SEAT_H / 2 + 9, radius: 10, fill: TC.exit, stroke: TC.paper, strokeWidth: 2, listening: false }));
+  const badge = hooks.seatBadge?.(it, TC);
+  if (badge) drawBadge(g, badge);
   return g;
+}
+
+/* Koltuk etiketi: koltuğun üst kenarına oturan, alt ucu koltuğu gösteren küçük renkli kutu (ipucu balonu gibi). */
+function drawBadge(g, badge) {
+  const fontSize = 15, h = 22, w = Math.max(30, badge.text.length * fontSize * 0.62 + 12);
+  const top = -SEAT_H / 2 - h - 4;
+  const b = new Konva.Group({ listening: false, opacity: badge.faded ? 0.6 : 1 });
+  b.add(new Konva.Rect({ x: -w / 2, y: top, width: w, height: h, cornerRadius: 6, fill: badge.color, stroke: TC.paper, strokeWidth: 2 }));
+  b.add(new Konva.Line({ points: [-5, top + h - 1, 0, top + h + 5, 5, top + h - 1], closed: true, fill: badge.color }));
+  b.add(new Konva.Text({ text: badge.text, x: -w / 2, y: top, width: w, height: h, align: "center", verticalAlign: "middle", fontSize, fontStyle: "700", fontFamily: TC.font, fill: "#FFFFFF" }));
+  g.add(b);
 }
 
 function render() {
