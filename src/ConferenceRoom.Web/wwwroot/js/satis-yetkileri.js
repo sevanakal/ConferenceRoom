@@ -79,6 +79,9 @@ function useCategoryEvent(id) {
 }
 useCategoryEvent(categoryEventId);
 const categoryOf = (seatId) => categoryMap?.byId.get(categoryMap.seats[seatId]);
+/* Kategorinin fiyatı: rezervasyon kategorisinde "Rezervasyon", protokolde "Satışa kapalı". */
+const money = new Intl.NumberFormat(locale, { style: "currency", currency: "TRY", maximumFractionDigits: 2 });
+const priceText = (c) => (c.protocol ? t("notForSale") : c.reservation ? t("reservation") : money.format(c.price));
 
 /* ------------------------------------------------------------------
    Koltuk görünümü: renk kategoriden (kategorisiz gri, protokol kesik kenarlı), üstte satabilen personelin etiketi.
@@ -99,7 +102,7 @@ function seatBadge(it, TC) {
 }
 function hoverParts(it) {
   const h = holdersOf(it.id), c = categoryOf(it.id);
-  return [c ? c.name : null, h.length ? t("soldBy", { names: h.map((id) => nameOf.get(id)).join(", ") }) : t("onlyFullAccess")];
+  return [c ? `${c.name} · ${priceText(c)}` : null, h.length ? t("soldBy", { names: h.map((id) => nameOf.get(id)).join(", ") }) : t("onlyFullAccess")];
 }
 
 /* ------------------------------------------------------------------
@@ -148,7 +151,7 @@ function renderPanel() {
     ${categoryEvents.length > 1 ? `<label class="fld"><span>${esc(t("categoryEvent"))}</span><select data-field="categoryEvent">${categoryEvents.map((e) =>
       `<option value="${e.id}" ${e.id === categoryEventId ? "selected" : ""}>${esc(e.title)}</option>`).join("")}</select></label>` : ""}
     ${shown && shown.map.categories.length
-      ? `<div class="legend">${shown.map.categories.map((c) => `<span><i class="${c.protocol ? "proto" : ""}" style="background:${esc(c.color)}"></i>${esc(c.name)}</span>`).join("")}<span><i></i>${esc(t("noCategory"))}</span></div>
+      ? `<ul class="cat-legend">${shown.map.categories.map((c) => `<li><i class="${c.protocol ? "proto" : ""}" style="background:${esc(c.color)}"></i><span>${esc(c.name)}</span><b>${esc(priceText(c))}</b></li>`).join("")}<li><i></i><span>${esc(t("noCategory"))}</span></li></ul>
          ${categoryEvents.length > 1 ? `<p class="note">${esc(t("categoryPreviewNote"))}</p>` : ""}`
       : `<p class="note">${esc(t(ed.config.isEvent ? "noCategoriesEvent" : "noCategoriesHall"))}</p>`}`;
 

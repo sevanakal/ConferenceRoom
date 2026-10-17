@@ -28,7 +28,7 @@ public static class SeatScopeStore
     /// <param name="ScopeJson">Gösterilecek kapsam. Etkinlik ekranında etkinliğe özel kayıt yoksa salonun kaydı.</param>
     /// <param name="Revision">Ekranın kaydettiği kaydın sürümü (henüz kayıt yoksa 0).</param>
     /// <param name="IsEventSpecific">Etkinlik ekranında etkinliğe özel kayıt var mı.</param>
-    /// <param name="PlanJson">Gösterilecek kroki: etkinlikte seansların bağlı olduğu en yeni sürüm, salonda son sürüm; yoksa null.</param>
+    /// <param name="PlanJson">Gösterilecek kroki: etkinlikte seansların bağlı olduğu en yeni sürüm (yapı öğeleri salonun son sürümünden), salonda son sürüm; yoksa null.</param>
     public sealed record Snapshot(string ScopeJson, int Revision, bool IsEventSpecific, string? PlanJson);
 
     public static async Task<Snapshot> LoadAsync(AppDbContext db, int hallId, int? eventId, CancellationToken cancellationToken)
@@ -38,7 +38,8 @@ public static class SeatScopeStore
         if (eventId is { } id)
         {
             var eventScope = await FindAsync(db, hallId, id, cancellationToken);
-            planJson = (await SeatMapStore.PlanVersionsAsync(db, id, cancellationToken)).LastOrDefault()?.PlanJson ?? await LatestPlanAsync(db, hallId, cancellationToken);
+            var bound = (await SeatMapStore.PlanVersionsAsync(db, id, cancellationToken)).LastOrDefault();
+            planJson = bound is null ? await LatestPlanAsync(db, hallId, cancellationToken) : await SeatMapStore.WithLatestStructureAsync(db, bound, cancellationToken);
             return new Snapshot(eventScope?.ScopeJson ?? hallScope?.ScopeJson ?? SeatScopeData.Empty, eventScope?.Revision ?? 0, eventScope is not null, planJson);
         }
         planJson = await LatestPlanAsync(db, hallId, cancellationToken);

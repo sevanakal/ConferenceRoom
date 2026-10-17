@@ -61,4 +61,26 @@ public class HallPlanTests
         Assert.True(result.IsValid);
         Assert.Equal(0, result.Capacity);
     }
+
+    [Fact]
+    public void Birlesik_krokide_koltuklar_bagli_surumden_duvarlar_son_surumden_gelir()
+    {
+        // Son sürümde: sahne kaldırılmış, duvar ve yeni bir kat eklenmiş, s1 taşınmış, s4 eklenmiş.
+        var latest = """
+            { "schema": 1, "unit": "cm", "name": "x",
+              "levels": [{ "id": "p", "name": "Parter" }, { "id": "b", "name": "Balkon" }], "blocks": [],
+              "items": [
+                { "id": "s1", "levelId": "p", "type": "seat", "x": 900, "y": 900, "row": "A", "num": 1 },
+                { "id": "s4", "levelId": "p", "type": "seat", "x": 300, "y": 200, "row": "A", "num": 4 },
+                { "id": "w1", "levelId": "b", "type": "wall", "x": 0, "y": 0, "w": 600, "h": 20 } ] }
+            """;
+
+        var plan = JsonNode.Parse(HallPlan.WithStructureFrom(SamplePlan, latest))!;
+
+        var items = plan["items"]!.AsArray().Select(i => i!["id"]!.GetValue<string>()).ToList();
+        Assert.Equal(["s1", "s2", "s3", "w1"], items);
+        Assert.Equal(100, plan["items"]![0]!["x"]!.GetValue<double>());   // koltuk bağlı sürümdeki yerinde
+        Assert.Equal(["p", "b"], plan["levels"]!.AsArray().Select(l => l!["id"]!.GetValue<string>()));
+        Assert.Equal("Orta", plan["blocks"]![0]!["name"]!.GetValue<string>());
+    }
 }

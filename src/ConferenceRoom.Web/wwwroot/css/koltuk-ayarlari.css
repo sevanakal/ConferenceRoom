@@ -17,7 +17,7 @@
 .seat-app .main { grid-template-columns: 1fr 340px; }
 .seat-app .brand span#saveState::before { content: "· "; }
 
-/* Kategori listesi: renk, ad, Ata düğmesi; altında fiyat, protokol, koltuk sayısı, sil */
+/* Kategori listesi: renk, ad, Ata düğmesi; altında fiyat; rezervasyon ve protokol işaretleri, koltuk sayısı, sil */
 .cats { display: grid; gap: 6px; }
 .cat {
   display: grid; grid-template-columns: 30px 1fr auto; grid-template-areas: "color name assign" "price price price" "proto cnt del";
@@ -28,7 +28,8 @@
 .cat [data-act=assign] { grid-area: assign; }
 .cat .price { grid-area: price; grid-template-columns: auto 1fr; align-items: center; gap: 8px; }
 .cat .price input { font-family: var(--font-data); text-align: right; }
-.cat .check { grid-area: proto; display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
+.cat .flags { grid-area: proto; display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.cat .check { display: inline-flex; gap: 6px; align-items: center; color: var(--muted); font-size: 12px; }
 .cat .cnt { grid-area: cnt; justify-self: end; font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .icon-del { grid-area: del; border: 0; background: transparent; color: var(--muted); padding: 3px; border-radius: 5px; display: grid; place-items: center; }
 .icon-del:hover { color: var(--accent); background: var(--accent-soft); }
@@ -47,6 +48,12 @@
 .staff-name b, .staff-name span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .staff-name span { font-family: var(--font-data); font-size: 11px; font-weight: 400; color: var(--muted); }
 .scope-info form { margin: 8px 0 0; }
+/* Satış yetkileri: gösterilen etkinliğin kategorileri (renk, ad, fiyat ya da "Rezervasyon") */
+.cat-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: 12px; }
+.cat-legend li { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; }
+.cat-legend i { width: 14px; height: 12px; border-radius: 3px 3px 5px 5px; background: var(--seat); border: 1.5px solid var(--seat-stroke); }
+.cat-legend i.proto { border: 2px dashed var(--ink); }
+.cat-legend b { font-family: var(--font-data); font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* Seansı olmayan etkinlik */
 .seat-empty { max-width: 560px; margin: 15vh auto; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 24px; font-size: 15px; }

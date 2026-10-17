@@ -11,7 +11,9 @@ namespace ConferenceRoom.Domain.Events;
 ///
 /// Yapı:
 ///   { "schema": 1,
-///     "categories": [{ "id", "name", "price", "color", "protocol" }],   bilet kategorileri; price TL, protocol: satışa kapalı
+///     "categories": [{ "id", "name", "price", "color", "protocol", "reservation" }],
+///                                                                   bilet kategorileri; price TL, protocol: satışa kapalı,
+///                                                                   reservation: fiyatsız rezervasyon (fiyat 0 saklanır, gösterilmez)
 ///     "seats":  { "&lt;koltuk id&gt;": "&lt;kategori id&gt;" },                    kategorisi olmayan koltuk satılmaz
 ///     "online": ["&lt;koltuk id&gt;", ...]                                   internetten satılabilecek koltuklar
 ///   }
@@ -76,15 +78,17 @@ public static partial class SeatMap
             if (Text(c["color"]) is not { } color || !ColorPattern().IsMatch(color))
                 return SeatMapResult.Fail("seatMap.invalid");
             var protocol = c["protocol"] is JsonValue p && p.GetValueKind() == JsonValueKind.True;
+            var reservation = c["reservation"] is JsonValue r && r.GetValueKind() == JsonValueKind.True;
             if (protocol)
                 protocolIds.Add(id);
             categories.Add(new JsonObject
             {
                 ["id"] = id,
                 ["name"] = name,
-                ["price"] = Math.Round((decimal)price, 2, MidpointRounding.AwayFromZero),
+                ["price"] = reservation ? 0m : Math.Round((decimal)price, 2, MidpointRounding.AwayFromZero),
                 ["color"] = color.ToUpperInvariant(),
                 ["protocol"] = protocol,
+                ["reservation"] = reservation,
             });
         }
 
