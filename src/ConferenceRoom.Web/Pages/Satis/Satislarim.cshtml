@@ -1,0 +1,89 @@
+@page "/satis/satislarim"
+@model ConferenceRoom.Web.Pages.Satis.SatislarimModel
+@using System.Globalization
+@using ConferenceRoom.Domain.Sales
+@using ConferenceRoom.Web.Common
+@*
+    Satışlarım: personelin kendi işlemleri. Ödemesi alınmamış işlemde "Ödeme alındı" düğmesi, alınmış işlemde geri alma
+    bağlantısı vardır (POST, Payment işleyicisi). Stil wwwroot/css/site.css (.sales-desk, .my-orders).
+*@
+@{
+    ViewData["Title"] = T["myOrders.title"];
+    var culture = CultureInfo.CurrentCulture;
+    string Money(decimal value) => T["report.money", value.ToString("#,0.##", culture)];
+}
+<section class="sales-desk my-orders">
+    <a class="back-link" href="/satis">← @T["myOrders.back"]</a>
+    <h1>@T["myOrders.title"]</h1>
+    <p class="muted">@T["myOrders.intro"]</p>
+    @if (Model.SessionId is not null)
+    {
+        <p><a href="/satis/satislarim">@T["myOrders.all"]</a></p>
+    }
+    @if (Model.Flash is not null)
+    {
+        <p class="notice" role="status">@Model.Flash</p>
+    }
+
+    @if (Model.Orders.Count == 0)
+    {
+        <p>@T["myOrders.empty"]</p>
+    }
+    else
+    {
+        <div class="table-scroll">
+            <table class="sales-desk__table">
+                <thead>
+                    <tr>
+                        <th>@T["report.when"]</th>
+                        <th>@T["salesDesk.event"]</th>
+                        <th>@T["report.buyer"]</th>
+                        <th>@T["report.seats"]</th>
+                        <th class="num">@T["report.total"]</th>
+                        <th>@T["report.payment"]</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr id="islem-@o.Id">
+                            <td>
+                                @DisplayTime.Format(o.CreatedAtUtc)
+                                <div class="muted small">@T[o.Kind == OrderKind.Sale ? "report.kindSale" : "report.kindReservation"] · @T["report.orderNo", o.Id]</div>
+                            </td>
+                            <td>
+                                <a href="/satis/satislarim?seans=@o.SessionId">@o.EventTitle</a>
+                                <div class="muted small">@DisplayTime.Format(o.SessionStartsAtUtc)</div>
+                            </td>
+                            <td>
+                                <b>@o.BuyerName</b>
+                                @if (o.BuyerPhone is not null)
+                                {
+                                    <div class="muted small">@o.BuyerPhone</div>
+                                }
+                                @if (o.Note is not null)
+                                {
+                                    <div class="muted small">@o.Note</div>
+                                }
+                            </td>
+                            <td>@string.Join(", ", o.Seats)</td>
+                            <td class="num">@Money(o.Total)</td>
+                            <td>
+                                <span class="pay-state" data-state="@o.Payment">@T[$"report.payment{o.Payment}"]</span>
+                                @if (o.Payment != PaymentStatus.NotRequired)
+                                {
+                                    var paid = o.Payment == PaymentStatus.Received;
+                                    <form method="post" asp-page-handler="Payment" asp-route-seans="@Model.SessionId" class="pay-form">
+                                        <input type="hidden" name="orderId" value="@o.Id" />
+                                        <input type="hidden" name="paid" value="@(paid ? "false" : "true")" />
+                                        <button type="submit" class="@(paid ? "btn-link" : "btn-primary")">@T[paid ? "myOrders.markUnpaid" : "myOrders.markPaid"]</button>
+                                    </form>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>

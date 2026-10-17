@@ -4,7 +4,8 @@
 @using ConferenceRoom.Web.Common
 @using ConferenceRoom.Web.Sales
 @*
-    Satış bölümü açılış sayfası: satış personelinin göreceği yaklaşan seanslar; satışa açık seansın satış ekranına bağlantısı.
+    Satış bölümü açılış sayfası: satış personelinin göreceği yaklaşan seanslar; satışa açık seansın satış ekranına bağlantısı,
+    üstte kendi satışlarının listesine (Satislarim.cshtml) bağlantı.
     Stil wwwroot/css/site.css.
 *@
 @{
@@ -12,7 +13,10 @@
     var culture = CultureInfo.CurrentCulture;
 }
 <section class="sales-desk">
-    <h1>@T["salesDesk.welcome", User.Identity?.Name ?? ""]</h1>
+    <div class="sales-desk__top">
+        <h1>@T["salesDesk.welcome", User.Identity?.Name ?? ""]</h1>
+        <a class="btn-ghost" href="/satis/satislarim">@T["myOrders.title"]</a>
+    </div>
     <p class="muted">@T["salesDesk.intro"]</p>
 
     @if (Model.Sessions.Count == 0)

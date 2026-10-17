@@ -97,7 +97,7 @@ Kroki verisi her sürümde tek bir JSON olarak saklanır (`HallPlanVersions.Plan
 | `/`, `/pano` | Ana sayfa: herkese açık etkinlik panosu (giriş gerekmez) |
 | `/bilet/{seansId}` | Seansın bilet sayfası (koltuk seçimi 4. aşamada) |
 | `/giris`, `/kayit` | Bilet alan izleyicinin girişi ve kaydı; satış personeli de buradan girer |
-| `/satis` | Satış bölümü: yaklaşan seanslar; `/satis/seans/{seansId}` krokiden koltuk seçip satış/rezervasyon ("Satış ve rezervasyon" yetkisi) |
+| `/satis` | Satış bölümü: yaklaşan seanslar; `/satis/seans/{seansId}` krokiden koltuk seçip satış/rezervasyon ("Satış ve rezervasyon" yetkisi); `/satis/satislarim` personelin kendi satışları ve ödeme güncellemesi |
 | `/yonetim/giris` | Yönetim paneli girişi (ayrı sayfa, ayrı çerez) |
 | `/yonetim` | Yönetim paneli: rolün yetkili olduğu bölümler |
 | `/yonetim/salonlar` | Salonlar; `/yonetim/salonlar/{id}/kroki` kroki editörü, `?surum=N` eski sürüm ("Salonlar ve kroki" yetkisi) |
