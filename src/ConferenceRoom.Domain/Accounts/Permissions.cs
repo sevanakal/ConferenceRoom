@@ -25,12 +25,15 @@ public static class Permissions
     /// </summary>
     public const string SalesSell = "sales.sell";
 
-    /// <summary>Satışları ve rezervasyonları görüntüleme.</summary>
+    /// <summary>Satışları ve rezervasyonları görüntüleme (satış raporu: etkinlik ve seans bazında satılan, kalan koltuklar).</summary>
     public const string SalesView = "sales.view";
+
+    /// <summary>Bilet satışı ya da rezervasyon yapıldığında panelde bildirim alma.</summary>
+    public const string SalesNotify = "sales.notify";
 
     /// <summary>Yönetim kullanıcıları ve rolleri.</summary>
     public const string UsersManage = "users.manage";
 
     /// <summary>Tüm yetkiler, panelde gösterilecek sırayla.</summary>
-    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, UsersManage];
+    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, SalesNotify, UsersManage];
 }

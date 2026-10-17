@@ -3,13 +3,17 @@
     Bu şablonu kullanan sayfalar /yonetim altındadır ve Program.cs'teki kural gereği yalnızca
     yönetim girişi yapmış kullanıcılar tarafından açılabilir (User burada yönetim kullanıcısıdır).
     Üst çubuğun altındaki bölüm menüsü yalnızca kullanıcının yetkili olduğu bölümleri gösterir;
-    sayfa ViewData["AdminNav"] ile hangi bölümde olduğunu söyler ("dashboard", "halls", "events", "pricing", "users", "roles", "salesScope").
+    sayfa ViewData["AdminNav"] ile hangi bölümde olduğunu söyler ("dashboard", "halls", "events", "pricing", "report", "notify", "users", "roles", "salesScope").
+    "Satış bildirimlerini al" yetkisi olan kullanıcıda üst çubukta okunmamış bildirim sayısıyla zil görünür; yeni bildirim
+    canlı gelir ve köşede kısa süre gösterilir (wwwroot/js/bildirimler.js, sunucu tarafı Sales/SalesNotifier.cs).
     Stil: wwwroot/css/admin.css, form alanları forms.css
 *@
 @using System.Globalization
 @using ConferenceRoom.Domain.Accounts
 @using ConferenceRoom.Web.Auth
+@using ConferenceRoom.Web.Sales
 @inject ConferenceRoom.Localization.LanguageCatalog Catalog
+@inject ConferenceRoom.Infrastructure.Persistence.AppDbContext Db
 @{
     var currentCulture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
     var returnUrl = Context.Request.Path + Context.Request.QueryString;
@@ -21,10 +25,33 @@
         ("halls", "/yonetim/salonlar", "admin.navHalls", Permissions.HallsManage),
         ("events", "/yonetim/etkinlikler", "admin.navEvents", Permissions.EventsManage),
         ("pricing", "/yonetim/fiyatlandirma", "admin.navPricing", Permissions.PricingManage),
+        ("report", "/yonetim/satislar", "admin.navReport", Permissions.SalesView),
+        ("notify", "/yonetim/bildirimler", "admin.navNotify", Permissions.SalesNotify),
         ("users", "/yonetim/kullanicilar", "admin.navUsers", Permissions.UsersManage),
         ("roles", "/yonetim/roller", "admin.navRoles", Permissions.UsersManage),
         ("salesScope", "/yonetim/satis-yetkileri", "admin.navSalesScope", Permissions.UsersManage),
     };
+    // Bildirim zili: yalnızca bildirim alan kullanıcıda; canlı istemcinin ayarları ve metinleri JSON olarak sayfada durur.
+    var notifies = User.HasClaim(AppClaims.Permission, Permissions.SalesNotify);
+    var unread = notifies ? await SalesNotifier.UnreadCountAsync(Db, User.UserId(), Context.RequestAborted) : 0;
+    var notifyConfig = notifies ? System.Text.Json.JsonSerializer.Serialize(new
+    {
+        hubUrl = NotificationHub.Path,
+        listUrl = "/yonetim/bildirimler",
+        canView = User.HasClaim(AppClaims.Permission, Permissions.SalesView),
+        locale = currentCulture,
+        texts = new
+        {
+            sold = T["notify.sold"].Value,
+            reserved = T["notify.reserved"].Value,
+            detail = T["notify.detail"].Value,
+            money = T["report.money"].Value,
+            online = T["report.online"].Value,
+            bell = T["notify.bell"].Value,
+            enabled = T["notify.browserEnabled"].Value,
+            denied = T["notify.browserDenied"].Value,
+        },
+    }) : null;
 }
 <!DOCTYPE html>
 <html lang="@currentCulture">
@@ -48,6 +75,13 @@
                        lang="@language.Culture">@language.Name</a>
                 }
             </nav>
+            @if (notifies)
+            {
+                <a class="notify-bell" id="notifyBell" href="/yonetim/bildirimler" aria-label="@T["notify.bell", unread]" title="@T["notify.title"]">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0" /></svg>
+                    <span class="notify-bell__count" id="notifyCount" hidden="@(unread == 0)">@(unread > 99 ? "99+" : unread.ToString(CultureInfo.CurrentCulture))</span>
+                </a>
+            }
             <span class="admin-user">@User.Identity?.Name</span>
             <form method="post" asp-page="/Yonetim/Cikis">
                 <button type="submit" class="btn-ghost">@T["nav.logout"]</button>
@@ -64,6 +98,13 @@
         @RenderBody()
     </main>
     <script src="~/js/forms.js" asp-append-version="true"></script>
+    @if (notifyConfig is not null)
+    {
+        <div class="notify-toasts" id="notifyToasts" aria-live="polite"></div>
+        <script type="application/json" id="notifyConfig">@Html.Raw(ConferenceRoom.Web.Common.ScreenData.ForScript(notifyConfig))</script>
+        <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
+        <script src="~/js/bildirimler.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

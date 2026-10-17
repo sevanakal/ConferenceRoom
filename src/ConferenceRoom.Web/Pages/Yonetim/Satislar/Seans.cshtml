@@ -1,0 +1,79 @@
+@page "/yonetim/satislar/seans/{id:int}"
+@model ConferenceRoom.Web.Pages.Yonetim.Satislar.SeansModel
+@using ConferenceRoom.Domain.Sales
+@using ConferenceRoom.Web.Common
+@*
+    Seansın satış ayrıntısı: üstte özet sayılar, altta işlemler (yeniden eskiye). Bkz. SeansModel.
+*@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model.Session.EventTitle;
+    ViewData["AdminNav"] = "report";
+    var s = Model.Session;
+}
+<header class="page-head">
+    <div>
+        <a class="back-link" href="/yonetim/satislar">← @T["report.back"]</a>
+        <h1>@s.EventTitle</h1>
+        <p>@DisplayTime.Format(s.StartsAtUtc) · @s.HallName</p>
+    </div>
+</header>
+
+<dl class="report-stats">
+    <div><dt>@T["report.capacity"]</dt><dd>@s.Capacity.ToString("N0")</dd></div>
+    <div><dt>@T["report.sold"]</dt><dd>@s.Sold.ToString("N0")</dd></div>
+    <div><dt>@T["report.reserved"]</dt><dd>@s.Reserved.ToString("N0")</dd></div>
+    <div><dt>@T["report.remaining"]</dt><dd>@s.Remaining.ToString("N0")</dd></div>
+    <div><dt>@T["report.received"]</dt><dd>@T["report.money", s.Received.ToString("#,0.##")]</dd></div>
+    <div><dt>@T["report.pending"]</dt><dd>@T["report.money", s.Pending.ToString("#,0.##")]</dd></div>
+</dl>
+
+@if (Model.Orders.Count == 0)
+{
+    <div class="empty-state">
+        <p>@T["report.noOrders"]</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">@T["report.when"]</th>
+                    <th scope="col">@T["report.buyer"]</th>
+                    <th scope="col">@T["report.seats"]</th>
+                    <th scope="col" class="num">@T["report.total"]</th>
+                    <th scope="col">@T["report.payment"]</th>
+                    <th scope="col">@T["report.seller"]</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var o in Model.Orders)
+                {
+                    <tr id="islem-@o.Id">
+                        <td>
+                            @DisplayTime.Format(o.CreatedAtUtc)
+                            <div class="row-sub">@T[o.Kind == OrderKind.Sale ? "report.kindSale" : "report.kindReservation"] · @T["report.orderNo", o.Id]</div>
+                        </td>
+                        <td>
+                            <b>@o.BuyerName</b>
+                            @if (o.BuyerPhone is not null)
+                            {
+                                <div class="row-sub">@o.BuyerPhone</div>
+                            }
+                            @if (o.Note is not null)
+                            {
+                                <div class="row-sub">@o.Note</div>
+                            }
+                        </td>
+                        <td><div class="chips">@foreach (var seat in o.Seats) { <span class="chip">@seat</span> }</div></td>
+                        <td class="num">@T["report.money", o.Total.ToString("#,0.##")]</td>
+                        <td><span class="pay-state" data-state="@o.Payment">@T[$"report.payment{o.Payment}"]</span></td>
+                        <td>@(o.SellerName ?? T["report.online"])</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

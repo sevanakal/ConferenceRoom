@@ -17,11 +17,12 @@ namespace ConferenceRoom.Web.Pages.Satis;
 /// Personel satış ekranı (/satis/seans/{seansId}): krokiden koltuk seçilir, alıcının adı (zorunlu), telefonu ve açıklaması
 /// girilir, toplam 0'dan büyükse ödemenin alınıp alınmadığı işaretlenir. Kurallar ve kayıt Web/Sales/SalesDesk.cs içinde;
 /// ekran wwwroot/js/satis-ekrani.js (kroki ve seçim koltuk seçicinin ortak çatısından, yalnızca seçtirir).
-/// Seçilen koltuk canlı bağlantıyla 3 dakika ayrılır (Sales/SalesHub.cs); satış olunca seansın diğer ekranlarına bildirilir.
+/// Seçilen koltuk canlı bağlantıyla 3 dakika ayrılır (Sales/SalesHub.cs); satış olunca seansın diğer ekranlarına bildirilir
+/// ve "Satış bildirimlerini al" yetkisi olan kullanıcılara panel bildirimi gider (Sales/SalesNotifier.cs).
 /// Satış bölümünün çereziyle açılır (satış yetkisi, Program.cs).
 /// </summary>
 public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocalizer localizer, IAntiforgery antiforgery, TimeProvider clock,
-    SeatHolds holds, IHubContext<SalesHub> hub) : PageModel
+    SeatHolds holds, IHubContext<SalesHub> hub, IHubContext<NotificationHub> notificationHub) : PageModel
 {
     [BindProperty(SupportsGet = true)]
     public int SessionId { get; set; }
@@ -66,7 +67,10 @@ public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocaliz
     {
         var result = await SalesDesk.SellAsync(db, holds, User.UserId(), SessionId, request, Now, cancellationToken);
         if (result.Outcome == SalesDesk.Outcome.Sold)
+        {
             await hub.Clients.Group(SalesHub.Group(SessionId)).SendAsync("sold", result.Order!.Tickets.Select(t => t.SeatId), cancellationToken);
+            await SalesNotifier.NotifyAsync(db, notificationHub, result.Order, cancellationToken);
+        }
         var message = result.Outcome switch
         {
             SalesDesk.Outcome.Sold => localizer[result.Order!.Kind == OrderKind.Sale ? "sales.soldToast" : "sales.reservedToast",

@@ -26,7 +26,8 @@ internal sealed class RoleConfiguration : IEntityTypeConfiguration<Role>
         builder.HasData(
             new Role { Id = Role.AdministratorId, OrganizationId = Organization.DefaultId, Name = "Yönetici", Description = "Tüm yetkiler", IsSystem = true, CreatedAtUtc = created },
             new Role { Id = Role.HallManagerId, OrganizationId = Organization.DefaultId, Name = "Salon sorumlusu", Description = "Salon krokileri ve etkinlikler", CreatedAtUtc = created },
-            new Role { Id = Role.SalesManagerId, OrganizationId = Organization.DefaultId, Name = "Satış sorumlusu", Description = "Bilet fiyatları, kategoriler ve satışlar", CreatedAtUtc = created });
+            new Role { Id = Role.SalesManagerId, OrganizationId = Organization.DefaultId, Name = "Satış sorumlusu", Description = "Bilet fiyatları, kategoriler ve satışlar", CreatedAtUtc = created },
+            new Role { Id = Role.NotifierId, OrganizationId = Organization.DefaultId, Name = "Bildirim", Description = "Satış raporunu görür, satış ve rezervasyon bildirimlerini alır; satış yapmaz, etkinlik düzenlemez", CreatedAtUtc = created });
     }
 }
 
@@ -39,7 +40,7 @@ internal sealed class RolePermissionConfiguration : IEntityTypeConfiguration<Rol
         builder.HasKey(p => new { p.RoleId, p.Permission });
         builder.Property(p => p.Permission).HasMaxLength(100);
 
-        // Yönetici her yetkiye sahip; diğer iki rol örnek olarak işi bölüşür.
+        // Yönetici her yetkiye sahip; diğer roller örnek olarak işi bölüşür. Bildirim rolü yalnızca izler.
         builder.HasData(
             Permissions.All.Select(p => new RolePermission { RoleId = Role.AdministratorId, Permission = p })
                 .Concat([
@@ -48,6 +49,8 @@ internal sealed class RolePermissionConfiguration : IEntityTypeConfiguration<Rol
                     new RolePermission { RoleId = Role.SalesManagerId, Permission = Permissions.PricingManage },
                     new RolePermission { RoleId = Role.SalesManagerId, Permission = Permissions.SalesSell },
                     new RolePermission { RoleId = Role.SalesManagerId, Permission = Permissions.SalesView },
+                    new RolePermission { RoleId = Role.NotifierId, Permission = Permissions.SalesView },
+                    new RolePermission { RoleId = Role.NotifierId, Permission = Permissions.SalesNotify },
                 ]));
     }
 }
