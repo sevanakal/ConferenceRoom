@@ -18,6 +18,10 @@
         <h1>@s.EventTitle</h1>
         <p>@DisplayTime.Format(s.StartsAtUtc) · @s.HallName</p>
     </div>
+    @if (Model.Orders.Count > 0)
+    {
+        <a class="btn-ghost" href="/yonetim/satislar/seans/@s.SessionId?handler=Excel" download>@T["report.excel"]</a>
+    }
 </header>
 
 <dl class="report-stats">

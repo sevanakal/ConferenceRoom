@@ -60,6 +60,8 @@
 .page-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
 .page-head h1 { margin: 0 0 4px; font-size: 1.6rem; letter-spacing: -.01em; }
 .page-head p { margin: 0; color: var(--color-muted); max-width: 70ch; }
+.page-head__actions { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.page-head .btn-ghost { text-decoration: none; display: inline-flex; align-items: center; }
 .back-link { display: inline-block; margin-bottom: 6px; color: var(--color-muted); text-decoration: none; font-size: .9rem; }
 .back-link:hover { color: var(--color-text); }
 .btn-inline { width: auto; min-height: 42px; text-decoration: none; }

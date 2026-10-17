@@ -777,7 +777,19 @@
     "paymentReceived": "Received",
     "paymentPending": "Not received",
     "paymentNotRequired": "Free",
-    "online": "Online"
+    "online": "Online",
+    "excel": "Export to Excel",
+    "sheetSessions": "Sessions",
+    "sheetOrders": "Transactions",
+    "event": "Event",
+    "hall": "Hall",
+    "status": "Status",
+    "orderNoColumn": "Transaction no",
+    "kind": "Type",
+    "phone": "Phone",
+    "seatCount": "Seats",
+    "note": "Note",
+    "totalRow": "Total"
   },
   "notify": {
     "title": "Notifications",

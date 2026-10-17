@@ -104,7 +104,7 @@ Kroki verisi her sürümde tek bir JSON olarak saklanır (`HallPlanVersions.Plan
 | `/yonetim/etkinlikler` | Etkinlikler ve seansları; `/yonetim/etkinlikler/turler` etkinlik türleri ("Etkinlikler" yetkisi) |
 | `/yonetim/fiyatlandirma` | Etkinliklerin koltuk ayarları özeti; `/yonetim/fiyatlandirma/{id}` kategori, fiyat ve online koltuk ekranı ("Fiyatlandırma" yetkisi) |
 | `/afisler/{dosya}` | Yüklenen afiş görselleri (Docker'da `posters` volume'u) |
-| `/yonetim/satislar` | Satış raporu: seans başına satılan, rezerve, kalan koltuk ve ödemeler; `/yonetim/satislar/seans/{id}` işlem listesi ("Satış raporu" yetkisi; "Satış kayıtlarını düzeltme" yetkisiyle işlemlerin ödeme durumu da değiştirilir) |
+| `/yonetim/satislar` | Satış raporu: seans başına satılan, rezerve, kalan koltuk ve ödemeler; `/yonetim/satislar/seans/{id}` işlem listesi, ikisi de "Excel'e aktar" ile .xlsx indirilir ("Satış raporu" yetkisi; "Satış kayıtlarını düzeltme" yetkisiyle işlemlerin ödeme durumu da değiştirilir) |
 | `/yonetim/bildirimler` | Satış ve rezervasyon bildirimleri; yeni bildirim panelde canlı gelir ("Satış bildirimleri" yetkisi) |
 | `/yonetim/kullanicilar`, `/yonetim/roller` | Yönetim kullanıcıları ve roller ("Kullanıcılar ve roller" yetkisi) |
 | `/yonetim/satis-yetkileri` | Satış yapabilen personel; `/yonetim/satis-yetkileri/salon/{id}` ve `/etkinlik/{id}` kısıtlı personele krokiden koltuk verme ("Kullanıcılar ve roller" yetkisi) |
