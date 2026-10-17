@@ -197,7 +197,9 @@
 .pay-state[data-state="Received"] { color: var(--color-ok); }
 .pay-state[data-state="Pending"] { color: var(--color-fail); }
 .pay-state[data-state="NotRequired"] { color: var(--color-muted); font-weight: 400; }
-.pay-form { margin: 4px 0 0; }
+.pay-form { margin: 6px 0 0; }
+.pay-form .btn-primary { width: auto; min-height: 34px; padding: 0 14px; font-size: .88rem; white-space: nowrap; }
+.pay-form .btn-ghost { font-size: .82rem; padding: 4px 10px; white-space: nowrap; }
 
 /* ---- Bildirimler (js/bildirimler.js): üst çubuktaki zil, köşe kutuları, bildirim listesi ---- */
 .notify-bell { position: relative; display: inline-flex; padding: 6px; border-radius: 10px; color: var(--color-text); }

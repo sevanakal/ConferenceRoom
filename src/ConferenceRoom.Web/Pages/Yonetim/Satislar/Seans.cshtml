@@ -78,7 +78,7 @@ else
                                 <form method="post" asp-page-handler="Payment" class="pay-form">
                                     <input type="hidden" name="orderId" value="@o.Id" />
                                     <input type="hidden" name="paid" value="@(paid ? "false" : "true")" />
-                                    <button type="submit" class="btn-link">@T[paid ? "myOrders.markUnpaid" : "myOrders.markPaid"]</button>
+                                    <button type="submit" class="@(paid ? "btn-ghost" : "btn-primary")">@T[paid ? "myOrders.markUnpaid" : "myOrders.markPaid"]</button>
                                 </form>
                             }
                         </td>
