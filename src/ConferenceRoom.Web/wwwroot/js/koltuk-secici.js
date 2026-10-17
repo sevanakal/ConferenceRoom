@@ -160,10 +160,12 @@ $("tabs").addEventListener("click", (e) => {
 });
 
 /* ------------------------------------------------------------------
-   Seçim: koltuğa tıklama seçer (Shift/Ctrl ile ekler/çıkarır), boş alanda sürükleme alan seçimidir.
+   Seçim: koltuğa tıklama seçer (Shift/Ctrl ile ekler/çıkarır). Koltuktan başlayıp fare basılıyken (ya da parmakla)
+   sürüklemek, üzerinden geçilen koltukları da seçer; Shift/Ctrl ile seçili bir koltuktan başlanırsa geçilenleri bırakır.
+   Boş alanda sürükleme alan seçimidir.
    El aracında, boşluk tuşu basılıyken ya da orta tuşla sürükleme kaydırır; iki parmak yakınlaştırır.
 ------------------------------------------------------------------ */
-let spaceDown = false, panning = null, marqueeStart = null, pinch = null;
+let spaceDown = false, panning = null, marqueeStart = null, pinch = null, paint = null;
 const seatIdOf = (target) => { let n = target; while (n && n !== stage) { const id = n.getAttr && n.getAttr("seatId"); if (id) return id; n = n.getParent(); } return null; };
 
 function setTool(name) {
@@ -188,9 +190,11 @@ stage.on("mousedown touchstart", (e) => {
   const add = evt.shiftKey || evt.ctrlKey || evt.metaKey;
   if (id) {
     if (!canSelect(id)) return;
-    if (add) selected.has(id) ? selected.delete(id) : selected.add(id);
-    else selected = new Set([id]);
-    paintSelection(); renderPanel();
+    const remove = add && selected.has(id);
+    if (!add) selected = new Set();
+    remove ? selected.delete(id) : selected.add(id);
+    paint = { remove, last: p };
+    paintSelection();
     return;
   }
   const w = layer.getRelativePointerPosition();
@@ -204,6 +208,7 @@ stage.on("mousemove touchmove", (e) => {
   if (evt.touches && evt.touches.length === 2) { handlePinch(evt); return; }
   const p = stage.getPointerPosition(); if (!p) return;
   if (panning) { stage.position({ x: panning.sx + p.x - panning.x, y: panning.sy + p.y - panning.y }); viewChanged(); return; }
+  if (paint) { paintAlong(paint.last, p); paint.last = p; return; }
   if (marqueeStart) {
     const w = layer.getRelativePointerPosition();
     marquee.setAttrs({ x: Math.min(marqueeStart.x, w.x), y: Math.min(marqueeStart.y, w.y), width: Math.abs(w.x - marqueeStart.x), height: Math.abs(w.y - marqueeStart.y) });
@@ -212,9 +217,24 @@ stage.on("mousemove touchmove", (e) => {
   showHover(seatIdOf(e.target));
 });
 
+/* Sürüklerken son konumdan bu konuma kadar çizgi üzerindeki koltukları seçer (ya da bırakır). Fare hızlı gidince olaylar
+   seyrek gelir; aradaki noktalara da bakılır ki küçük ölçekte koltuk atlanmasın. */
+function paintAlong(from, to) {
+  const steps = Math.max(1, Math.ceil(Math.hypot(to.x - from.x, to.y - from.y) / 3));
+  let changed = false;
+  for (let i = 1; i <= steps; i++) {
+    const id = seatIdOf(stage.getIntersection({ x: from.x + (to.x - from.x) * i / steps, y: from.y + (to.y - from.y) * i / steps }));
+    if (!id || !canSelect(id) || selected.has(id) !== paint.remove) continue;
+    paint.remove ? selected.delete(id) : selected.add(id);
+    changed = true;
+  }
+  if (changed) paintSelection();
+}
+
 function endPointer() {
   pinch = null;
   if (panning) { panning = null; host.classList.remove("panning"); return; }
+  if (paint) { paint = null; renderPanel(); return; }
   if (!marqueeStart) return;
   const box = { x: marquee.x(), y: marquee.y(), width: marquee.width(), height: marquee.height() };
   if (!marqueeStart.add) selected = new Set();

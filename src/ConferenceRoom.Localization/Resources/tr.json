@@ -586,7 +586,7 @@
     "selection": "Seçim",
     "selCount": "{n} koltuk seçili",
     "selNone": "Koltuk seçilmedi",
-    "selHint": "Koltuğa tıklayın; Shift ile ekleyip çıkarın. Boş alanda sürükleyerek alan seçin.",
+    "selHint": "Koltuğa tıklayın ya da basılı tutup koltukların üzerinden sürükleyin; Shift ile ekleyip çıkarın. Boş alanda sürükleyerek alan seçin.",
     "selectLevel": "Kattaki tüm koltuklar",
     "selectUnassigned": "Kategorisizler",
     "selectOnline": "Online koltukları seç",
