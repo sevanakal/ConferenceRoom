@@ -531,7 +531,12 @@
     "errorNotForSale": "Seçilen koltuklardan biri satışa kapalı.",
     "errorNotInScope": "Seçilen koltuklardan birini satma yetkiniz yok.",
     "errorPayment": "Ödemenin alınıp alınmadığını seçin.",
-    "open": "Satış ekranı"
+    "open": "Satış ekranı",
+    "stateBusy": "İşlemde (başka ekranda seçili)",
+    "heldByOther": "Bu koltuk az önce başka bir ekranda seçildi.",
+    "holdExpired": "Süre doldu; seçili koltuklar bırakıldı. Yeniden seçebilirsiniz.",
+    "holdLeft": "Koltuklar sizin için ayrıldı · kalan süre {time}",
+    "held": "Bu koltuklar başka bir ekranda işlemde: {0}."
   },
   "pricing": {
     "title": "Fiyatlandırma",

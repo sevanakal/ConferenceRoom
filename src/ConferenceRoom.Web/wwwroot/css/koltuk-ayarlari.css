@@ -10,6 +10,7 @@
 :root {
   --staff-1: #E11D48; --staff-2: #2563EB; --staff-3: #16A34A; --staff-4: #9333EA;
   --staff-5: #EA580C; --staff-6: #0891B2; --staff-7: #CA8A04; --staff-8: #DB2777;
+  --seat-hold: #D97706;   /* satış ekranında başka ekranda işlemdeki (3 dakika ayrılmış) koltuk */
 }
 
 /* Ana alan: araç çubuğu yok, panel biraz daha geniş */
@@ -70,6 +71,9 @@
 .sales-legend em { font-style: normal; font-size: 11px; color: var(--muted); min-width: 52px; text-align: right; }
 .cat-legend i.sold { background: var(--ink); border-color: var(--ink); }
 .cat-legend i.off { border: 1.5px dashed var(--seat-stroke); }
+.cat-legend i.busy { background: var(--seat-hold); border: 1.5px dashed var(--seat-hold); }
+.hold-timer { margin: 0; font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.hold-timer.warn { color: var(--accent); font-weight: 600; }
 .sel-seats { margin: 0; font-family: var(--font-data); font-size: 12px; line-height: 1.5; max-height: 72px; overflow: auto; }
 .total { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-weight: 600; }
 .total b { font-family: var(--font-data); font-size: 16px; font-variant-numeric: tabular-nums; }

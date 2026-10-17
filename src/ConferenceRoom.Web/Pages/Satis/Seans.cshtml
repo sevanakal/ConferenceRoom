@@ -27,5 +27,6 @@
     <script type="application/json" id="editorConfig">@Html.Raw(ScreenData.ForScript(JsonSerializer.Serialize(Model.EditorConfig)))</script>
     <script type="application/json" id="planData">@Html.Raw(ScreenData.ForScript(Model.Snapshot.PlanJson))</script>
     <script type="application/json" id="seatData">@Html.Raw(ScreenData.ForScript(JsonSerializer.Serialize(Model.SeatData)))</script>
+    <script src="~/lib/signalr/signalr.min.js" asp-append-version="true"></script>
     <script src="~/js/satis-ekrani.js" asp-append-version="true"></script>
 }

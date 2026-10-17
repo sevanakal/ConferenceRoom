@@ -9,13 +9,16 @@ using ConferenceRoom.Domain.Sales;
 using ConferenceRoom.Tests.Auth;
 using ConferenceRoom.Tests.Database;
 using ConferenceRoom.Tests.Events;
+using ConferenceRoom.Web.Sales;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace ConferenceRoom.Tests.Sales;
 
 /// <summary>
 /// Personel satış ekranı (gerçek MySQL): satış/rezervasyon kaydı, fiyatın kategoriden gelmesi, aynı koltuğun ikinci kez
-/// satılamaması, alıcı adı ve ödeme kuralları, satışa kapalı koltuk ve seans, koltuk kapsamı (Pages/Satis/Seans, Web/Sales/SalesDesk.cs).
+/// satılamaması, başka ekranda ayrılmış koltuk, alıcı adı ve ödeme kuralları, satışa kapalı koltuk ve seans, koltuk kapsamı
+/// (Pages/Satis/Seans, Web/Sales/SalesDesk.cs).
 /// Örnek krokide koltuklar s1 (A-1), s2 (A-2), s3 (EK-1); s1 500 TL, s2 ücretsiz, s3 protokol.
 /// </summary>
 [Collection(MySqlCollection.Name)]
@@ -103,6 +106,22 @@ public partial class SalesDeskTests(MySqlWebAppFactory factory) : IClassFixture<
 
         Assert.Equal("invalid", (await SellAsync(seller, sessionId, new { seats = new[] { "s1" }, buyerName = "Ali", paid = true })).Status);
         Assert.Equal("sold", (await SellAsync(seller, sessionId, new { seats = new[] { "s2" }, buyerName = "Ali" })).Status);
+    }
+
+    [MySqlFact]
+    public async Task Baska_ekranda_ayrilmis_koltuk_satilamaz_ayrim_suresi_dolunca_satilir()
+    {
+        var sessionId = await CreateSessionAsync(SaleMode.Sale);
+        var seller = await factory.SignInSellerAsync();
+        var holds = factory.Services.GetRequiredService<SeatHolds>();
+        holds.TryHold(sessionId, "baska-ekran", 999, ["s1"]);
+
+        var (status, answer) = await SellAsync(seller, sessionId, new { seats = new[] { "s1" }, buyerName = "Ali", paid = true, holder = "baska-ekran" });
+
+        Assert.Equal("held", status);
+        Assert.Contains("A-1", answer.GetProperty("message").GetString());
+        holds.Release(sessionId, "baska-ekran", ["s1"]);
+        Assert.Equal("sold", (await SellAsync(seller, sessionId, new { seats = new[] { "s1" }, buyerName = "Ali", paid = true })).Status);
     }
 
     [MySqlFact]
