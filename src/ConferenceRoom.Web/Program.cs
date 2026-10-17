@@ -30,6 +30,8 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/Yonetim/Etkinlikler", AuthPolicies.Permission(Permissions.EventsManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Fiyatlandirma", AuthPolicies.Permission(Permissions.PricingManage));
     o.Conventions.AuthorizeFolder("/Yonetim/SatisYetkileri", AuthPolicies.Permission(Permissions.UsersManage));
+    o.Conventions.AuthorizeFolder("/Yonetim/Satislar", AuthPolicies.Permission(Permissions.SalesView));
+    o.Conventions.AuthorizeFolder("/Yonetim/Bildirimler", AuthPolicies.Permission(Permissions.SalesNotify));
     // Satış bölümü: satış personeli /giris sayfasından girer (ayrı çerez; panel bu oturumla açılmaz).
     o.Conventions.AuthorizeFolder("/Satis", AuthPolicies.Sales);
     // Ana sayfa etkinlik panosudur; /pano adresi lobideki ekranlar için kalır.
@@ -42,7 +44,7 @@ builder.Services.AddInfrastructure(builder.Configuration);    // MySQL + EF Core
 builder.Services.AddAppAuthentication(builder.Configuration); // ayrı oturumlar (yönetim / satış / izleyici), yetkiler (bkz. Auth/)
 builder.Services.AddSingleton(TimeProvider.System);            // "şu an" tek yerden gelsin (testlerde değiştirilebilir)
 builder.Services.AddSingleton<PosterStore>();                  // etkinlik afişleri (diskte; Docker'da ayrı birim)
-builder.Services.AddSignalR();                                 // satış ekranlarının canlı bağlantısı (Sales/SalesHub.cs)
+builder.Services.AddSignalR();                                 // canlı bağlantılar: satış ekranları ve panel bildirimleri (Sales/)
 builder.Services.AddSingleton<SeatHolds>();                    // 3 dakikalık koltuk ayırmaları (bellekte)
 builder.Services.AddHostedService<SeatHoldExpiry>();           // süresi dolan ayırmaları kaldırıp ekranlara bildirir
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
@@ -93,6 +95,7 @@ app.UseRateLimiter();
 
 app.MapRazorPages();
 app.MapHub<SalesHub>(SalesHub.Path);
+app.MapHub<NotificationHub>(NotificationHub.Path);
 app.MapHealthChecks("/health");
 app.MapLanguageEndpoints();
 

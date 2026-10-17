@@ -125,6 +125,15 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                             IsSystem = false,
                             Name = "Satış sorumlusu",
                             OrganizationId = 1
+                        },
+                        new
+                        {
+                            Id = 4,
+                            CreatedAtUtc = new DateTime(2026, 10, 15, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Description = "Satış raporunu görür, satış ve rezervasyon bildirimlerini alır; satış yapmaz, etkinlik düzenlemez",
+                            IsSystem = false,
+                            Name = "Bildirim",
+                            OrganizationId = 1
                         });
                 });
 
@@ -170,6 +179,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         new
                         {
                             RoleId = 1,
+                            Permission = "sales.notify"
+                        },
+                        new
+                        {
+                            RoleId = 1,
                             Permission = "users.manage"
                         },
                         new
@@ -196,6 +210,16 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         {
                             RoleId = 3,
                             Permission = "sales.view"
+                        },
+                        new
+                        {
+                            RoleId = 4,
+                            Permission = "sales.view"
+                        },
+                        new
+                        {
+                            RoleId = 4,
+                            Permission = "sales.notify"
                         });
                 });
 
@@ -615,6 +639,38 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Notification", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ReadAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("StaffUserId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("StaffUserId", "ReadAtUtc");
+
+                    b.ToTable("Notifications", (string)null);
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Sales.Order", b =>
                 {
                     b.Property<int>("Id")
@@ -940,6 +996,29 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("CreatedBy");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Notification", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Sales.Order", "Order")
+                        .WithMany()
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", null)
+                        .WithMany()
+                        .HasForeignKey("StaffUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ConferenceRoom.Domain.Sales.Order", b =>

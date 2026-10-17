@@ -55,8 +55,7 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
     /// </summary>
     public async Task<(string Email, int Id)> CreateStaffAsync(string[] permissions, bool seatsRestricted = false)
     {
-        var email = $"personel-{Guid.NewGuid():N}@test.local";
-        var id = 0;
+        var roleId = 0;
         await WithDbAsync(async db =>
         {
             var role = new Role
@@ -67,6 +66,18 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
             };
             db.Roles.Add(role);
             await db.SaveChangesAsync();
+            roleId = role.Id;
+        });
+        return await CreateStaffInRoleAsync(roleId, seatsRestricted);
+    }
+
+    /// <summary>Var olan bir roldeki (ör. kurulumla gelen Bildirim rolü) yeni bir kullanıcı ekler; (e-posta, kullanıcı no) döner.</summary>
+    public async Task<(string Email, int Id)> CreateStaffInRoleAsync(int roleId, bool seatsRestricted = false, bool isActive = true)
+    {
+        var email = $"personel-{Guid.NewGuid():N}@test.local";
+        var id = 0;
+        await WithDbAsync(async db =>
+        {
             var user = new StaffUser
             {
                 OrganizationId = Organization.DefaultId,
@@ -74,7 +85,8 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
                 FullName = "Satış personeli",
                 PasswordHash = new PasswordService().Hash(StaffPassword),
                 SeatsRestricted = seatsRestricted,
-                Roles = [new StaffUserRole { RoleId = role.Id }],
+                IsActive = isActive,
+                Roles = [new StaffUserRole { RoleId = roleId }],
             };
             db.StaffUsers.Add(user);
             await db.SaveChangesAsync();

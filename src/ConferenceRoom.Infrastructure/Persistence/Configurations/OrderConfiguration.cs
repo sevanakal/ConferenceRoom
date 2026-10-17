@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 namespace ConferenceRoom.Infrastructure.Persistence.Configurations;
 
 /// <summary>
-/// Orders (satış/rezervasyon işlemleri) ve Tickets (işlemdeki koltuklar) tabloları. Tür, kanal ve ödeme durumu
+/// Orders (satış/rezervasyon işlemleri), Tickets (işlemdeki koltuklar) ve Notifications (satış bildirimleri) tabloları. Tür, kanal ve ödeme durumu
 /// veritabanında okunabilsin diye metin olarak saklanır. Aynı seansta bir koltuk bir kez satılabilir: (EventSessionId, SeatId)
 /// benzersiz indeksi aynı anda yapılan iki satıştan ikincisini durdurur.
 /// </summary>
@@ -43,5 +43,18 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.HasIndex(t => new { t.EventSessionId, t.SeatId }).IsUnique();
         builder.HasOne<Organization>().WithMany().HasForeignKey(t => t.OrganizationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasOne<Domain.Events.EventSession>().WithMany().HasForeignKey(t => t.EventSessionId).OnDelete(DeleteBehavior.Restrict);
+    }
+}
+
+/// <summary>Notifications tablosu: kullanıcı başına satış bildirimleri; okunmamışlar kullanıcıya göre hızlı sayılır.</summary>
+internal sealed class NotificationConfiguration : IEntityTypeConfiguration<Notification>
+{
+    public void Configure(EntityTypeBuilder<Notification> builder)
+    {
+        builder.ToTable("Notifications");
+        builder.HasIndex(n => new { n.StaffUserId, n.ReadAtUtc });
+        builder.HasOne<Organization>().WithMany().HasForeignKey(n => n.OrganizationId).OnDelete(DeleteBehavior.Restrict);
+        builder.HasOne<Domain.Accounts.StaffUser>().WithMany().HasForeignKey(n => n.StaffUserId).OnDelete(DeleteBehavior.Cascade);
+        builder.HasOne(n => n.Order).WithMany().HasForeignKey(n => n.OrderId).OnDelete(DeleteBehavior.Cascade);
     }
 }

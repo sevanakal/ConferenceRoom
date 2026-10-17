@@ -99,7 +99,9 @@
         "name": "Sales permissions",
         "description": "Choosing on the seating plan which seats each salesperson may sell."
       }
-    }
+    },
+    "navReport": "Sales report",
+    "navNotify": "Notifications"
   },
   "roles": {
     "title": "Roles",
@@ -721,8 +723,12 @@
         "description": "Selling tickets and reserving seats. Which seats a person may sell can be limited per person."
       },
       "view": {
-        "name": "Sales",
-        "description": "View sold tickets and bookings."
+        "name": "Sales report",
+        "description": "What was sold for each event, how many seats are left, pending payments. View only."
+      },
+      "notify": {
+        "name": "Sales notifications",
+        "description": "Get a notification in the panel when a ticket is sold or a seat is reserved."
       }
     },
     "users": {
@@ -734,5 +740,50 @@
   },
   "footer": {
     "license": "Open source, MIT licence"
+  },
+  "report": {
+    "title": "Sales report",
+    "intro": "Tickets sold and reserved, seats left and payments, per session.",
+    "empty": "No sessions to show.",
+    "showPast": "Include past sessions",
+    "hidePast": "Upcoming sessions only",
+    "session": "Session",
+    "capacity": "For sale",
+    "sold": "Sold",
+    "reserved": "Reserved",
+    "remaining": "Left",
+    "received": "Collected",
+    "pending": "Payment due",
+    "details": "Orders",
+    "ended": "Ended",
+    "cancelled": "Cancelled",
+    "money": "{0} TL",
+    "back": "Back to sales report",
+    "noOrders": "No sales or reservations for this session yet.",
+    "when": "Time",
+    "buyer": "Buyer",
+    "seats": "Seats",
+    "total": "Amount",
+    "payment": "Payment",
+    "seller": "Sold by",
+    "kindSale": "Sale",
+    "kindReservation": "Reservation",
+    "orderNo": "Order {0}",
+    "paymentReceived": "Received",
+    "paymentPending": "Not received",
+    "paymentNotRequired": "Free",
+    "online": "Online"
+  },
+  "notify": {
+    "title": "Notifications",
+    "intro": "Ticket sale and reservation notifications. New ones appear instantly on every panel page.",
+    "empty": "No notifications yet.",
+    "sold": "{0} ticket(s) sold",
+    "reserved": "{0} seat(s) reserved",
+    "detail": "{0} · {1} · Buyer: {2} · Sold by: {3}",
+    "bell": "Notifications ({0} unread)",
+    "enableBrowser": "Turn on browser notifications",
+    "browserEnabled": "Browser notifications are on.",
+    "browserDenied": "Browser notifications are blocked (you can allow them in browser settings)."
   }
 }

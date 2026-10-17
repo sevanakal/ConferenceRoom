@@ -1,0 +1,70 @@
+@page "/yonetim/satislar"
+@model ConferenceRoom.Web.Pages.Yonetim.Satislar.IndexModel
+@using ConferenceRoom.Web.Common
+@*
+    Satış raporu: her satır bir seans. Sayılar koltuk, tutarlar TL. Bkz. IndexModel.
+*@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["report.title"];
+    ViewData["AdminNav"] = "report";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["report.title"]</h1>
+        <p>@T["report.intro"]</p>
+    </div>
+    <a class="btn-link" href="@(Model.IncludePast ? "/yonetim/satislar" : "/yonetim/satislar?gecmis=true")">@(Model.IncludePast ? T["report.hidePast"] : T["report.showPast"])</a>
+</header>
+
+@if (Model.Sessions.Count == 0)
+{
+    <div class="empty-state">
+        <p>@T["report.empty"]</p>
+    </div>
+}
+else
+{
+    <div class="table-wrap">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th scope="col">@T["report.session"]</th>
+                    <th scope="col" class="num">@T["report.capacity"]</th>
+                    <th scope="col" class="num">@T["report.sold"]</th>
+                    <th scope="col" class="num">@T["report.reserved"]</th>
+                    <th scope="col" class="num">@T["report.remaining"]</th>
+                    <th scope="col" class="num">@T["report.received"]</th>
+                    <th scope="col" class="num">@T["report.pending"]</th>
+                    <th scope="col"><span class="visually-hidden">@T["report.details"]</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Sessions)
+                {
+                    <tr>
+                        <td>
+                            <a class="row-title" href="/yonetim/satislar/seans/@s.SessionId">@s.EventTitle</a>
+                            <div class="row-sub">@DisplayTime.Format(s.StartsAtUtc) · @s.HallName</div>
+                            @if (s.Status == ConferenceRoom.Domain.Events.EventStatus.Cancelled)
+                            {
+                                <span class="pill pill-soft">@T["report.cancelled"]</span>
+                            }
+                            else if (s.Ended)
+                            {
+                                <span class="pill pill-soft">@T["report.ended"]</span>
+                            }
+                        </td>
+                        <td class="num">@s.Capacity.ToString("N0")</td>
+                        <td class="num">@s.Sold.ToString("N0")</td>
+                        <td class="num">@s.Reserved.ToString("N0")</td>
+                        <td class="num"><b>@s.Remaining.ToString("N0")</b></td>
+                        <td class="num">@T["report.money", s.Received.ToString("#,0.##")]</td>
+                        <td class="num">@(s.Pending == 0 ? "–" : T["report.money", s.Pending.ToString("#,0.##")])</td>
+                        <td class="actions"><a href="/yonetim/satislar/seans/@s.SessionId">@T["report.details"]</a></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

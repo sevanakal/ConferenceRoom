@@ -10,7 +10,7 @@ namespace ConferenceRoom.Domain.Accounts;
 public class Role : Entity, IOrganizationScoped
 {
     /// <summary>Kurulumla gelen rollerin kimlikleri. İlk yönetici hesabı <see cref="AdministratorId"/> rolünü alır.</summary>
-    public const int AdministratorId = 1, HallManagerId = 2, SalesManagerId = 3;
+    public const int AdministratorId = 1, HallManagerId = 2, SalesManagerId = 3, NotifierId = 4;
 
     public int OrganizationId { get; set; }
 

@@ -33,10 +33,11 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<EventSession> EventSessions => Set<EventSession>();
     public DbSet<EventSeatMap> EventSeatMaps => Set<EventSeatMap>();
 
-    // ---- Satış: personelin satabileceği koltuklar, satış/rezervasyon işlemleri ve biletler ----
+    // ---- Satış: personelin satabileceği koltuklar, satış/rezervasyon işlemleri, biletler ve bildirimler ----
     public DbSet<SeatScope> SeatScopes => Set<SeatScope>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<Ticket> Tickets => Set<Ticket>();
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
