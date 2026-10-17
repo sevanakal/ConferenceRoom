@@ -112,3 +112,20 @@ main { padding-block: calc(var(--space) * 2); display: grid; gap: var(--space); 
 .sales-desk__table th { color: var(--color-muted); font-size: .85rem; font-weight: 600; }
 .sales-desk__table tr:last-child td { border-bottom: 0; }
 .sales-desk__table .btn-primary { width: auto; min-height: 36px; padding: 0 14px; font-size: .9rem; white-space: nowrap; text-decoration: none; }
+.sales-desk__top { display: flex; justify-content: space-between; align-items: center; gap: var(--space); flex-wrap: wrap; }
+.sales-desk__top .btn-ghost { text-decoration: none; display: inline-flex; align-items: center; }
+
+/* Satışlarım (Pages/Satis/Satislarim): kendi işlemleri ve ödeme güncellemesi */
+.my-orders .back-link { color: var(--color-muted); text-decoration: none; font-size: .9rem; }
+.my-orders .table-scroll { overflow-x: auto; }
+.my-orders .small { font-size: .85rem; margin: 2px 0 0; }
+.my-orders .num { text-align: right; white-space: nowrap; }
+.my-orders td { vertical-align: top; }
+.my-orders .notice { padding: 10px 14px; border-radius: var(--radius); background: color-mix(in srgb, var(--color-ok) 12%, transparent); color: var(--color-ok); font-weight: 600; }
+.my-orders .pay-state { display: block; font-weight: 600; font-size: .9rem; }
+.my-orders .pay-state[data-state="Received"] { color: var(--color-ok); }
+.my-orders .pay-state[data-state="Pending"] { color: var(--color-fail); }
+.my-orders .pay-state[data-state="NotRequired"] { color: var(--color-muted); font-weight: 400; }
+.my-orders .pay-form { margin: 6px 0 0; }
+.my-orders .pay-form .btn-link { border: 0; background: none; padding: 0; color: var(--color-muted); font: inherit; font-size: .85rem; text-decoration: underline; cursor: pointer; }
+.my-orders tr:target td { background: color-mix(in srgb, var(--color-accent) 8%, transparent); }

@@ -20,9 +20,10 @@ public static class SalesReport
     public sealed record SessionRow(int SessionId, int EventId, string EventTitle, string HallName, DateTime StartsAtUtc, bool Ended,
         EventStatus Status, int Capacity, int Sold, int Reserved, int Remaining, decimal Received, decimal Pending);
 
-    /// <summary>Seansın bir işlemi (satış ya da rezervasyon).</summary>
+    /// <summary>Bir işlem (satış ya da rezervasyon), seansı ve etkinliğiyle.</summary>
     public sealed record OrderRow(int Id, DateTime CreatedAtUtc, OrderKind Kind, OrderChannel Channel, string BuyerName, string? BuyerPhone,
-        string? Note, IReadOnlyList<string> Seats, decimal Total, PaymentStatus Payment, string? SellerName);
+        string? Note, IReadOnlyList<string> Seats, decimal Total, PaymentStatus Payment, string? SellerName,
+        int SessionId, string EventTitle, DateTime SessionStartsAtUtc);
 
     /// <summary>
     /// Taslak olmayan etkinliklerin seansları, başlangıca göre. <paramref name="includePast"/> false ise bitmiş seanslar
@@ -85,16 +86,34 @@ public static class SalesReport
     }
 
     /// <summary>Seansın işlemleri, yeniden eskiye.</summary>
-    public static async Task<List<OrderRow>> OrdersAsync(AppDbContext db, int sessionId, CancellationToken cancellationToken)
+    public static Task<List<OrderRow>> OrdersAsync(AppDbContext db, int sessionId, CancellationToken cancellationToken) =>
+        OrdersAsync(db.Orders.Where(o => o.EventSessionId == sessionId), int.MaxValue, cancellationToken);
+
+    /// <summary>Verilen işlemler (ör. bir personelin satışları), yeniden eskiye, en çok <paramref name="limit"/> tane.</summary>
+    public static async Task<List<OrderRow>> OrdersAsync(IQueryable<Order> source, int limit, CancellationToken cancellationToken)
     {
-        var orders = await db.Orders.Where(o => o.EventSessionId == sessionId && o.OrganizationId == Organization.DefaultId)
+        var orders = await source.Where(o => o.OrganizationId == Organization.DefaultId)
             .OrderByDescending(o => o.Id)
-            .Select(o => new { o.Id, o.CreatedAtUtc, o.Kind, o.Channel, o.BuyerName, o.BuyerPhone, o.Note, o.Total, o.Payment, Seller = o.SoldBy == null ? null : o.SoldBy.FullName })
+            .Take(limit)
+            .Select(o => new
+            {
+                o.Id,
+                o.CreatedAtUtc,
+                o.Kind,
+                o.Channel,
+                o.BuyerName,
+                o.BuyerPhone,
+                o.Note,
+                o.Total,
+                o.Payment,
+                Seller = o.SoldBy == null ? null : o.SoldBy.FullName,
+                o.EventSessionId,
+                EventTitle = o.Event!.Title,
+                StartsAtUtc = o.EventSession!.StartsAtUtc,
+                Seats = o.Tickets.OrderBy(t => t.Id).Select(t => t.SeatLabel).ToList(),
+            })
             .ToListAsync(cancellationToken);
-        var orderIds = orders.Select(o => o.Id).ToList();
-        var seats = (await db.Tickets.Where(t => orderIds.Contains(t.OrderId)).OrderBy(t => t.Id).Select(t => new { t.OrderId, t.SeatLabel }).ToListAsync(cancellationToken))
-            .ToLookup(t => t.OrderId, t => t.SeatLabel);
         return orders.Select(o => new OrderRow(o.Id, o.CreatedAtUtc, o.Kind, o.Channel, o.BuyerName, o.BuyerPhone, o.Note,
-            seats[o.Id].ToList(), o.Total, o.Payment, o.Seller)).ToList();
+            o.Seats, o.Total, o.Payment, o.Seller, o.EventSessionId, o.EventTitle, o.StartsAtUtc)).ToList();
     }
 }

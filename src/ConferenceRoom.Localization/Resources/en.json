@@ -785,5 +785,16 @@
     "enableBrowser": "Turn on browser notifications",
     "browserEnabled": "Browser notifications are on.",
     "browserDenied": "Browser notifications are blocked (you can allow them in browser settings)."
+  },
+  "myOrders": {
+    "title": "My sales",
+    "intro": "Sales and reservations you made. Mark an order as paid here when the payment is received later.",
+    "back": "Back to sessions",
+    "all": "All my sales",
+    "empty": "You have not made any sales or reservations yet.",
+    "markPaid": "Payment received",
+    "markUnpaid": "Mark as not received",
+    "markedPaid": "Order {0} is marked as paid.",
+    "markedUnpaid": "Order {0} is marked as not paid."
   }
 }

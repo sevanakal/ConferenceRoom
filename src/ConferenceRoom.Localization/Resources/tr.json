@@ -785,5 +785,16 @@
     "enableBrowser": "Tarayıcı bildirimlerini aç",
     "browserEnabled": "Tarayıcı bildirimleri açık.",
     "browserDenied": "Tarayıcı bildirimleri engellendi (tarayıcı ayarlarından açılabilir)."
+  },
+  "myOrders": {
+    "title": "Satışlarım",
+    "intro": "Yaptığınız satış ve rezervasyonlar. Ödemesi sonradan alınan işlemi buradan \"Ödeme alındı\" yapabilirsiniz.",
+    "back": "Seans listesine dön",
+    "all": "Tüm satışlarım",
+    "empty": "Henüz satış ya da rezervasyon yapmadınız.",
+    "markPaid": "Ödeme alındı",
+    "markUnpaid": "Alınmadı olarak geri al",
+    "markedPaid": "{0} numaralı işlemin ödemesi alındı olarak işaretlendi.",
+    "markedUnpaid": "{0} numaralı işlemin ödemesi alınmadı olarak işaretlendi."
   }
 }
