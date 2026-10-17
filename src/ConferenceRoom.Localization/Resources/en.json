@@ -531,7 +531,12 @@
     "errorNotForSale": "One of the selected seats is not for sale.",
     "errorNotInScope": "You are not allowed to sell one of the selected seats.",
     "errorPayment": "Choose whether the payment was received.",
-    "open": "Sales screen"
+    "open": "Sales screen",
+    "stateBusy": "In progress (selected on another screen)",
+    "heldByOther": "This seat was just selected on another screen.",
+    "holdExpired": "Time is up; the selected seats were released. You can select them again.",
+    "holdLeft": "Seats held for you · {time} left",
+    "held": "These seats are in progress on another screen: {0}."
   },
   "pricing": {
     "title": "Pricing",

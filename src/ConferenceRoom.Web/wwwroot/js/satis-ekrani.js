@@ -6,11 +6,16 @@
   koltuk seçicinin ortak çatısındadır (koltuk-secici.js, yalnızca seçtiren kip); burada yalnızca bu ekrana özgü olanlar var.
   Kurallar sunucuda yeniden denetlenir (Web/Sales/SalesDesk.cs); fiyat sunucuda kategoriden hesaplanır.
 
+  Koltuk ayırma (3 dakika): seçilen koltuk canlı bağlantıyla (SignalR, Sales/SalesHub.cs) sunucuda ayrılır; seansın diğer
+  ekranlarında "işlemde" görünür ve seçilemez. Seçim kalkınca, satış olunca ya da süre dolunca ayırma kalkar; panelde kalan
+  süre görünür. Başka ekranda satılan koltuk anında satılmış görünür. Bağlantı kurulamazsa ekran ayırmasız çalışır
+  (satış yine sunucuda denetlenir).
+
   Veri (#seatData): { map: etkinliğin koltuk ayarları (Domain/Events/SeatMap.cs), sold: [satılmış koltuk id],
                       allowed: [personelin satabileceği koltuk id] ya da null (tümü) }
   Ekran metinleri: tr.json/en.json "seatEditor" (ortak) ve "sales" bölümleri.
 
-  Dosyanın bölümleri: yardımcılar → koltuk durumu ve görünümü → panel → satış → başlangıç
+  Dosyanın bölümleri: yardımcılar → koltuk durumu ve görünümü → panel → canlı bağlantı ve ayırma → satış → başlangıç
 */
 (() => {
 "use strict";
@@ -31,11 +36,15 @@ const allowedSet = () => (ed.data.allowed ? new Set(ed.data.allowed) : null);
 const priceText = (price) => (price ? money.format(price) : t("reservation"));
 
 /* ------------------------------------------------------------------
-   Koltuk durumu: sold (satılmış/rezerve), closed (kategorisi yok ya da protokol), scope (personelin kapsamı dışında),
-   free (satılabilir). Satılabilir koltuk kategorisinin renginde, satılmış koltuk koyu, diğerleri soluk ve kesik kenarlıdır.
+   Koltuk durumu: sold (satılmış/rezerve), busy (başka ekranda işlemde), closed (kategorisi yok ya da protokol),
+   scope (personelin kapsamı dışında), free (satılabilir). Satılabilir koltuk kategorisinin renginde, satılmış koltuk koyu,
+   işlemdeki koltuk turuncu, diğerleri soluk ve kesik kenarlıdır.
 ------------------------------------------------------------------ */
+const busy = new Set();                 // başka ekranlarda ayrılmış koltuklar
+const BUSY_COLOR = KrokiCizim.css("--seat-hold") || "#D97706";
 function stateOf(id) {
   if (soldSet().has(id)) return "sold";
+  if (busy.has(id)) return "busy";
   const c = categoryOf(id);
   if (!c || c.protocol) return "closed";
   const allowed = allowedSet();
@@ -46,13 +55,15 @@ function seatStyle(it, TC) {
   const state = stateOf(it.id);
   if (state === "free") { const c = categoryOf(it.id); return { fill: c.color, text: "#FFFFFF", stroke: "rgba(0,0,0,.35)", strokeWidth: 1.5 }; }
   if (state === "sold") return { fill: TC.ink, text: TC.paper, stroke: TC.ink, strokeWidth: 1.5 };
+  if (state === "busy") return { fill: BUSY_COLOR, text: "#FFFFFF", stroke: BUSY_COLOR, strokeWidth: 1.5, dash: [4, 3] };
   return { fill: TC.seat, text: TC.muted, stroke: TC.seatStroke, strokeWidth: 1.5, dash: [6, 4] };
 }
 function selectable(it) { return config.isOpen && stateOf(it.id) === "free"; }
 function hoverParts(it) {
   const state = stateOf(it.id), c = categoryOf(it.id);
   if (state === "free") return [c.name, priceText(c.price)];
-  return [t(state === "sold" ? (isSale ? "stateSold" : "stateReserved") : state === "scope" ? "stateScope" : "stateClosed")];
+  const key = { sold: isSale ? "stateSold" : "stateReserved", busy: "stateBusy", scope: "stateScope" }[state] ?? "stateClosed";
+  return [t(key)];
 }
 function stateText() {
   const total = ed.seats.size, sold = ed.data.sold.length;
@@ -64,7 +75,7 @@ function stateText() {
    formdaki değerler "form" nesnesinde tutulur.
 ------------------------------------------------------------------ */
 const form = { buyerName: "", buyerPhone: "", note: "", paid: null };
-let busy = false;
+let sending = false;
 
 function selectedSeats() { return [...ed.selected].map((id) => ed.seats.get(id)).filter(Boolean); }
 function totalOf(list) { return list.reduce((sum, s) => sum + categoryOf(s.id).price, 0); }
@@ -72,6 +83,7 @@ function totalOf(list) { return list.reduce((sum, s) => sum + categoryOf(s.id).p
 function renderPanel() {
   renderLegend();
   renderSell();
+  syncHolds();
 }
 
 function renderLegend() {
@@ -84,6 +96,7 @@ function renderLegend() {
     ${rows ? `<ul class="cat-legend sales-legend">${rows}</ul>` : `<p class="note">${esc(t("noCategories"))}</p>`}
     <ul class="cat-legend sales-legend">
       <li><i class="sold"></i><span>${esc(t(isSale ? "stateSold" : "stateReserved"))}</span></li>
+      <li><i class="busy"></i><span>${esc(t("stateBusy"))}</span></li>
       <li><i class="off"></i><span>${esc(t(ed.data.allowed ? "stateClosedOrScope" : "stateClosed"))}</span></li>
     </ul>`;
 }
@@ -105,7 +118,8 @@ function renderSell() {
     ${list.length ? `
       <p class="sel-seats">${esc(labels)}</p>
       <ul class="cat-legend">${summary}</ul>
-      <p class="total"><span>${esc(t("total"))}</span><b>${esc(priceText(total))}</b></p>` : `<p class="note">${esc(t("pickSeats"))}</p>`}
+      <p class="total"><span>${esc(t("total"))}</span><b>${esc(priceText(total))}</b></p>
+      <p class="hold-timer" id="holdTimer" ${myHolds.size ? "" : "hidden"}></p>` : `<p class="note">${esc(t("pickSeats"))}</p>`}
     <form id="sellForm" class="sell-form" novalidate>
       <label class="fld"><span>${esc(t("buyerName"))} *</span><input name="buyerName" maxlength="${L.name}" autocomplete="off" required value="${esc(form.buyerName)}"></label>
       <label class="fld"><span>${esc(t("buyerPhone"))}</span><input name="buyerPhone" type="tel" maxlength="${L.phone}" autocomplete="off" value="${esc(form.buyerPhone)}"></label>
@@ -116,7 +130,7 @@ function renderSell() {
         <label><input type="radio" name="paid" value="true" ${form.paid === true ? "checked" : ""}> ${esc(t("paid"))}</label>
         <label><input type="radio" name="paid" value="false" ${form.paid === false ? "checked" : ""}> ${esc(t("unpaid"))}</label>
       </fieldset>` : ""}
-      <button type="submit" class="btn primary sell-btn" ${list.length && !busy ? "" : "disabled"}>${esc(busy ? t("working") : t(isSale ? "sell" : "reserve"))}</button>
+      <button type="submit" class="btn primary sell-btn" ${list.length && !sending ? "" : "disabled"}>${esc(sending ? t("working") : t(isSale ? "sell" : "reserve"))}</button>
     </form>`;
 }
 
@@ -135,21 +149,91 @@ document.addEventListener("submit", (e) => {
 function onAction() { /* panelde bu ekrana ait data-act düğmesi yok */ }
 
 /* ------------------------------------------------------------------
+   Canlı bağlantı ve ayırma. myHolds: bu ekranın ayırdığı koltuklar (id → bitiş, ms). Seçim her değiştiğinde (panel yeniden
+   yazılınca) seçim ile ayırmalar karşılaştırılır: yeni seçilenler ayrılır, seçimden çıkanlar bırakılır. Sunucu bir koltuğu
+   ayıramazsa (başka ekran önce seçmiş) koltuk seçimden düşer.
+------------------------------------------------------------------ */
+const myHolds = new Map();
+const pending = new Set();              // ayırma isteği yolda olan koltuklar
+const conn = window.signalR ? new signalR.HubConnectionBuilder().withUrl(config.hubUrl).withAutomaticReconnect().build() : null;
+const live = () => conn?.state === "Connected";
+
+function syncHolds() {
+  if (!live()) return;
+  const sel = ed.selected;
+  const add = [...sel].filter((id) => !myHolds.has(id) && !pending.has(id));
+  const drop = [...myHolds.keys()].filter((id) => !sel.has(id));
+  if (drop.length) { drop.forEach((id) => myHolds.delete(id)); conn.invoke("Release", drop).catch(() => {}); }
+  if (add.length) {
+    add.forEach((id) => pending.add(id));
+    conn.invoke("Hold", add).then((r) => {
+      add.forEach((id) => pending.delete(id));
+      for (const [id, until] of Object.entries(r.held)) {
+        if (ed.selected.has(id)) myHolds.set(id, until);
+        else conn.invoke("Release", [id]).catch(() => {});   // bu arada seçimden çıkmış
+      }
+      if (r.rejected.length) {
+        r.rejected.forEach((id) => ed.selected.delete(id));
+        ed.toast(t("heldByOther"));
+        ed.render();
+      } else tick();
+    }).catch(() => add.forEach((id) => pending.delete(id)));
+  }
+}
+
+/* Kalan süre: en erken biten ayırmaya göre. Süresi dolan koltuk seçimden düşer. */
+function tick() {
+  const el = $("holdTimer");
+  if (!myHolds.size) { if (el) el.hidden = true; return; }
+  const now = Date.now();
+  const expired = [...myHolds].filter(([, until]) => until <= now).map(([id]) => id);
+  if (expired.length) {
+    expired.forEach((id) => { myHolds.delete(id); ed.selected.delete(id); });
+    ed.toast(t("holdExpired"), 6000);
+    ed.render();
+    return;
+  }
+  const left = Math.max(0, Math.round((Math.min(...myHolds.values()) - now) / 1000));
+  if (el) { el.hidden = false; el.textContent = t("holdLeft", { time: Math.floor(left / 60) + ":" + String(left % 60).padStart(2, "0") }); el.classList.toggle("warn", left <= 30); }
+}
+setInterval(tick, 1000);
+
+function applyLive(list, fn) { list.forEach(fn); ed.render(); }
+if (conn) {
+  conn.on("held", (seats) => applyLive(seats, (id) => busy.add(id)));
+  conn.on("released", (seats) => applyLive(seats, (id) => busy.delete(id)));
+  conn.on("sold", (seats) => applyLive(seats, (id) => {
+    busy.delete(id);
+    if (!ed.data.sold.includes(id)) ed.data.sold.push(id);
+    if (ed.selected.has(id) && !myHolds.has(id)) ed.selected.delete(id);
+  }));
+  // Bağlanınca (ve kopup yeniden bağlanınca) seansa katılır; seçili koltuklar yeniden ayrılır.
+  const join = async () => {
+    const others = await conn.invoke("Join", config.sessionId);
+    busy.clear(); others.forEach((id) => busy.add(id));
+    myHolds.clear(); pending.clear();
+    ed.render();
+  };
+  conn.onreconnected(() => join().catch(() => {}));
+  conn.start().then(join).catch(() => { /* canlı bağlantı yok: ayırmasız çalışır */ });
+}
+
+/* ------------------------------------------------------------------
    Satış: sunucuya gönderilir; cevapta seansın güncel satılmış koltukları gelir. Başarılıysa seçim ve form temizlenir,
    başkası aynı koltuğu az önce sattıysa o koltuklar seçimden düşer.
 ------------------------------------------------------------------ */
 async function sell() {
   const list = selectedSeats();
-  if (busy || !list.length) return;
+  if (sending || !list.length) return;
   if (!form.buyerName.trim()) { ed.toast(t("errorBuyerName")); document.querySelector("#sellForm [name=buyerName]")?.focus(); return; }
   if (totalOf(list) > 0 && form.paid === null) { ed.toast(t("errorPayment")); return; }
-  busy = true; renderSell();
+  sending = true; renderSell();
   let message = t("failed");
   try {
     const res = await fetch(config.sellUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json", "RequestVerificationToken": config.token },
-      body: JSON.stringify({ seats: list.map((s) => s.id), buyerName: form.buyerName, buyerPhone: form.buyerPhone, note: form.note, paid: form.paid }),
+      body: JSON.stringify({ seats: list.map((s) => s.id), buyerName: form.buyerName, buyerPhone: form.buyerPhone, note: form.note, paid: form.paid, holder: conn?.connectionId ?? null }),
     });
     const r = await res.json().catch(() => ({}));
     if (r.message) message = r.message;
@@ -157,10 +241,10 @@ async function sell() {
     if (r.status === "sold") Object.assign(form, { buyerName: "", buyerPhone: "", note: "", paid: null });
     if (r.status === "sold" || r.status === "taken") {
       const sold = soldSet();
-      ed.selected.forEach((id) => { if (sold.has(id)) ed.selected.delete(id); });
+      ed.selected.forEach((id) => { if (sold.has(id)) { ed.selected.delete(id); myHolds.delete(id); } });
     }
   } catch (e) { /* bağlantı hatası: varsayılan mesaj */ }
-  busy = false;
+  sending = false;
   ed.render();
   ed.toast(message, 6000);
 }

@@ -8,6 +8,7 @@ using ConferenceRoom.Web.Sales;
 using Microsoft.AspNetCore.Antiforgery;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Localization;
 
 namespace ConferenceRoom.Web.Pages.Satis;
@@ -16,9 +17,11 @@ namespace ConferenceRoom.Web.Pages.Satis;
 /// Personel satış ekranı (/satis/seans/{seansId}): krokiden koltuk seçilir, alıcının adı (zorunlu), telefonu ve açıklaması
 /// girilir, toplam 0'dan büyükse ödemenin alınıp alınmadığı işaretlenir. Kurallar ve kayıt Web/Sales/SalesDesk.cs içinde;
 /// ekran wwwroot/js/satis-ekrani.js (kroki ve seçim koltuk seçicinin ortak çatısından, yalnızca seçtirir).
+/// Seçilen koltuk canlı bağlantıyla 3 dakika ayrılır (Sales/SalesHub.cs); satış olunca seansın diğer ekranlarına bildirilir.
 /// Satış bölümünün çereziyle açılır (satış yetkisi, Program.cs).
 /// </summary>
-public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocalizer localizer, IAntiforgery antiforgery, TimeProvider clock) : PageModel
+public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocalizer localizer, IAntiforgery antiforgery, TimeProvider clock,
+    SeatHolds holds, IHubContext<SalesHub> hub) : PageModel
 {
     [BindProperty(SupportsGet = true)]
     public int SessionId { get; set; }
@@ -40,9 +43,12 @@ public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocaliz
         EditorConfig = new
         {
             culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
+            sessionId = SessionId,
             kind = snapshot.Session.Kind.ToString(),
             isOpen = snapshot.Session.IsOpen,
             sellUrl = $"/satis/seans/{SessionId}?handler=Sell",
+            hubUrl = SalesHub.Path,
+            holdSeconds = (int)SeatHolds.Duration.TotalSeconds,
             token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken,
             maxSeats = SalesDesk.MaxSeatsPerOrder,
             limits = new { name = Order.MaxBuyerName, phone = Order.MaxBuyerPhone, note = Order.MaxNote },
@@ -53,17 +59,20 @@ public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocaliz
     }
 
     /// <summary>
-    /// Satış ya da rezervasyon. Gövde: { seats[], buyerName, buyerPhone, note, paid }.
-    /// Cevap: { status: sold | invalid | taken | closed, message?, orderId?, count?, sold[] } — sold: seansın güncel satılmış koltukları.
+    /// Satış ya da rezervasyon. Gövde: { seats[], buyerName, buyerPhone, note, paid, holder } (holder: ekranın canlı bağlantı kimliği).
+    /// Cevap: { status: sold | invalid | taken | held | closed, message?, orderId?, sold[] } — sold: seansın güncel satılmış koltukları.
     /// </summary>
     public async Task<IActionResult> OnPostSellAsync([FromBody] SalesDesk.SellRequest request, CancellationToken cancellationToken)
     {
-        var result = await SalesDesk.SellAsync(db, User.UserId(), SessionId, request, Now, cancellationToken);
+        var result = await SalesDesk.SellAsync(db, holds, User.UserId(), SessionId, request, Now, cancellationToken);
+        if (result.Outcome == SalesDesk.Outcome.Sold)
+            await hub.Clients.Group(SalesHub.Group(SessionId)).SendAsync("sold", result.Order!.Tickets.Select(t => t.SeatId), cancellationToken);
         var message = result.Outcome switch
         {
             SalesDesk.Outcome.Sold => localizer[result.Order!.Kind == OrderKind.Sale ? "sales.soldToast" : "sales.reservedToast",
                 result.Order.Tickets.Count, result.Order.Id].Value,
             SalesDesk.Outcome.Taken => localizer["sales.taken", string.Join(", ", result.Taken ?? [])].Value,
+            SalesDesk.Outcome.Held => localizer["sales.held", string.Join(", ", result.Taken ?? [])].Value,
             SalesDesk.Outcome.Closed => localizer["sales.closed"].Value,
             _ => localizer[result.ErrorKey!].Value,
         };
@@ -79,7 +88,7 @@ public class SeansModel(AppDbContext db, LanguageCatalog catalog, IStringLocaliz
             StatusCode = result.Outcome switch
             {
                 SalesDesk.Outcome.Sold => StatusCodes.Status200OK,
-                SalesDesk.Outcome.Taken => StatusCodes.Status409Conflict,
+                SalesDesk.Outcome.Taken or SalesDesk.Outcome.Held => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest,
             },
         };
