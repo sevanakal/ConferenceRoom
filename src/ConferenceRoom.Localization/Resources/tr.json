@@ -11,17 +11,7 @@
     "home": "Ana sayfa",
     "language": "Dil",
     "login": "Giriş yap",
-    "logout": "Çıkış yap",
-    "board": "Etkinlik panosu"
-  },
-  "home": {
-    "title": "Hoş geldiniz",
-    "intro": "Bu, konferans salonu yönetim sisteminin ilk iskeletidir. Salon krokisi, etkinlikler ve rezervasyonlar sırayla eklenecek.",
-    "statusTitle": "Sistem durumu",
-    "database": "Veritabanı",
-    "databaseOk": "Bağlantı kuruldu",
-    "databaseFail": "Bağlantı kurulamadı",
-    "organization": "Kurum"
+    "logout": "Çıkış yap"
   },
   "error": {
     "title": "Bir hata oluştu",
@@ -481,7 +471,17 @@
     "badgeSalesSoon": "Satış {0} açılıyor",
     "badgeSalesClosed": "Satış kapandı",
     "badgeNow": "Şu anda",
-    "badgeCancelled": "İptal edildi"
+    "badgeCancelled": "İptal edildi",
+    "unavailable": "Etkinlik bilgilerine şu anda ulaşılamıyor. Lütfen biraz sonra tekrar deneyin.",
+    "buy": "Bilet al",
+    "reserve": "Rezervasyon yap",
+    "posterOpen": "Afişi büyüt",
+    "posterClose": "Kapat",
+    "posterAlt": "{0} afişi"
+  },
+  "ticket": {
+    "soon": "Online bilet satışı ve rezervasyon çok yakında bu sayfada açılacak. Koltuğunuzu krokiden seçebileceksiniz.",
+    "back": "Etkinliklere dön"
   },
   "salesDesk": {
     "title": "Satış",

@@ -64,17 +64,16 @@ a { color: var(--color-accent); }
 
 /* İçerik */
 main { padding-block: calc(var(--space) * 2); display: grid; gap: var(--space); }
-.hero h1 { margin: 0 0 8px; }
 .lead { margin: 0; color: var(--color-muted); max-width: 65ch; }
 .card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: var(--space); }
 .card h2 { margin: 0 0 12px; font-size: 1rem; }
 .muted { color: var(--color-muted); }
 
-.status-list { display: grid; grid-template-columns: max-content 1fr; gap: 6px 24px; margin: 0; }
-.status-list dt { color: var(--color-muted); }
-.status-list dd { margin: 0; }
-.status-list .ok { color: var(--color-ok); font-weight: 600; }
-.status-list .fail { color: var(--color-fail); font-weight: 600; }
+/* Seansın bilet sayfası (/bilet/{seansId}) */
+.ticket-intro { display: flex; gap: var(--space); align-items: flex-start; flex-wrap: wrap; }
+.ticket-intro h1 { margin: 0 0 8px; }
+.ticket-poster { width: 180px; max-width: 100%; border-radius: var(--radius); }
+
 
 /* Alt bilgi */
 .site-footer { color: var(--color-muted); font-size: .85rem; padding-block: var(--space); border-top: 1px solid var(--color-border); }

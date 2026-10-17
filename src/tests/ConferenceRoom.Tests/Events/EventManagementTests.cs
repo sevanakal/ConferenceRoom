@@ -84,6 +84,38 @@ public partial class EventManagementTests(MySqlWebAppFactory factory) : IClassFi
     }
 
     [MySqlFact]
+    public async Task Ana_sayfa_panodur_satistaki_seansin_bilet_al_dugmesi_bilet_sayfasini_acar_iptal_ve_taslakta_acmaz()
+    {
+        var admin = await factory.SignInStaffAsync();
+        var hallId = await CreateHallAsync(planVersions: 1);
+        var onSale = await CreateEventAsync(admin, hallId);
+        var cancelled = await CreateEventAsync(admin, hallId);
+        var draft = await CreateEventAsync(admin, hallId);
+        foreach (var id in new[] { onSale, cancelled, draft })
+            await AddSessionAsync(admin, id, hallId, "2030-07-01", "20:00");
+        await SaveEventAsync(admin, onSale, hallId, "Published");
+        await SaveEventAsync(admin, cancelled, hallId, "Cancelled");
+        var sessions = new Dictionary<int, int>();
+        await factory.WithDbAsync(async db =>
+        {
+            foreach (var id in new[] { onSale, cancelled, draft })
+                sessions[id] = await db.EventSessions.Where(s => s.EventId == id).Select(s => s.Id).SingleAsync();
+        });
+        var visitor = factory.CreateClient();
+
+        // Giriş istemeden açılır, giriş sayfasına yönlendirmez.
+        var home = await visitor.GetAsync("/");
+        Assert.Equal("/", home.RequestMessage!.RequestUri!.AbsolutePath);
+        var html = await home.Content.ReadAsStringAsync();
+
+        Assert.Contains(TitleOf(onSale), html);
+        Assert.Contains($"href=\"/bilet/{sessions[onSale]}\"", html);
+        Assert.DoesNotContain($"href=\"/bilet/{sessions[cancelled]}\"", html);
+        Assert.Contains(TitleOf(onSale), await visitor.GetStringAsync($"/bilet/{sessions[onSale]}"));
+        Assert.Equal(System.Net.HttpStatusCode.NotFound, (await visitor.GetAsync($"/bilet/{sessions[draft]}")).StatusCode);
+    }
+
+    [MySqlFact]
     public async Task Gorsel_olmayan_dosya_afis_olarak_kabul_edilmez_gorsel_kabul_edilir()
     {
         var admin = await factory.SignInStaffAsync();
