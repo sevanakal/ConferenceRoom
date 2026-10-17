@@ -4,6 +4,7 @@
 @using ConferenceRoom.Web.Common
 @*
     Seansın satış ayrıntısı: üstte özet sayılar, altta işlemler (yeniden eskiye). Bkz. SeansModel.
+    "Satış kayıtlarını düzeltme" yetkisi olan kullanıcı her işlemin ödeme durumunu buradan değiştirebilir.
 *@
 @{
     Layout = "_AdminLayout";
@@ -69,7 +70,18 @@ else
                         </td>
                         <td><div class="chips">@foreach (var seat in o.Seats) { <span class="chip">@seat</span> }</div></td>
                         <td class="num">@T["report.money", o.Total.ToString("#,0.##")]</td>
-                        <td><span class="pay-state" data-state="@o.Payment">@T[$"report.payment{o.Payment}"]</span></td>
+                        <td>
+                            <span class="pay-state" data-state="@o.Payment">@T[$"report.payment{o.Payment}"]</span>
+                            @if (Model.CanManage && o.Payment != PaymentStatus.NotRequired)
+                            {
+                                var paid = o.Payment == PaymentStatus.Received;
+                                <form method="post" asp-page-handler="Payment" class="pay-form">
+                                    <input type="hidden" name="orderId" value="@o.Id" />
+                                    <input type="hidden" name="paid" value="@(paid ? "false" : "true")" />
+                                    <button type="submit" class="btn-link">@T[paid ? "myOrders.markUnpaid" : "myOrders.markPaid"]</button>
+                                </form>
+                            }
+                        </td>
                         <td>@(o.SellerName ?? T["report.online"])</td>
                     </tr>
                 }

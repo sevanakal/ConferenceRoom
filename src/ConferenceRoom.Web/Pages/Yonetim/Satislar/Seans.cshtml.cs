@@ -1,4 +1,6 @@
+using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Infrastructure.Persistence;
+using ConferenceRoom.Web.Auth;
 using ConferenceRoom.Web.Sales;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -8,9 +10,14 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Satislar;
 /// <summary>
 /// Seansın satış ayrıntısı (/yonetim/satislar/seans/{id}): raporun o seansa ait satırı ve işlem listesi (zaman, alıcı,
 /// telefon, koltuklar, tutar, ödeme, satan personel, açıklama). Bildirimlerden de buraya gelinir. "sales.view" yetkisi ister.
+/// "Satış kayıtlarını düzeltme" (sales.manage) yetkisi olan kullanıcı burada herhangi bir işlemin ödeme durumunu değiştirir
+/// (Payment işleyicisi; kural SalesDesk.SetPaymentAsync).
 /// </summary>
 public class SeansModel(AppDbContext db, TimeProvider clock) : PageModel
 {
+    /// <summary>Kullanıcı ödeme durumunu değiştirebilir mi (düğmeler yalnızca o zaman görünür).</summary>
+    public bool CanManage => User.HasClaim(AppClaims.Permission, Permissions.SalesManage);
+
     [BindProperty(SupportsGet = true)]
     public int Id { get; set; }
 
@@ -26,5 +33,14 @@ public class SeansModel(AppDbContext db, TimeProvider clock) : PageModel
         Session = row;
         Orders = await SalesReport.OrdersAsync(db, Id, cancellationToken);
         return Page();
+    }
+
+    /// <summary>Ödeme durumunu değiştirir ve işlemin satırına döner. Yetkisi olmayan kullanıcıya 403.</summary>
+    public async Task<IActionResult> OnPostPaymentAsync(int orderId, bool paid, CancellationToken cancellationToken)
+    {
+        if (!CanManage)
+            return Forbid();
+        await SalesDesk.SetPaymentAsync(db, User.UserId(), orderId, paid, cancellationToken, anySeller: true);
+        return Redirect($"/yonetim/satislar/seans/{Id}#islem-{orderId}");
     }
 }

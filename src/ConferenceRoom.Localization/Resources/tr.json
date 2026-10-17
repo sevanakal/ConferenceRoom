@@ -727,6 +727,10 @@
         "name": "Satış raporu",
         "description": "Hangi etkinlikte ne satıldı, kaç koltuk kaldı, ödemesi bekleyenler. Yalnızca görüntüler."
       },
+      "manage": {
+        "name": "Satış kayıtlarını düzeltme",
+        "description": "Başka personelin yaptığı satış ve rezervasyonun ödeme durumunu satış raporundan değiştirme."
+      },
       "notify": {
         "name": "Satış bildirimleri",
         "description": "Bilet satışı ya da rezervasyon yapıldığında panelde bildirim alma."

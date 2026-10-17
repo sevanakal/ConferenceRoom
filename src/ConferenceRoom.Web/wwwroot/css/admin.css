@@ -197,6 +197,7 @@
 .pay-state[data-state="Received"] { color: var(--color-ok); }
 .pay-state[data-state="Pending"] { color: var(--color-fail); }
 .pay-state[data-state="NotRequired"] { color: var(--color-muted); font-weight: 400; }
+.pay-form { margin: 4px 0 0; }
 
 /* ---- Bildirimler (js/bildirimler.js): üst çubuktaki zil, köşe kutuları, bildirim listesi ---- */
 .notify-bell { position: relative; display: inline-flex; padding: 6px; border-radius: 10px; color: var(--color-text); }

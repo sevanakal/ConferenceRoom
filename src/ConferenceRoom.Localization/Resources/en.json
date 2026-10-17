@@ -727,6 +727,10 @@
         "name": "Sales report",
         "description": "What was sold for each event, how many seats are left, pending payments. View only."
       },
+      "manage": {
+        "name": "Correct sales records",
+        "description": "Change the payment status of sales and reservations made by other staff, from the sales report."
+      },
       "notify": {
         "name": "Sales notifications",
         "description": "Get a notification in the panel when a ticket is sold or a seat is reserved."
