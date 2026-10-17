@@ -1,0 +1,31 @@
+@page "/satis/seans/{sessionId:int}"
+@model ConferenceRoom.Web.Pages.Satis.SeansModel
+@using System.Globalization
+@using System.Text.Json
+@using ConferenceRoom.Web.Common
+@*
+    Personel satış ekranı. Çerçeve (başlık, kat sekmeleri, tuval, seçim bölümü) ortak şablondan gelir (_SeatScreenLayout,
+    PickOnly: Kaydet ve geri al yok); burada panelin satış bölümleri ve ekranın verisi var. İşleyiş wwwroot/js/satis-ekrani.js.
+    Koltuğun sahibini anlatan isimler (seçili, satılmış...) seatEditor ve sales bölümlerinden ekran tarafından yazılır.
+*@
+@{
+    Layout = "_SeatScreenLayout";
+    var session = Model.Snapshot.Session;
+    ViewData["Title"] = $"{session.Title} · {T["sales.title"]}";
+    ViewData["ScreenTitle"] = session.Title;
+    ViewData["ScreenSubtitle"] = $"{DisplayTime.ToLocal(session.StartsAtUtc).ToString("d MMMM yyyy, HH:mm", CultureInfo.CurrentCulture)} · {session.HallName}";
+    ViewData["BackUrl"] = "/satis";
+    ViewData["BackLabel"] = T["sales.back"].Value;
+    ViewData["PickOnly"] = true;
+    if (!session.IsOpen)
+        ViewData["Notice"] = T["sales.closed"].Value;
+}
+<section class="sec" id="legendSec"></section>
+<section class="sec" id="sellSec"></section>
+
+@section Scripts {
+    <script type="application/json" id="editorConfig">@Html.Raw(ScreenData.ForScript(JsonSerializer.Serialize(Model.EditorConfig)))</script>
+    <script type="application/json" id="planData">@Html.Raw(ScreenData.ForScript(Model.Snapshot.PlanJson))</script>
+    <script type="application/json" id="seatData">@Html.Raw(ScreenData.ForScript(JsonSerializer.Serialize(Model.SeatData)))</script>
+    <script src="~/js/satis-ekrani.js" asp-append-version="true"></script>
+}

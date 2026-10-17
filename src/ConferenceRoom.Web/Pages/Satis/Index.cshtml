@@ -2,8 +2,10 @@
 @model ConferenceRoom.Web.Pages.Satis.IndexModel
 @using System.Globalization
 @using ConferenceRoom.Web.Common
+@using ConferenceRoom.Web.Sales
 @*
-    Satış bölümü açılış sayfası: satış personelinin göreceği yaklaşan seanslar. Stil wwwroot/css/site.css.
+    Satış bölümü açılış sayfası: satış personelinin göreceği yaklaşan seanslar; satışa açık seansın satış ekranına bağlantısı.
+    Stil wwwroot/css/site.css.
 *@
 @{
     ViewData["Title"] = T["salesDesk.title"];
@@ -21,7 +23,7 @@
     {
         <table class="sales-desk__table">
             <thead>
-                <tr><th>@T["salesDesk.when"]</th><th>@T["salesDesk.event"]</th><th>@T["salesDesk.hall"]</th><th>@T["salesDesk.status"]</th></tr>
+                <tr><th>@T["salesDesk.when"]</th><th>@T["salesDesk.event"]</th><th>@T["salesDesk.hall"]</th><th>@T["salesDesk.status"]</th><th></th></tr>
             </thead>
             <tbody>
                 @foreach (var s in Model.Sessions)
@@ -31,6 +33,12 @@
                         <td>@s.Title</td>
                         <td>@s.HallName</td>
                         <td>@T[$"board.badge{s.Badge}", s.SalesStartUtc is { } start ? DisplayTime.ToLocal(start).ToString("d MMMM HH:mm", culture) : ""]</td>
+                        <td>
+                            @if (SalesDesk.IsOpen(s.Badge))
+                            {
+                                <a class="btn-primary" href="/satis/seans/@s.SessionId">@T["sales.open"]</a>
+                            }
+                        </td>
                     </tr>
                 }
             </tbody>

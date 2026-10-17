@@ -6,8 +6,8 @@ namespace ConferenceRoom.Web.Pages.Satis;
 
 /// <summary>
 /// Satış bölümünün açılış sayfası (/satis). Satış yetkisi olan personel /giris sayfasından girince buraya gelir
-/// (çerez: AuthSchemes.Sales; yönetim paneli bu oturumla açılmaz). Şimdilik satılabilecek yaklaşan seansları listeler;
-/// koltuk seçerek satış ekranı bir sonraki adımda buraya eklenecek.
+/// (çerez: AuthSchemes.Sales; yönetim paneli bu oturumla açılmaz). Yaklaşan seansları listeler; satışa açık seansın
+/// satış ekranı /satis/seans/{seansId} adresindedir (Seans.cshtml).
 /// </summary>
 public class IndexModel(AppDbContext db, TimeProvider clock) : PageModel
 {

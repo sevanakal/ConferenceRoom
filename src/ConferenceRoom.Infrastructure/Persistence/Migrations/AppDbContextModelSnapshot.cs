@@ -615,6 +615,72 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         });
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Order", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("BuyerName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("BuyerPhone")
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)");
+
+                    b.Property<string>("Channel")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EventId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("EventSessionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Payment")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
+                    b.Property<int?>("SoldByStaffUserId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventSessionId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("SoldByStaffUserId");
+
+                    b.HasIndex("EventId", "CreatedAtUtc");
+
+                    b.ToTable("Orders", (string)null);
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Sales.SeatScope", b =>
                 {
                     b.Property<int>("Id")
@@ -664,6 +730,55 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("SeatScopes", (string)null);
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Ticket", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("CategoryName")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("varchar(60)");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("EventSessionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrderId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("decimal(12,2)");
+
+                    b.Property<string>("SeatId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("SeatLabel")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("varchar(40)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("EventSessionId", "SeatId")
+                        .IsUnique();
+
+                    b.ToTable("Tickets", (string)null);
                 });
 
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Customer", b =>
@@ -827,6 +942,38 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.Navigation("CreatedBy");
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Order", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Events.Event", "Event")
+                        .WithMany()
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Events.EventSession", "EventSession")
+                        .WithMany()
+                        .HasForeignKey("EventSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", "SoldBy")
+                        .WithMany()
+                        .HasForeignKey("SoldByStaffUserId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.Navigation("Event");
+
+                    b.Navigation("EventSession");
+
+                    b.Navigation("SoldBy");
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Sales.SeatScope", b =>
                 {
                     b.HasOne("ConferenceRoom.Domain.Events.Event", "Event")
@@ -859,6 +1006,27 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.Navigation("UpdatedBy");
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Ticket", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Events.EventSession", null)
+                        .WithMany()
+                        .HasForeignKey("EventSessionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Sales.Order", null)
+                        .WithMany("Tickets")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Role", b =>
                 {
                     b.Navigation("Permissions");
@@ -877,6 +1045,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("ConferenceRoom.Domain.Halls.Hall", b =>
                 {
                     b.Navigation("PlanVersions");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Sales.Order", b =>
+                {
+                    b.Navigation("Tickets");
                 });
 #pragma warning restore 612, 618
         }

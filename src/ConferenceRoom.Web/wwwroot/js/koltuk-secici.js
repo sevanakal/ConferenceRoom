@@ -1,7 +1,9 @@
 /*
   Koltuk seçici (yönetim paneli): krokiyi salt okunur gösterip koltuk seçtiren ekranların ortak çatısı
   ==================================================================================================
-  Kullanan ekranlar: etkinlik koltuk ayarları (koltuk-ayarlari.js) ve personel satış yetkileri (satis-yetkileri.js).
+  Kullanan ekranlar: etkinlik koltuk ayarları (koltuk-ayarlari.js), personel satış yetkileri (satis-yetkileri.js) ve
+  personel satış ekranı (satis-ekrani.js). Sayfada Kaydet düğmesi yoksa (şablonda PickOnly) ekran yalnızca seçtirir:
+  geri al/yinele, kaydetme ve "kaydedilmemiş değişiklik" uyarısı devre dışıdır, işi ekranın paneli yapar.
   Çizim kroki editörüyle ortaktır (kroki-cizim.js); sayfa iskeleti Pages/Shared/_SeatScreenLayout.cshtml.
   Sayfa üç JSON bloğu verir:
     #editorConfig : ayar sürümü (revision), kayıt adresi, dil, ekran metinleri
@@ -12,6 +14,8 @@
   kaydetme, kısayollar, bildirim. Ekrana özgü olanlar (koltuğun rengi, panel bölümleri, düğmelerin işi) ekranın
   verdiği kancalardan (hooks) gelir:
     seatStyle(it)        → koltuğun dolgu/kenar/yazı rengi (KrokiCizim.drawSeat biçiminde)
+    selectable(it)       → koltuk seçilebilir mi (yoksa hepsi; ör. satış ekranında satılmış koltuk seçilmez)
+    stateText()          → yalnızca seçtiren ekranda başlığın yanındaki durum yazısı
     seatDot(it)          → koltuğun köşesine yeşil nokta konsun mu
     seatBadge(it, TC)    → koltuğun üstündeki küçük etiket { text, color, faded } ya da null (ör. satış yetkilisinin baş harfleri)
     hoverParts(it)       → fare altındaki koltuk için ek bilgiler (dizi)
@@ -58,6 +62,8 @@ let levelId = plan.levels[0].id;
 let selected = new Set();
 let tool = "select";
 const levelSeats = () => [...seats.values()].filter((s) => s.levelId === levelId);
+const pickOnly = !$("saveBtn");
+const canSelect = (id) => !hooks.selectable || hooks.selectable(seats.get(id));
 
 /* ---------- Geri al / yinele: her değişiklikten sonra commit() verinin JSON'unu yığına koyar ---------- */
 let undoStack = [], redoStack = [], lastSnap = JSON.stringify(data);
@@ -69,8 +75,8 @@ function commit() {
   render();
 }
 function restore(snap) { data = JSON.parse(snap); lastSnap = snap; render(); }
-function undo() { if (!undoStack.length) return; redoStack.push(lastSnap); restore(undoStack.pop()); }
-function redo() { if (!redoStack.length) return; undoStack.push(lastSnap); restore(redoStack.pop()); }
+function undo() { if (pickOnly || !undoStack.length) return; redoStack.push(lastSnap); restore(undoStack.pop()); }
+function redo() { if (pickOnly || !redoStack.length) return; undoStack.push(lastSnap); restore(redoStack.pop()); }
 
 /* ------------------------------------------------------------------
    Çizim (Konva). Katmanlar: gridLayer (ızgara), layer (kroki), uiLayer (alan seçimi kutusu).
@@ -181,6 +187,7 @@ stage.on("mousedown touchstart", (e) => {
   const id = seatIdOf(e.target);
   const add = evt.shiftKey || evt.ctrlKey || evt.metaKey;
   if (id) {
+    if (!canSelect(id)) return;
     if (add) selected.has(id) ? selected.delete(id) : selected.add(id);
     else selected = new Set([id]);
     paintSelection(); renderPanel();
@@ -212,7 +219,7 @@ function endPointer() {
   const box = { x: marquee.x(), y: marquee.y(), width: marquee.width(), height: marquee.height() };
   if (!marqueeStart.add) selected = new Set();
   if (box.width > 2 || box.height > 2) {
-    for (const [id, g] of nodes) if (Konva.Util.haveIntersection(box, g.getClientRect({ relativeTo: layer }))) selected.add(id);
+    for (const [id, g] of nodes) if (canSelect(id) && Konva.Util.haveIntersection(box, g.getClientRect({ relativeTo: layer }))) selected.add(id);
   }
   marquee.visible(false); marqueeStart = null; uiLayer.batchDraw();
   paintSelection(); renderPanel();
@@ -246,7 +253,7 @@ const seatsOfBlock = (blockKey) => levelSeats().filter((s) => (s.blockId || NO_B
 const rowsOf = (blockKey) => [...new Set(seatsOfBlock(blockKey).map((s) => s.row || ""))].sort(naturalSort);
 function selectSeats(list, add) {
   if (!add) selected = new Set();
-  list.forEach((s) => selected.add(s.id));
+  list.forEach((s) => { if (canSelect(s.id)) selected.add(s.id); });
   paintSelection(); renderPanel();
 }
 function selectRows(blockKey, from, to) {
@@ -323,6 +330,7 @@ let savedSnap = lastSnap;
 let saving = false;
 const isDirty = () => lastSnap !== savedSnap;
 function updateSaveState(text) {
+  if (pickOnly) { $("saveState").textContent = hooks.stateText?.() ?? ""; return; }
   const dirty = isDirty();
   $("saveState").textContent = text || (dirty ? t("unsaved") : revision ? t("revisionN", { n: revision }) : t("noRevision"));
   $("saveState").classList.toggle("dirty", dirty);
@@ -331,7 +339,7 @@ function updateSaveState(text) {
   $("redoBtn").disabled = !redoStack.length;
 }
 async function save() {
-  if (saving) return;
+  if (saving || pickOnly) return;
   saving = true; updateSaveState(t("saving"));
   const body = JSON.stringify(data);
   let message = t("saveFailed");
@@ -348,10 +356,12 @@ async function save() {
   } catch (e) { /* bağlantı hatası: varsayılan mesaj */ }
   saving = false; updateSaveState(); toast(message, 6000);
 }
-$("saveBtn").onclick = save;
-window.addEventListener("beforeunload", (e) => { if (isDirty()) { e.preventDefault(); e.returnValue = ""; } });
-$("undoBtn").onclick = undo;
-$("redoBtn").onclick = redo;
+if (!pickOnly) {
+  $("saveBtn").onclick = save;
+  window.addEventListener("beforeunload", (e) => { if (isDirty()) { e.preventDefault(); e.returnValue = ""; } });
+  $("undoBtn").onclick = undo;
+  $("redoBtn").onclick = redo;
+}
 $("zoomIn").onclick = () => setZoom(stage.scaleX() * 1.25);
 $("zoomOut").onclick = () => setZoom(stage.scaleX() / 1.25);
 $("fitBtn").onclick = fit;

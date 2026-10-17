@@ -135,6 +135,29 @@ public static partial class SeatMap
         return new SeatMapResult(null, normalized.ToJsonString(), seats.Count, online.Count);
     }
 
+    /// <summary>
+    /// Kaydedilmiş (denetlenmiş) ayarlardan satış için gerekenler: koltuk id → kategori. Satış her işlemde fiyatı
+    /// ve satılabilirliği buradan alır; kategorisi olmayan ya da protokol kategorisindeki koltuk satılmaz.
+    /// </summary>
+    public static IReadOnlyDictionary<string, SeatCategory> SeatCategories(string json)
+    {
+        var root = JsonNode.Parse(json)!.AsObject();
+        var categories = new Dictionary<string, SeatCategory>(StringComparer.Ordinal);
+        foreach (var node in root["categories"]!.AsArray())
+        {
+            var c = node!.AsObject();
+            categories[Text(c["id"])!] = new SeatCategory(Text(c["id"])!, Text(c["name"])!, c["price"]!.GetValue<decimal>(), Text(c["color"])!,
+                c["protocol"] is JsonValue p && p.GetValueKind() == JsonValueKind.True);
+        }
+        var seats = new Dictionary<string, SeatCategory>(StringComparer.Ordinal);
+        foreach (var (seatId, value) in root["seats"]!.AsObject())
+        {
+            if (Text(value) is { } categoryId && categories.TryGetValue(categoryId, out var category))
+                seats[seatId] = category;
+        }
+        return seats;
+    }
+
     // ---- Yardımcılar: alan yoksa ya da türü farklıysa null ----
 
     private static string? Text(JsonNode? node) =>
@@ -149,6 +172,9 @@ public static partial class SeatMap
     [GeneratedRegex("^#[0-9A-Fa-f]{6}$")]
     private static partial Regex ColorPattern();
 }
+
+/// <summary>Bilet kategorisi (fiyat TL; protokol: satışa kapalı).</summary>
+public sealed record SeatCategory(string Id, string Name, decimal Price, string Color, bool Protocol);
 
 /// <summary>Denetimin sonucu: hata varsa dil anahtarı, yoksa kaydedilecek JSON ve özet (kategorisi olan / online koltuk sayısı).</summary>
 public sealed record SeatMapResult(string? ErrorKey, string? Json, int AssignedSeats, int OnlineSeats)

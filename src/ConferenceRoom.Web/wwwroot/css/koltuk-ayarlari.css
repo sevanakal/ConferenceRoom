@@ -1,6 +1,6 @@
 /*
   Koltuk seçici ekranlarının stili (Pages/Shared/_SeatScreenLayout.cshtml): etkinlik koltuk ayarları
-  (Yonetim/Fiyatlandirma/Koltuklar) ve satış yetkileri (Yonetim/SatisYetkileri/Koltuklar).
+  (Yonetim/Fiyatlandirma/Koltuklar), satış yetkileri (Yonetim/SatisYetkileri/Koltuklar) ve personel satış ekranı (Satis/Seans).
   Çerçeve (başlık, düğmeler, sekmeler, panel) ve renk değişkenleri kroki-editor.css'ten gelir.
   Yerleşim: üstte başlık, solda kroki tuvali, sağda panel (seçim + ekranın kendi bölümleri).
 */
@@ -64,3 +64,18 @@
   .seat-app .main { grid-template-columns: 1fr; grid-template-rows: 1fr; }
   .seat-app .panel { width: min(340px, calc(100% - 32px)); }
 }
+
+/* ---- Personel satış ekranı (satis-ekrani.js): renk açıklaması, seçilen koltuklar, alıcı formu ---- */
+.sales-legend li { grid-template-columns: 14px 1fr auto auto; }
+.sales-legend em { font-style: normal; font-size: 11px; color: var(--muted); min-width: 52px; text-align: right; }
+.cat-legend i.sold { background: var(--ink); border-color: var(--ink); }
+.cat-legend i.off { border: 1.5px dashed var(--seat-stroke); }
+.sel-seats { margin: 0; font-family: var(--font-data); font-size: 12px; line-height: 1.5; max-height: 72px; overflow: auto; }
+.total { display: flex; justify-content: space-between; align-items: baseline; margin: 4px 0 0; padding-top: 8px; border-top: 1px solid var(--line); font-weight: 600; }
+.total b { font-family: var(--font-data); font-size: 16px; font-variant-numeric: tabular-nums; }
+.sell-form { display: grid; gap: 8px; margin-top: 8px; }
+.sell-form textarea { width: 100%; padding: 5px 7px; border: 1px solid var(--line); border-radius: 5px; background: var(--paper); color: var(--ink); font: inherit; resize: vertical; }
+.sell-form .pay { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0; padding: 8px; border: 1px solid var(--line); border-radius: 6px; }
+.sell-form .pay legend { padding: 0 4px; font-size: 11px; color: var(--muted); }
+.sell-form .pay label { display: inline-flex; gap: 6px; align-items: center; }
+.sell-btn { justify-content: center; padding: 9px 12px; font-weight: 600; }

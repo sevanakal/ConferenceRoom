@@ -111,3 +111,4 @@ main { padding-block: calc(var(--space) * 2); display: grid; gap: var(--space); 
 .sales-desk__table th, .sales-desk__table td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--color-border); }
 .sales-desk__table th { color: var(--color-muted); font-size: .85rem; font-weight: 600; }
 .sales-desk__table tr:last-child td { border-bottom: 0; }
+.sales-desk__table .btn-primary { width: auto; min-height: 36px; padding: 0 14px; font-size: .9rem; white-space: nowrap; text-decoration: none; }

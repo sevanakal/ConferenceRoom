@@ -112,6 +112,29 @@ public static class HallPlan
     }
 
     /// <summary>
+    /// Kaydedilmiş krokideki koltukların okunur adları (koltuk id → "Sıra-No", ör. "A-12"; sıra adı yoksa yalnızca numara).
+    /// Ekrandaki etiketle aynı kural (wwwroot/js/kroki-cizim.js, seatLabel); satılan bilete bu ad yazılır.
+    /// </summary>
+    public static Dictionary<string, string> SeatLabels(string planJson)
+    {
+        using var document = JsonDocument.Parse(planJson);
+        var labels = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var item in document.RootElement.GetProperty("items").EnumerateArray())
+        {
+            if (item.GetProperty("type").GetString() != "seat")
+                continue;
+            var row = item.TryGetProperty("row", out var r) && r.ValueKind == JsonValueKind.String ? r.GetString() : null;
+            var num = item.TryGetProperty("num", out var n) ? n.ValueKind switch
+            {
+                JsonValueKind.Number or JsonValueKind.String => n.ToString(),
+                _ => "",
+            } : "";
+            labels[item.GetProperty("id").GetString()!] = string.IsNullOrEmpty(row) ? num : $"{row}-{num}";
+        }
+        return labels;
+    }
+
+    /// <summary>
     /// Koltukları <paramref name="seatPlanJson"/> krokisinden, koltuk dışındaki yapı öğelerini (duvar, kapı, sahne, bölge, sütun,
     /// yazı) <paramref name="structurePlanJson"/> krokisinden alan birleşik kroki. Katlar: yapı krokisinin katları, ardından
     /// yalnızca koltuk krokisinde olanlar. Etkinlik ekranları kullanır: etkinlik eski bir kroki sürümüne bağlı olsa da salonun
