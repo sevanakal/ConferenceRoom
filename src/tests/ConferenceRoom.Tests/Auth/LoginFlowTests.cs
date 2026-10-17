@@ -81,6 +81,23 @@ public class LoginFlowTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWeb
     }
 
     [MySqlFact]
+    public async Task Yonetici_bilgileriyle_izleyici_girisi_yapilamaz_ve_panel_acilmaz()
+    {
+        var client = factory.CreateClient();
+
+        // İzleyici girişi yalnızca izleyici tablosuna bakar; yönetim kullanıcısının bilgileri burada geçersizdir.
+        var html = await Forms.PostAsync(client, "/giris?returnUrl=%2Fyonetim", new Dictionary<string, string>
+        {
+            ["Input.Email"] = MySqlWebAppFactory.AdminEmail,
+            ["Input.Password"] = MySqlWebAppFactory.AdminPassword,
+        });
+        Assert.Contains("E-posta ya da şifre hatalı.", html);
+
+        var panel = await client.GetAsync("/yonetim");
+        Assert.Contains("/yonetim/giris", panel.RequestMessage!.RequestUri!.ToString());
+    }
+
+    [MySqlFact]
     public async Task Ayni_e_postayla_ikinci_kez_kayit_olunamaz()
     {
         var form = new Dictionary<string, string>
