@@ -497,6 +497,7 @@
   "sales": {
     "title": "Sales",
     "back": "Back to sessions",
+    "selHint": "Click seats one by one to add them; click a selected seat again to remove it. You can also hold and drag across seats.",
     "legend": "Categories",
     "noCategories": "This event has no ticket categories yet. Seats can be sold once categories are assigned in Pricing.",
     "freeCount": "{n} free",

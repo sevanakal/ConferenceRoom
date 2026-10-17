@@ -20,7 +20,8 @@
 (() => {
 "use strict";
 
-const hooks = { seatStyle, selectable, hoverParts, renderPanel, stateText, onAction };
+// addOnClick: koltuklar birer birer seçilir; tıklama önceki seçimi bozmaz, seçili koltuğa yeniden tıklamak seçimi kaldırır.
+const hooks = { seatStyle, selectable, hoverParts, renderPanel, stateText, onAction, addOnClick: true };
 const ed = KoltukSecici.create(hooks);
 const { t, esc, locale, config } = ed;
 const $ = (id) => document.getElementById(id);
