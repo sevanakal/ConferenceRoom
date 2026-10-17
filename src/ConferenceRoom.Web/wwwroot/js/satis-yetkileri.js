@@ -79,9 +79,9 @@ function useCategoryEvent(id) {
 }
 useCategoryEvent(categoryEventId);
 const categoryOf = (seatId) => categoryMap?.byId.get(categoryMap.seats[seatId]);
-/* Kategorinin fiyatı: rezervasyon kategorisinde "Rezervasyon", protokolde "Satışa kapalı". */
+/* Kategorinin fiyatı: fiyatı 0 ise "Rezervasyon", protokolde "Satışa kapalı". */
 const money = new Intl.NumberFormat(locale, { style: "currency", currency: "TRY", maximumFractionDigits: 2 });
-const priceText = (c) => (c.protocol ? t("notForSale") : c.reservation ? t("reservation") : money.format(c.price));
+const priceText = (c) => (c.protocol ? t("notForSale") : c.price ? money.format(c.price) : t("reservation"));
 
 /* ------------------------------------------------------------------
    Koltuk görünümü: renk kategoriden (kategorisiz gri, protokol kesik kenarlı), üstte satabilen personelin etiketi.

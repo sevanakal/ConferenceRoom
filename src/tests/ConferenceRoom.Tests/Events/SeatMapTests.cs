@@ -32,18 +32,14 @@ public class SeatMapTests
     }
 
     [Fact]
-    public void Rezervasyon_kategorisinin_fiyati_sifir_saklanir_ve_online_olabilir()
+    public void Online_fiyat_gosterimi_varsayilan_olarak_acik_istenirse_kapatilir()
     {
-        var json = Map().Replace("\"price\": 250.5, \"color\": \"#1d5fbf\", \"protocol\": false", "\"price\": 250.5, \"color\": \"#1d5fbf\", \"protocol\": false, \"reservation\": true");
+        var shown = JsonNode.Parse(SeatMap.Read(Map(), Seats).Json!)!;
+        var hidden = JsonNode.Parse(SeatMap.Read(Map().TrimEnd().TrimEnd('}') + ", \"showOnlinePrice\": false }", Seats).Json!)!;
 
-        var result = SeatMap.Read(json, Seats);
-
-        Assert.True(result.IsValid);
-        var categories = JsonNode.Parse(result.Json!)!["categories"]!;
-        Assert.Equal(0m, categories[0]!["price"]!.GetValue<decimal>());
-        Assert.True(categories[0]!["reservation"]!.GetValue<bool>());
-        Assert.False(categories[1]!["reservation"]!.GetValue<bool>());   // alan yoksa rezervasyon değildir
-        Assert.Equal(1, result.OnlineSeats);
+        Assert.True(shown["showOnlinePrice"]!.GetValue<bool>());
+        Assert.False(hidden["showOnlinePrice"]!.GetValue<bool>());
+        Assert.Equal(250.5m, hidden["categories"]![0]!["price"]!.GetValue<decimal>());   // fiyat gizlense de saklanır
     }
 
     [Fact]

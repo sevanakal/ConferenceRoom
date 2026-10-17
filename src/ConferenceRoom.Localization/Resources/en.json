@@ -574,7 +574,8 @@
     "settingsNote": "Settings apply to every session of the event.",
     "protocolTitle": "Protocol seats are not for sale",
     "reservation": "Reservation",
-    "reservationTitle": "Reservation without a price: no price is entered or shown (e.g. if you don't want to show a price for online reservations)"
+    "showOnlinePrice": "Show prices online",
+    "showOnlinePriceHint": "If unticked, people buying or reserving online don't see the price. Prices are still entered here and used for staff sales; you can leave them at 0 (a price of 0 shows as \"Reservation\")."
   },
   "salesScope": {
     "title": "Sales permissions",

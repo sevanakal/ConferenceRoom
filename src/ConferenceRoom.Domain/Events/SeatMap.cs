@@ -11,11 +11,10 @@ namespace ConferenceRoom.Domain.Events;
 ///
 /// Yapı:
 ///   { "schema": 1,
-///     "categories": [{ "id", "name", "price", "color", "protocol", "reservation" }],
-///                                                                   bilet kategorileri; price TL, protocol: satışa kapalı,
-///                                                                   reservation: fiyatsız rezervasyon (fiyat 0 saklanır, gösterilmez)
+///     "categories": [{ "id", "name", "price", "color", "protocol" }],   bilet kategorileri; price TL, protocol: satışa kapalı
 ///     "seats":  { "&lt;koltuk id&gt;": "&lt;kategori id&gt;" },                    kategorisi olmayan koltuk satılmaz
-///     "online": ["&lt;koltuk id&gt;", ...]                                   internetten satılabilecek koltuklar
+///     "online": ["&lt;koltuk id&gt;", ...],                                  internetten satılabilecek koltuklar
+///     "showOnlinePrice": true                                           online satışta fiyat gösterilsin mi (yoksa true)
 ///   }
 /// Kurallar: koltuk kimlikleri etkinliğin kroki sürümlerinde bulunmalı; online koltuğun protokol olmayan bir kategorisi olmalı.
 /// </summary>
@@ -39,6 +38,7 @@ public static partial class SeatMap
         ["categories"] = new JsonArray(),
         ["seats"] = new JsonObject(),
         ["online"] = new JsonArray(),
+        ["showOnlinePrice"] = true,
     }.ToJsonString();
 
     /// <summary>Ayarları denetler. <paramref name="seatIds"/>: etkinliğin seanslarının bağlı olduğu kroki sürümlerindeki koltuk kimlikleri.</summary>
@@ -78,17 +78,15 @@ public static partial class SeatMap
             if (Text(c["color"]) is not { } color || !ColorPattern().IsMatch(color))
                 return SeatMapResult.Fail("seatMap.invalid");
             var protocol = c["protocol"] is JsonValue p && p.GetValueKind() == JsonValueKind.True;
-            var reservation = c["reservation"] is JsonValue r && r.GetValueKind() == JsonValueKind.True;
             if (protocol)
                 protocolIds.Add(id);
             categories.Add(new JsonObject
             {
                 ["id"] = id,
                 ["name"] = name,
-                ["price"] = reservation ? 0m : Math.Round((decimal)price, 2, MidpointRounding.AwayFromZero),
+                ["price"] = Math.Round((decimal)price, 2, MidpointRounding.AwayFromZero),
                 ["color"] = color.ToUpperInvariant(),
                 ["protocol"] = protocol,
-                ["reservation"] = reservation,
             });
         }
 
@@ -123,7 +121,17 @@ public static partial class SeatMap
             online.Add(seatId);
         }
 
-        var normalized = new JsonObject { ["schema"] = SchemaVersion, ["categories"] = categories, ["seats"] = seats, ["online"] = online };
+        // ---- Online satışta fiyat gösterimi: yalnızca açıkça false ise gizlenir ----
+        var showOnlinePrice = !(root["showOnlinePrice"] is JsonValue show && show.GetValueKind() == JsonValueKind.False);
+
+        var normalized = new JsonObject
+        {
+            ["schema"] = SchemaVersion,
+            ["categories"] = categories,
+            ["seats"] = seats,
+            ["online"] = online,
+            ["showOnlinePrice"] = showOnlinePrice,
+        };
         return new SeatMapResult(null, normalized.ToJsonString(), seats.Count, online.Count);
     }
 
