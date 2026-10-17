@@ -17,7 +17,7 @@ public static class AuthenticationSetup
     {
         services.AddSingleton<PasswordService>();
 
-        // ---- Çerezler: iki ayrı şema ----
+        // ---- Çerezler: üç ayrı şema (yönetim, satış personeli, izleyici) ----
         // Genel sayfalarda (ana sayfa, bilet ekranı) varsayılan kimlik izleyicinin çerezidir.
         // Yönetim sayfaları kendi kuralında Staff şemasını ister; izleyici çerezi orada geçersizdir.
         services.AddAuthentication(AuthSchemes.Customer)
@@ -40,12 +40,26 @@ public static class AuthenticationSetup
                 o.ExpireTimeSpan = TimeSpan.FromHours(10);  // bir iş günü
                 o.SlidingExpiration = true;
                 // Pasif yapılan kullanıcının oturumu hemen kapanır, yetki değişikliği hemen geçerli olur.
-                o.Events.OnValidatePrincipal = StaffAccounts.ValidatePrincipalAsync;
+                o.Events.OnValidatePrincipal = StaffAccounts.ValidatePanelPrincipalAsync;
+            })
+            .AddCookie(AuthSchemes.Sales, o =>
+            {
+                o.Cookie.Name = ".konferans.satis";
+                o.Cookie.Path = "/satis";                  // yalnızca satış bölümüne gönderilir; panelde geçmez
+                o.LoginPath = "/giris";
+                o.LogoutPath = "/satis/cikis";
+                o.AccessDeniedPath = "/giris";
+                o.ExpireTimeSpan = TimeSpan.FromHours(10);
+                o.SlidingExpiration = true;
+                // Pasif yapılan ya da satış yetkisi alınan personelin oturumu hemen kapanır.
+                o.Events.OnValidatePrincipal = StaffAccounts.ValidateSalesPrincipalAsync;
             });
 
-        // ---- Kurallar: panele giriş + her yetki için bir kural ----
+        // ---- Kurallar: panele giriş, satış bölümüne giriş + her yetki için bir kural ----
         var authorization = services.AddAuthorizationBuilder()
-            .AddPolicy(AuthPolicies.Staff, p => p.AddAuthenticationSchemes(AuthSchemes.Staff).RequireAuthenticatedUser());
+            .AddPolicy(AuthPolicies.Staff, p => p.AddAuthenticationSchemes(AuthSchemes.Staff).RequireAuthenticatedUser())
+            .AddPolicy(AuthPolicies.Sales, p => p.AddAuthenticationSchemes(AuthSchemes.Sales).RequireAuthenticatedUser()
+                .RequireClaim(AppClaims.Permission, Permissions.SalesSell));
         foreach (var permission in Permissions.All)
         {
             authorization.AddPolicy(AuthPolicies.Permission(permission), p => p

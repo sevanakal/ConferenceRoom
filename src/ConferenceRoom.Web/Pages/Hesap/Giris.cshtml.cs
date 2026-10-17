@@ -10,8 +10,10 @@ using Microsoft.EntityFrameworkCore;
 namespace ConferenceRoom.Web.Pages.Hesap;
 
 /// <summary>
-/// Bilet alan izleyicinin girişi (/giris). Yalnızca izleyici hesapları (Customers) girebilir;
-/// yönetim kullanıcıları kendi sayfalarından (/yonetim/giris) girer. Otomatik yönlendirme yoktur.
+/// Genel giriş (/giris): bilet alan izleyici (Customers) ve satış personeli. Satış yetkisi ("sales.sell") olan personel
+/// burada girince satış bölümüne (/satis) gider; bu oturumla yönetim paneli açılmaz (panel kendi sayfasından,
+/// /yonetim/giris, ayrı çerezle girilir). Satış yetkisi olmayan personelin bilgileri burada geçersizdir.
+/// Aynı e-posta hem personelde hem izleyicide varsa önce personel şifresi denenir.
 /// </summary>
 [EnableRateLimiting(AuthenticationSetup.LoginRateLimit)]
 public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
@@ -38,6 +40,19 @@ public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
         }
 
         var email = PasswordService.NormalizeEmail(Input.Email);
+
+        // ---- Satış personeli ----
+        var staff = await db.StaffUsers.WithPermissions().FirstOrDefaultAsync(u => u.Email == email && u.IsActive, cancellationToken);
+        if (staff is not null && passwords.Verify(staff.PasswordHash, Input.Password) && StaffAccounts.CanSell(StaffAccounts.PermissionsOf(staff)))
+        {
+            staff.LastLoginAtUtc = DateTime.UtcNow;
+            await db.SaveChangesAsync(cancellationToken);
+            await HttpContext.SignInAsync(AuthSchemes.Sales, Principals.ForStaff(staff, AuthSchemes.Sales),
+                new AuthenticationProperties { IsPersistent = Input.RememberMe });
+            return LocalRedirect(Principals.SafeReturnUrl(ReturnUrl, "/satis", area: "/satis"));
+        }
+
+        // ---- İzleyici ----
         var customer = await db.Customers
             .FirstOrDefaultAsync(c => c.OrganizationId == Organization.DefaultId && c.Email == email && c.IsActive, cancellationToken);
 

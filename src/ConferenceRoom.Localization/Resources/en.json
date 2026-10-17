@@ -37,7 +37,8 @@
     "invalidLogin": "Incorrect email or password.",
     "required": "This field is required.",
     "emailInvalid": "Enter a valid email address.",
-    "secure": "Your connection is encrypted; your password is never stored in plain text."
+    "secure": "Your connection is encrypted; your password is never stored in plain text.",
+    "noPanelAccess": "This account cannot sign in to the admin panel. Use the Sign in link on the home page for sales."
   },
   "staffLogin": {
     "badge": "Admin panel",
@@ -481,6 +482,15 @@
     "badgeSalesClosed": "Sales closed",
     "badgeNow": "Now",
     "badgeCancelled": "Cancelled"
+  },
+  "salesDesk": {
+    "title": "Sales",
+    "welcome": "Welcome, {0}",
+    "intro": "Upcoming sessions you can sell. The seat-selection sales and reservation screen will be added here in the next step.",
+    "when": "Date and time",
+    "event": "Event",
+    "hall": "Hall",
+    "status": "Status"
   },
   "pricing": {
     "title": "Pricing",

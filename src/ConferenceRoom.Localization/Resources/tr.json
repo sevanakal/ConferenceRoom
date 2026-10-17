@@ -37,7 +37,8 @@
     "invalidLogin": "E-posta ya da şifre hatalı.",
     "required": "Bu alan zorunludur.",
     "emailInvalid": "Geçerli bir e-posta adresi yazın.",
-    "secure": "Bağlantınız şifrelidir; şifreniz hiçbir yerde açık olarak saklanmaz."
+    "secure": "Bağlantınız şifrelidir; şifreniz hiçbir yerde açık olarak saklanmaz.",
+    "noPanelAccess": "Bu hesabın yönetim paneline giriş yetkisi yok. Satış için ana sayfadaki Giriş bağlantısını kullanın."
   },
   "staffLogin": {
     "badge": "Yönetim paneli",
@@ -481,6 +482,15 @@
     "badgeSalesClosed": "Satış kapandı",
     "badgeNow": "Şu anda",
     "badgeCancelled": "İptal edildi"
+  },
+  "salesDesk": {
+    "title": "Satış",
+    "welcome": "Hoş geldiniz, {0}",
+    "intro": "Satılabilecek yaklaşan seanslar. Koltuk seçerek satış ve rezervasyon ekranı bir sonraki adımda buraya eklenecek.",
+    "when": "Tarih ve saat",
+    "event": "Etkinlik",
+    "hall": "Salon",
+    "status": "Durum"
   },
   "pricing": {
     "title": "Fiyatlandırma",

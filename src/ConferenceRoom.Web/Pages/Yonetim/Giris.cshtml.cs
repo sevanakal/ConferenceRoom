@@ -9,8 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ConferenceRoom.Web.Pages.Yonetim;
 
 /// <summary>
-/// Yönetim paneli girişi (/yonetim/giris). Yalnızca yönetim kullanıcıları (StaffUsers) girebilir;
-/// izleyici hesapları burada geçersizdir. Başarılı girişte rollerden gelen yetkiler çereze yazılır.
+/// Yönetim paneli girişi (/yonetim/giris). Yalnızca panel yetkisi olan personel (StaffUsers, satış dışında en az bir
+/// yetki) girebilir; izleyici hesapları burada geçersizdir, yalnızca satış yapan personel /giris sayfasını kullanır.
+/// Başarılı girişte rollerden gelen yetkiler çereze yazılır.
 /// </summary>
 [EnableRateLimiting(AuthenticationSetup.LoginRateLimit)]
 public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
@@ -44,6 +45,13 @@ public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
         if (!passwords.Verify(user?.PasswordHash, Input.Password) || user is null)
         {
             ErrorKey = "auth.invalidLogin";
+            return Page();
+        }
+
+        // Yalnızca satış yetkisi olan personel panele giremez (şifre doğru olduğu için nedenini söylemek sorun değil).
+        if (!StaffAccounts.CanUsePanel(StaffAccounts.PermissionsOf(user)))
+        {
+            ErrorKey = "auth.noPanelAccess";
             return Page();
         }
 

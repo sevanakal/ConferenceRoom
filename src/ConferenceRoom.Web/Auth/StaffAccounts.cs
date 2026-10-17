@@ -30,15 +30,38 @@ public static class StaffAccounts
         .CountAsync(u => u.OrganizationId == Organization.DefaultId && u.IsActive
             && u.Roles.Any(r => r.Role!.Permissions.Any(p => p.Permission == Permissions.UsersManage)), cancellationToken);
 
-    // ---- Çerez doğrulaması ----
+    // ---- Hangi girişi kullanabilir ----
+
+    /// <summary>Kullanıcının rollerinden gelen yetkiler. Roles → Role → Permissions yüklenmiş olmalı.</summary>
+    public static IReadOnlySet<string> PermissionsOf(StaffUser user) =>
+        user.Roles.SelectMany(r => r.Role!.Permissions).Select(p => p.Permission).ToHashSet();
 
     /// <summary>
-    /// Yönetim çerezi her istekte veritabanıyla karşılaştırılır:
-    ///   - kullanıcı silinmiş ya da pasif yapılmışsa oturum hemen kapanır,
-    ///   - rolleri, yetkileri ya da adı değişmişse çerez yenilenir; yeni yetkiler yeniden giriş gerekmeden geçerli olur.
-    /// Panel az sayıda kişi tarafından kullanıldığı için istek başına bir sorgu sorun değildir.
+    /// Yönetim paneline (/yonetim/giris) girebilir mi: satış dışında en az bir yetkisi olmalı. Yalnızca satış yapan
+    /// personel panele giremez; o, izleyiciyle aynı sayfadan (/giris) satış bölümüne girer.
     /// </summary>
-    public static async Task ValidatePrincipalAsync(CookieValidatePrincipalContext context)
+    public static bool CanUsePanel(IReadOnlySet<string> permissions) => permissions.Any(p => p != Permissions.SalesSell);
+
+    /// <summary>Satış bölümüne (/giris → /satis) girebilir mi: "sales.sell" yetkisi olmalı.</summary>
+    public static bool CanSell(IReadOnlySet<string> permissions) => permissions.Contains(Permissions.SalesSell);
+
+    // ---- Çerez doğrulaması ----
+
+    /// <summary>Yönetim çerezi: kullanıcı aktif olmalı ve panel yetkisi sürmeli (<see cref="CanUsePanel"/>).</summary>
+    public static Task ValidatePanelPrincipalAsync(CookieValidatePrincipalContext context) =>
+        ValidateAsync(context, AuthSchemes.Staff, CanUsePanel);
+
+    /// <summary>Satış çerezi: kullanıcı aktif olmalı ve satış yetkisi sürmeli (<see cref="CanSell"/>).</summary>
+    public static Task ValidateSalesPrincipalAsync(CookieValidatePrincipalContext context) =>
+        ValidateAsync(context, AuthSchemes.Sales, CanSell);
+
+    /// <summary>
+    /// Personel çerezi her istekte veritabanıyla karşılaştırılır:
+    ///   - kullanıcı silinmiş, pasif yapılmış ya da bu bölümün yetkisi alınmışsa oturum hemen kapanır,
+    ///   - rolleri, yetkileri ya da adı değişmişse çerez yenilenir; yeni yetkiler yeniden giriş gerekmeden geçerli olur.
+    /// Personel az sayıda olduğu için istek başına bir sorgu sorun değildir.
+    /// </summary>
+    private static async Task ValidateAsync(CookieValidatePrincipalContext context, string scheme, Func<IReadOnlySet<string>, bool> allowed)
     {
         var id = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
         var db = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
@@ -46,14 +69,14 @@ public static class StaffAccounts
             ? await db.StaffUsers.WithPermissions().FirstOrDefaultAsync(u => u.Id == userId && u.IsActive, context.HttpContext.RequestAborted)
             : null;
 
-        if (user is null)
+        if (user is null || !allowed(PermissionsOf(user)))
         {
             context.RejectPrincipal();
-            await context.HttpContext.SignOutAsync(AuthSchemes.Staff);
+            await context.HttpContext.SignOutAsync(scheme);
             return;
         }
 
-        var fresh = Principals.ForStaff(user);
+        var fresh = Principals.ForStaff(user, scheme);
         if (!Fingerprint(fresh).SetEquals(Fingerprint(context.Principal!)))
         {
             context.ReplacePrincipal(fresh);

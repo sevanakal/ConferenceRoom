@@ -29,12 +29,14 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/Yonetim/Etkinlikler", AuthPolicies.Permission(Permissions.EventsManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Fiyatlandirma", AuthPolicies.Permission(Permissions.PricingManage));
     o.Conventions.AuthorizeFolder("/Yonetim/SatisYetkileri", AuthPolicies.Permission(Permissions.UsersManage));
+    // Satış bölümü: satış personeli /giris sayfasından girer (ayrı çerez; panel bu oturumla açılmaz).
+    o.Conventions.AuthorizeFolder("/Satis", AuthPolicies.Sales);
 });
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));
 builder.Services.AddJsonLocalization();                       // tüm metinler ConferenceRoom.Localization/Resources/*.json
 builder.Services.AddInfrastructure(builder.Configuration);    // MySQL + EF Core
-builder.Services.AddAppAuthentication(builder.Configuration); // iki ayrı giriş (yönetim / izleyici), yetkiler (bkz. Auth/)
+builder.Services.AddAppAuthentication(builder.Configuration); // ayrı oturumlar (yönetim / satış / izleyici), yetkiler (bkz. Auth/)
 builder.Services.AddSingleton(TimeProvider.System);            // "şu an" tek yerden gelsin (testlerde değiştirilebilir)
 builder.Services.AddSingleton<PosterStore>();                  // etkinlik afişleri (diskte; Docker'da ayrı birim)
 builder.Services.AddHealthChecks().AddDbContextCheck<AppDbContext>("veritabani");
