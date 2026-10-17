@@ -1,0 +1,39 @@
+@page "/satis"
+@model ConferenceRoom.Web.Pages.Satis.IndexModel
+@using System.Globalization
+@using ConferenceRoom.Web.Common
+@*
+    Satış bölümü açılış sayfası: satış personelinin göreceği yaklaşan seanslar. Stil wwwroot/css/site.css.
+*@
+@{
+    ViewData["Title"] = T["salesDesk.title"];
+    var culture = CultureInfo.CurrentCulture;
+}
+<section class="sales-desk">
+    <h1>@T["salesDesk.welcome", User.Identity?.Name ?? ""]</h1>
+    <p class="muted">@T["salesDesk.intro"]</p>
+
+    @if (Model.Sessions.Count == 0)
+    {
+        <p>@T["board.empty"]</p>
+    }
+    else
+    {
+        <table class="sales-desk__table">
+            <thead>
+                <tr><th>@T["salesDesk.when"]</th><th>@T["salesDesk.event"]</th><th>@T["salesDesk.hall"]</th><th>@T["salesDesk.status"]</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Sessions)
+                {
+                    <tr>
+                        <td>@DisplayTime.ToLocal(s.StartsAtUtc).ToString("d MMMM yyyy, HH:mm", culture)</td>
+                        <td>@s.Title</td>
+                        <td>@s.HallName</td>
+                        <td>@T[$"board.badge{s.Badge}", s.SalesStartUtc is { } start ? DisplayTime.ToLocal(start).ToString("d MMMM HH:mm", culture) : ""]</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+</section>

@@ -10,8 +10,11 @@ namespace ConferenceRoom.Web.Auth;
 /// </summary>
 public static class Principals
 {
-    /// <summary>Yönetim kullanıcısı. Roles → Role → Permissions yüklenmiş olmalı.</summary>
-    public static ClaimsPrincipal ForStaff(StaffUser user)
+    /// <summary>
+    /// Personel (yönetim kullanıcısı). Roles → Role → Permissions yüklenmiş olmalı. <paramref name="scheme"/>: hangi
+    /// oturum için (panel: <see cref="AuthSchemes.Staff"/>, satış: <see cref="AuthSchemes.Sales"/>).
+    /// </summary>
+    public static ClaimsPrincipal ForStaff(StaffUser user, string scheme = AuthSchemes.Staff)
     {
         var roles = user.Roles.Select(r => r.Role!).ToList();
         var claims = new List<Claim>
@@ -23,7 +26,7 @@ public static class Principals
         claims.AddRange(roles.Select(r => new Claim(ClaimTypes.Role, r.Name)));
         claims.AddRange(roles.SelectMany(r => r.Permissions).Select(p => p.Permission).Distinct()
             .Select(p => new Claim(AppClaims.Permission, p)));
-        return new ClaimsPrincipal(new ClaimsIdentity(claims, AuthSchemes.Staff));
+        return new ClaimsPrincipal(new ClaimsIdentity(claims, scheme));
     }
 
     /// <summary>Giriş yapmış kullanıcının (yönetim ya da izleyici) veritabanı kimliği. Yalnızca giriş isteyen sayfalarda çağrılır.</summary>

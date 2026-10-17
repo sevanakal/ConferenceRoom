@@ -25,11 +25,12 @@
                 <a href="/">@T["nav.home"]</a>
                 <a href="/pano">@T["nav.board"]</a>
             </nav>
-            @* Genel sayfalarda User bilet alan izleyicidir (varsayılan şema); yönetim girişi ayrı bir sayfadadır. *@
+            @* Genel sayfalarda User bilet alan izleyicidir (varsayılan şema); satış bölümünde (/satis) satış personelidir.
+               Çıkış her biri için kendi sayfasına gider. Yönetim girişi ayrı bir sayfadadır. *@
             @if (User.Identity?.IsAuthenticated == true)
             {
                 <span class="header-user">@User.Identity.Name</span>
-                <form method="post" asp-page="/Hesap/Cikis" class="header-form">
+                <form method="post" asp-page="@(User.Identity.AuthenticationType == ConferenceRoom.Web.Auth.AuthSchemes.Sales ? "/Satis/Cikis" : "/Hesap/Cikis")" class="header-form">
                     <button type="submit" class="btn-ghost">@T["nav.logout"]</button>
                 </form>
             }
