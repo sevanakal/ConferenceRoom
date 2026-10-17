@@ -208,6 +208,10 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("DashboardOrder")
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)

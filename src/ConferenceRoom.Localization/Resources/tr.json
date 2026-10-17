@@ -97,6 +97,12 @@
     "navEvents": "Etkinlikler",
     "navPricing": "Fiyatlandırma",
     "navSalesScope": "Satış yetkileri",
+    "orderHint": "Kartları sağ üst köşelerindeki tutamaçtan sürükleyerek istediğiniz sıraya dizebilirsiniz. Düzen yalnızca sizin için saklanır.",
+    "orderReset": "Varsayılan sıraya dön",
+    "orderSaved": "Kart düzeniniz kaydedildi.",
+    "orderFailed": "Kart düzeni kaydedilemedi. Sayfayı yenileyip tekrar deneyin.",
+    "orderHandle": "{0} kartını taşı",
+    "orderHandleTitle": "Sürükleyerek taşıyın (klavyede ok tuşları)",
     "card": {
       "salesScope": {
         "name": "Satış yetkileri",
