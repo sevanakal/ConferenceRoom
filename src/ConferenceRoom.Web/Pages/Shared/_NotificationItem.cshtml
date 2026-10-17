@@ -1,0 +1,31 @@
+@*
+    Tek bildirim satırı (bildirim listesi). Canlı gelen bildirim js/bildirimler.js içinde aynı yapıyla çizilir;
+    biri değişirse öbürü de değişmeli. Satış raporunu görebilen kullanıcıda işleme bağlantı verir.
+*@
+@model ConferenceRoom.Web.Sales.SalesNotifier.Item
+@using ConferenceRoom.Domain.Accounts
+@using ConferenceRoom.Domain.Sales
+@using ConferenceRoom.Web.Auth
+@using ConferenceRoom.Web.Common
+@{
+    var headline = T[Model.Kind == OrderKind.Sale ? "notify.sold" : "notify.reserved", Model.SeatCount];
+    var canView = User.HasClaim(AppClaims.Permission, Permissions.SalesView);
+}
+<li class="notify-item" data-unread="@(Model.IsRead ? "false" : "true")">
+    <div class="notify-item__head">
+        @if (canView)
+        {
+            <a class="row-title" href="/yonetim/satislar/seans/@Model.SessionId#islem-@Model.OrderId">@headline</a>
+        }
+        else
+        {
+            <b>@headline</b>
+        }
+        @if (Model.Total > 0)
+        {
+            <span class="muted">@T["report.money", Model.Total.ToString("#,0.##")]</span>
+        }
+        <time class="notify-item__time" datetime="@Model.CreatedAtUtc.ToString("O")">@DisplayTime.Format(Model.CreatedAtUtc)</time>
+    </div>
+    <div class="row-sub">@T["notify.detail", Model.EventTitle, DisplayTime.Format(Model.SessionStartsAtUtc), Model.BuyerName, Model.SellerName ?? T["report.online"]]</div>
+</li>

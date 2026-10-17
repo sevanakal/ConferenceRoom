@@ -1,0 +1,31 @@
+@page "/yonetim/bildirimler"
+@model ConferenceRoom.Web.Pages.Yonetim.Bildirimler.IndexModel
+@*
+    Bildirim listesi. Her bildirim bir satış ya da rezervasyon işlemidir; satış raporunu görebilen kullanıcı işleme gider.
+    Liste elemanının biçimi canlı gelen bildirimle aynıdır (_NotificationItem.cshtml, js/bildirimler.js).
+*@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["notify.title"];
+    ViewData["AdminNav"] = "notify";
+}
+<header class="page-head">
+    <div>
+        <h1>@T["notify.title"]</h1>
+        <p>@T["notify.intro"]</p>
+    </div>
+    <button type="button" class="btn-link" id="browserNotify" hidden>@T["notify.enableBrowser"]</button>
+</header>
+
+<ul class="notify-list" id="notifyList" data-empty="@T["notify.empty"]">
+    @foreach (var item in Model.Items)
+    {
+        <partial name="_NotificationItem" model="item" />
+    }
+</ul>
+@if (Model.Items.Count == 0)
+{
+    <div class="empty-state" id="notifyEmpty">
+        <p>@T["notify.empty"]</p>
+    </div>
+}

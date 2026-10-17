@@ -14,6 +14,7 @@ namespace ConferenceRoom.Web.Sales;
 ///   - seans satışa açık mı (panodaki durumla aynı kural, <see cref="IsOpen"/>; seans bittiyse kapalı),
 ///   - koltuklar seansın krokisinde mi, kategorisi var mı, protokol değil mi,
 ///   - personel bu koltukları satabilir mi (koltuk kapsamı, <see cref="SeatScopeStore.AllowedSeatsAsync"/>),
+///   - koltuk başka bir ekranda ayrılmış mı (3 dakikalık ayırma, <see cref="SeatHolds"/>),
 ///   - koltuk daha önce satılmış mı (aynı anda iki satışta veritabanının benzersiz indeksi ikinciyi durdurur).
 /// Fiyat istemciden alınmaz, etkinliğin koltuk ayarlarındaki kategoriden gelir. Toplam 0 ise ödeme sorulmaz.
 /// İşlemin türü (satış / rezervasyon) etkinliğin satış türüdür.
@@ -40,13 +41,16 @@ public static class SalesDesk
     /// <summary>Seansın ekranda gösterilen bilgileri.</summary>
     public sealed record Session(int Id, int EventId, string Title, string HallName, DateTime StartsAtUtc, OrderKind Kind, BoardBadge Badge, bool IsOpen);
 
-    /// <summary>Ekrandan gelen satış isteği. Paid: toplam 0'dan büyükse zorunlu (ödeme alındı mı).</summary>
-    public sealed record SellRequest(IReadOnlyList<string> Seats, string? BuyerName, string? BuyerPhone, string? Note, bool? Paid);
+    /// <summary>
+    /// Ekrandan gelen satış isteği. Paid: toplam 0'dan büyükse zorunlu (ödeme alındı mı).
+    /// Holder: ekranın canlı bağlantı kimliği; koltukları bu bağlantı ayırdıysa satış onlara izin verir.
+    /// </summary>
+    public sealed record SellRequest(IReadOnlyList<string> Seats, string? BuyerName, string? BuyerPhone, string? Note, bool? Paid, string? Holder = null);
 
-    public enum Outcome { Sold, Invalid, Taken, Closed }
+    public enum Outcome { Sold, Invalid, Taken, Held, Closed }
 
     /// <param name="ErrorKey">Invalid ise hatanın dil anahtarı.</param>
-    /// <param name="Taken">Taken ise başkasının sattığı koltukların okunur adları (ör. "A-12").</param>
+    /// <param name="Taken">Taken ise başkasının sattığı, Held ise başka ekranda ayrılmış koltukların okunur adları (ör. "A-12").</param>
     /// <param name="Order">Sold ise kaydedilen işlem.</param>
     public sealed record SellResult(Outcome Outcome, string? ErrorKey = null, IReadOnlyCollection<string>? Taken = null, Order? Order = null);
 
@@ -65,11 +69,29 @@ public static class SalesDesk
             await SeatScopeStore.AllowedSeatsAsync(db, staffUserId, ev, cancellationToken));
     }
 
+    /// <summary>
+    /// Personelin bu seansta satabileceği koltuklar (krokide, kategorili, protokol değil, kapsamında); seans satışa kapalıysa
+    /// ya da bulunamazsa null. Canlı bağlantı (<see cref="SalesHub"/>) yalnızca bunları ayırır.
+    /// </summary>
+    public static async Task<IReadOnlySet<string>?> SellableSeatsAsync(AppDbContext db, int staffUserId, int sessionId, DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        var found = await FindAsync(db, sessionId, nowUtc, cancellationToken);
+        if (found is null || !found.Value.Session.IsOpen)
+            return null;
+        var (_, ev, version) = found.Value;
+        var mapJson = await db.EventSeatMaps.Where(m => m.EventId == ev.Id).Select(m => m.MapJson).FirstOrDefaultAsync(cancellationToken);
+        var categories = SeatMap.SeatCategories(mapJson ?? SeatMap.Empty);
+        var allowed = await SeatScopeStore.AllowedSeatsAsync(db, staffUserId, ev, cancellationToken);
+        return HallPlan.SeatIds(version.PlanJson)
+            .Where(id => categories.TryGetValue(id, out var c) && !c.Protocol && (allowed is null || allowed.Contains(id)))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
     /// <summary>Seansta satılmış/rezerve edilmiş koltuk kimlikleri.</summary>
     public static async Task<IReadOnlyCollection<string>> SoldSeatsAsync(AppDbContext db, int sessionId, CancellationToken cancellationToken) =>
         await db.Tickets.Where(t => t.EventSessionId == sessionId).Select(t => t.SeatId).ToListAsync(cancellationToken);
 
-    public static async Task<SellResult> SellAsync(AppDbContext db, int staffUserId, int sessionId, SellRequest request, DateTime nowUtc, CancellationToken cancellationToken)
+    public static async Task<SellResult> SellAsync(AppDbContext db, SeatHolds holds, int staffUserId, int sessionId, SellRequest request, DateTime nowUtc, CancellationToken cancellationToken)
     {
         // ---- Seans satışa açık mı ----
         var found = await FindAsync(db, sessionId, nowUtc, cancellationToken);
@@ -116,6 +138,11 @@ public static class SalesDesk
         else
             return new SellResult(Outcome.Invalid, "sales.errorPayment");
 
+        // ---- Başka bir ekranda ayrılmış koltuk var mı ----
+        var blocked = holds.BlockedFor(sessionId, request.Holder, staffUserId, seatIds);
+        if (blocked.Count > 0)
+            return new SellResult(Outcome.Held, Taken: blocked.Select(id => labels[id]).ToList());
+
         // ---- Daha önce satılmış koltuk var mı ----
         var taken = await TakenAsync(db, sessionId, seatIds, cancellationToken);
         if (taken.Count > 0)
@@ -158,6 +185,7 @@ public static class SalesDesk
             db.ChangeTracker.Clear();
             return new SellResult(Outcome.Taken, Taken: await TakenAsync(db, sessionId, seatIds, cancellationToken));
         }
+        holds.Clear(sessionId, seatIds);
         return new SellResult(Outcome.Sold, Order: order);
     }
 

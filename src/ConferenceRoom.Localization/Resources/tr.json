@@ -99,7 +99,9 @@
         "name": "Satış yetkileri",
         "description": "Satış yapan personelin hangi koltukları satabileceğini krokiden belirleme."
       }
-    }
+    },
+    "navReport": "Satış raporu",
+    "navNotify": "Bildirimler"
   },
   "roles": {
     "title": "Roller",
@@ -531,7 +533,12 @@
     "errorNotForSale": "Seçilen koltuklardan biri satışa kapalı.",
     "errorNotInScope": "Seçilen koltuklardan birini satma yetkiniz yok.",
     "errorPayment": "Ödemenin alınıp alınmadığını seçin.",
-    "open": "Satış ekranı"
+    "open": "Satış ekranı",
+    "stateBusy": "İşlemde (başka ekranda seçili)",
+    "heldByOther": "Bu koltuk az önce başka bir ekranda seçildi.",
+    "holdExpired": "Süre doldu; seçili koltuklar bırakıldı. Yeniden seçebilirsiniz.",
+    "holdLeft": "Koltuklar sizin için ayrıldı · kalan süre {time}",
+    "held": "Bu koltuklar başka bir ekranda işlemde: {0}."
   },
   "pricing": {
     "title": "Fiyatlandırma",
@@ -716,8 +723,12 @@
         "description": "Bilet satma ve yer ayırma. Hangi koltukları satabileceği kişiye göre sınırlanabilir."
       },
       "view": {
-        "name": "Satışlar",
-        "description": "Satılan biletleri ve rezervasyonları görüntüleme."
+        "name": "Satış raporu",
+        "description": "Hangi etkinlikte ne satıldı, kaç koltuk kaldı, ödemesi bekleyenler. Yalnızca görüntüler."
+      },
+      "notify": {
+        "name": "Satış bildirimleri",
+        "description": "Bilet satışı ya da rezervasyon yapıldığında panelde bildirim alma."
       }
     },
     "users": {
@@ -729,5 +740,50 @@
   },
   "footer": {
     "license": "Açık kaynak, MIT lisansı"
+  },
+  "report": {
+    "title": "Satış raporu",
+    "intro": "Seanslara göre satılan ve rezerve edilen biletler, kalan koltuklar ve ödemeler.",
+    "empty": "Gösterilecek seans yok.",
+    "showPast": "Bitmiş seansları da göster",
+    "hidePast": "Yalnızca yaklaşan seanslar",
+    "session": "Seans",
+    "capacity": "Satılabilir",
+    "sold": "Satılan",
+    "reserved": "Rezerve",
+    "remaining": "Kalan",
+    "received": "Tahsil edilen",
+    "pending": "Bekleyen ödeme",
+    "details": "İşlemler",
+    "ended": "Bitti",
+    "cancelled": "İptal",
+    "money": "{0} TL",
+    "back": "Satış raporuna dön",
+    "noOrders": "Bu seansta henüz satış ya da rezervasyon yok.",
+    "when": "Zaman",
+    "buyer": "Alıcı",
+    "seats": "Koltuklar",
+    "total": "Tutar",
+    "payment": "Ödeme",
+    "seller": "Satan",
+    "kindSale": "Satış",
+    "kindReservation": "Rezervasyon",
+    "orderNo": "İşlem no {0}",
+    "paymentReceived": "Alındı",
+    "paymentPending": "Alınmadı",
+    "paymentNotRequired": "Ücretsiz",
+    "online": "İnternetten"
+  },
+  "notify": {
+    "title": "Bildirimler",
+    "intro": "Bilet satışı ve rezervasyon bildirimleri. Yeni bildirimler panelin her sayfasında anında görünür.",
+    "empty": "Henüz bildirim yok.",
+    "sold": "{0} bilet satıldı",
+    "reserved": "{0} koltuk rezerve edildi",
+    "detail": "{0} · {1} · Alıcı: {2} · Satan: {3}",
+    "bell": "Bildirimler ({0} okunmamış)",
+    "enableBrowser": "Tarayıcı bildirimlerini aç",
+    "browserEnabled": "Tarayıcı bildirimleri açık.",
+    "browserDenied": "Tarayıcı bildirimleri engellendi (tarayıcı ayarlarından açılabilir)."
   }
 }
