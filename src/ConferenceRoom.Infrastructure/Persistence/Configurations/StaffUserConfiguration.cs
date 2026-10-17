@@ -14,6 +14,7 @@ internal sealed class StaffUserConfiguration : IEntityTypeConfiguration<StaffUse
         builder.Property(u => u.Email).HasMaxLength(254).IsRequired();
         builder.Property(u => u.FullName).HasMaxLength(200).IsRequired();
         builder.Property(u => u.PasswordHash).HasMaxLength(200).IsRequired();
+        builder.Property(u => u.DashboardOrder).HasMaxLength(1000);
         builder.HasIndex(u => new { u.OrganizationId, u.Email }).IsUnique();
         builder.HasOne<Organization>().WithMany().HasForeignKey(u => u.OrganizationId).OnDelete(DeleteBehavior.Restrict);
         builder.HasMany(u => u.Roles).WithOne().HasForeignKey(r => r.StaffUserId).OnDelete(DeleteBehavior.Cascade);

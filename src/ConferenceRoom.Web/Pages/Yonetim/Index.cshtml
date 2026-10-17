@@ -1,5 +1,10 @@
 @page "/yonetim"
 @model ConferenceRoom.Web.Pages.Yonetim.IndexModel
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Antiforgery
+@*
+    Yönetim paneli: karşılama ve bölüm kartları. Kartlar sağ üstteki tutamaçtan sürüklenip yeniden sıralanır
+    (wwwroot/js/panel-duzen.js); sıra kullanıcı başına saklanır (IndexModel.OnPostOrderAsync).
+*@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = T["admin.title"];
@@ -39,10 +44,18 @@
     }
 </section>
 
-<ul class="section-grid">
+<div class="section-tools">
+    <p id="orderStatus" class="section-tools__hint" role="status">@T["admin.orderHint"]</p>
+    <button type="button" class="btn-link" id="resetOrder" hidden="@(!Model.HasCustomOrder)">@T["admin.orderReset"]</button>
+</div>
+<ul class="section-grid" id="sectionGrid" data-save-url="/yonetim?handler=Order" data-token="@Antiforgery.GetAndStoreTokens(HttpContext).RequestToken"
+    data-saved="@T["admin.orderSaved"]" data-failed="@T["admin.orderFailed"]">
     @foreach (var (key, textPrefix, allowed) in Model.Sections)
     {
-        <li class="section-card" data-allowed="@(allowed ? "true" : "false")">
+        <li class="section-card" data-allowed="@(allowed ? "true" : "false")" data-key="@key">
+            <button type="button" class="drag-handle" aria-label="@T["admin.orderHandle", T[$"{textPrefix}.name"]]" title="@T["admin.orderHandleTitle"]">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5h.01M15 5h.01M9 12h.01M15 12h.01M9 19h.01M15 19h.01" /></svg>
+            </button>
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="@icons.GetValueOrDefault(key, "M4 4h16v16H4z")" /></svg>
             @if (allowed && links.TryGetValue(key, out var url))
             {
@@ -63,3 +76,7 @@
         </li>
     }
 </ul>
+
+@section Scripts {
+    <script src="~/js/panel-duzen.js" asp-append-version="true"></script>
+}

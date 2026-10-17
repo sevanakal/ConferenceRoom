@@ -29,6 +29,12 @@ public class StaffUser : Entity, IOrganizationScoped
 
     public DateTime? LastLoginAtUtc { get; set; }
 
+    /// <summary>
+    /// Kullanıcının panel (/yonetim) kart sırası: kart anahtarları virgülle ayrılmış (ör. "events.manage,halls.manage").
+    /// null: varsayılan sıra. Listede olmayan kartlar (sonradan eklenenler) sona varsayılan sırayla eklenir.
+    /// </summary>
+    public string? DashboardOrder { get; set; }
+
     public ICollection<StaffUserRole> Roles { get; set; } = [];
 }
 

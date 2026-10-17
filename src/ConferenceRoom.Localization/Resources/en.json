@@ -97,6 +97,12 @@
     "navEvents": "Events",
     "navPricing": "Pricing",
     "navSalesScope": "Sales permissions",
+    "orderHint": "Drag the cards by the handle in their top-right corner to arrange them as you like. The layout is saved for you only.",
+    "orderReset": "Restore default order",
+    "orderSaved": "Your card layout has been saved.",
+    "orderFailed": "The card layout could not be saved. Refresh the page and try again.",
+    "orderHandle": "Move the {0} card",
+    "orderHandleTitle": "Drag to move (arrow keys on the keyboard)",
     "card": {
       "salesScope": {
         "name": "Sales permissions",

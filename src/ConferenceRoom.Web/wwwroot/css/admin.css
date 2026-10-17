@@ -136,6 +136,20 @@
 .section-card .stretched::after { content: ""; position: absolute; inset: 0; border-radius: 12px; }
 .section-card:has(.stretched):hover { border-color: var(--color-accent); }
 
+/* Kart sırası (js/panel-duzen.js): sağ üstte sürükleme tutamacı, sürüklenen kart soluk ve kesik kenarlı */
+.section-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 10px; }
+.section-tools__hint { margin: 0; color: var(--color-muted); font-size: .88rem; }
+.btn-link { border: 0; background: none; padding: 0; color: var(--color-accent); font: inherit; font-size: .88rem; cursor: pointer; }
+.btn-link:hover { text-decoration: underline; }
+.section-card .drag-handle {
+    position: absolute; top: 10px; right: 10px; z-index: 1; display: grid; place-items: center; width: 30px; height: 30px; padding: 0;
+    border: 1px solid transparent; border-radius: 8px; background: none; color: var(--color-muted); cursor: grab; touch-action: none;
+}
+.section-card .drag-handle svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 3; }
+.section-card .drag-handle:hover, .section-card .drag-handle:focus-visible { border-color: var(--color-border); background: var(--color-bg); color: var(--color-text); }
+.section-card.dragging { opacity: .55; border-style: dashed; border-color: var(--color-accent); }
+.section-grid.sorting, .section-grid.sorting .drag-handle { cursor: grabbing; user-select: none; }
+
 @media (max-width: 640px) {
     .admin-brand small, .admin-user { display: none; }
     .admin-main { padding-top: 20px; }
