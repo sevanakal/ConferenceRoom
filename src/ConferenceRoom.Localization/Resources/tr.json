@@ -497,6 +497,7 @@
   "sales": {
     "title": "Satış",
     "back": "Seans listesine dön",
+    "selHint": "Koltuklara tek tek tıklayarak seçime ekleyin; seçili koltuğa yeniden tıklayınca seçimden çıkar. Basılı tutup koltukların üzerinden sürükleyerek de seçebilirsiniz.",
     "legend": "Kategoriler",
     "noCategories": "Bu etkinlikte henüz bilet kategorisi yok. Fiyatlandırmadan kategori atanınca koltuklar satılabilir.",
     "freeCount": "{n} boş",

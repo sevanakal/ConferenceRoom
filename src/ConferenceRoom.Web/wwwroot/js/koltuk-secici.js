@@ -20,6 +20,9 @@
     seatBadge(it, TC)    → koltuğun üstündeki küçük etiket { text, color, faded } ya da null (ör. satış yetkilisinin baş harfleri)
     hoverParts(it)       → fare altındaki koltuk için ek bilgiler (dizi)
     quickSelect          → seçim bölümüne eklenecek düğmeler: [{ act, label, seats: () => koltuklar }]
+    addOnClick           → true ise tıklama seçimi biriktirir (Shift basılıymış gibi): koltuğa tıklamak onu seçime ekler,
+                           seçili koltuğa yeniden tıklamak çıkarır, alan seçimi de eklenir; seçimi "Seçimi temizle" ya da Esc boşaltır
+                           (satış ekranı: birer birer koltuk seçilir)
     renderPanel()        → ekranın kendi panel bölümlerini yazar (seçim değiştikçe çağrılır)
     onAction(act, b, e)  → panelde ekrana ait bir düğmeye basıldı
     onChange(e)          → panelde ekrana ait bir alan değişti
@@ -187,7 +190,7 @@ stage.on("mousedown touchstart", (e) => {
   }
   if (evt.button === 2) return;
   const id = seatIdOf(e.target);
-  const add = evt.shiftKey || evt.ctrlKey || evt.metaKey;
+  const add = hooks.addOnClick || evt.shiftKey || evt.ctrlKey || evt.metaKey;
   if (id) {
     if (!canSelect(id)) return;
     const remove = add && selected.has(id);
