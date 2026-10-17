@@ -606,7 +606,7 @@
     "reset": "Salon geneline dön",
     "resetConfirm": "Bu etkinliğe özel kayıt silinsin ve salonun genel kaydı kullanılsın mı?",
     "staffTitle": "Personel",
-    "staffHint": "Bir personelin adına tıklayınca koltukları krokide koyu renkle görünür. Koltukları seçip Ver ya da Al'a basın. Aynı koltuk birden çok personele verilebilir.",
+    "staffHint": "Koltuğu satabilen personel, koltuğun üstünde kendi rengindeki etiketle baş harfleriyle görünür. Bir personelin adına tıklayınca onun etiketleri öne çıkar, diğerleri soluklaşır. Koltukları seçip Ver ya da Al'a basın. Aynı koltuk birden çok personele verilebilir (etikette +1 gibi görünür).",
     "give": "Ver",
     "giveTitle": "Seçili koltukları bu personele ver",
     "take": "Al",
@@ -625,14 +625,16 @@
     "totalSeats": "Toplam koltuk",
     "givenSeats": "Personele verilmiş",
     "notGivenSeats": "Yalnızca tam yetkili satar",
-    "legendOwn": "Seçili personelin",
-    "legendOther": "Başka personelin",
-    "legendNone": "Verilmemiş",
     "needSelection": "Önce krokiden koltuk seçin.",
     "invalid": "Satış yetkisi verisi okunamadı.",
     "tooLarge": "Satış yetkisi verisi çok büyük.",
     "unknownSeat": "Krokide olmayan bir koltuk var. Sayfayı yenileyip tekrar deneyin.",
-    "unknownStaff": "Listede olmayan bir kullanıcı var. Sayfayı yenileyip tekrar deneyin."
+    "unknownStaff": "Listede olmayan bir kullanıcı var. Sayfayı yenileyip tekrar deneyin.",
+    "categoriesTitle": "Kategoriler",
+    "categoryEvent": "Kategorileri gösterilen etkinlik",
+    "categoryPreviewNote": "Koltuk renkleri seçilen etkinliğin fiyatlandırmasından gelir; yalnızca görünüm içindir, satış yetkilerini değiştirmez.",
+    "noCategoriesHall": "Bu salonun etkinliklerinde henüz kategori tanımlanmamış; koltuklar gri görünür. Kategoriler Fiyatlandırma ekranında tanımlanır.",
+    "noCategoriesEvent": "Bu etkinlikte henüz kategori tanımlanmamış; koltuklar gri görünür. Kategoriler Fiyatlandırma ekranında tanımlanır."
   },
   "permission": {
     "halls": {
