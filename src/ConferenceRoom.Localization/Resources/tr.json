@@ -96,7 +96,13 @@
     "navHalls": "Salonlar",
     "navEvents": "Etkinlikler",
     "navPricing": "Fiyatlandırma",
-    "navSalesScope": "Satış yetkileri"
+    "navSalesScope": "Satış yetkileri",
+    "card": {
+      "salesScope": {
+        "name": "Satış yetkileri",
+        "description": "Satış yapan personelin hangi koltukları satabileceğini krokiden belirleme."
+      }
+    }
   },
   "roles": {
     "title": "Roller",

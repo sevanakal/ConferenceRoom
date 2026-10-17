@@ -96,7 +96,13 @@
     "navHalls": "Halls",
     "navEvents": "Events",
     "navPricing": "Pricing",
-    "navSalesScope": "Sales permissions"
+    "navSalesScope": "Sales permissions",
+    "card": {
+      "salesScope": {
+        "name": "Sales permissions",
+        "description": "Choosing on the seating plan which seats each salesperson may sell."
+      }
+    }
   },
   "roles": {
     "title": "Roles",

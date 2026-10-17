@@ -30,7 +30,7 @@ public class LoginFlowTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWeb
         // E-posta büyük harf ve boşlukla yazılsa da bulunur.
         var html = await Forms.PostAsync(client, "/yonetim/giris", new Dictionary<string, string> { ["Input.Email"] = " YONETICI@test.local", ["Input.Password"] = MySqlWebAppFactory.AdminPassword });
         Assert.Contains("Hoş geldiniz, Test Yöneticisi", html);
-        Assert.Equal(Permissions.All.Count, Regex.Count(html, "data-allowed=\"true\""));
+        Assert.Equal(Permissions.All.Count + 1, Regex.Count(html, "data-allowed=\"true\""));   // yetkiler + satış yetkileri kartı
         Assert.DoesNotContain("data-allowed=\"false\"", html);
     }
 
@@ -54,7 +54,7 @@ public class LoginFlowTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWeb
         var client = factory.CreateClient();
         var html = await Forms.PostAsync(client, "/yonetim/giris", new Dictionary<string, string> { ["Input.Email"] = email, ["Input.Password"] = "Satis.Sifre.1" });
         Assert.Equal(3, Regex.Count(html, "data-allowed=\"true\""));      // fiyatlar, satış yapma, satışları görme
-        Assert.Equal(3, Regex.Count(html, "data-allowed=\"false\""));     // salonlar, etkinlikler, kullanıcılar kilitli
+        Assert.Equal(4, Regex.Count(html, "data-allowed=\"false\""));     // salonlar, etkinlikler, kullanıcılar, satış yetkileri kilitli
     }
 
     [MySqlFact]

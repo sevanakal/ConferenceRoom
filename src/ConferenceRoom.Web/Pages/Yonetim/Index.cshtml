@@ -4,7 +4,7 @@
     Layout = "_AdminLayout";
     ViewData["Title"] = T["admin.title"];
     ViewData["AdminNav"] = "dashboard";
-    // Bölüm kartlarının simgeleri (yetki koduna göre). Bölüm eklendikçe buraya da eklenir.
+    // Bölüm kartlarının simgeleri (yetki kodu ya da ek bölüm anahtarına göre). Bölüm eklendikçe buraya da eklenir.
     var icons = new Dictionary<string, string>
     {
         ["halls.manage"] = "M3 21V8l9-5 9 5v13M7 21v-6h10v6M7 11h.01M12 11h.01M17 11h.01",
@@ -12,6 +12,8 @@
         ["pricing.manage"] = "M3 12V4h8l10 10-8 8L3 12ZM7.5 7.5h.01",
         ["sales.view"] = "M4 20V10M10 20V4M16 20v-8M22 20H2",
         ["users.manage"] = "M16 20v-1a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v1M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM22 20v-1a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8",
+        ["sales.sell"] = "M3 7h18v4a2 2 0 0 0 0 4v4H3v-4a2 2 0 0 0 0-4V7ZM14 7v12",
+        ["salesScope"] = "M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3ZM9 12l2 2 4-4",
     };
     // Kullanıma açılmış bölümlerin adresleri. Burada olmayan bölüm "Yakında" görünür.
     var links = new Dictionary<string, string>
@@ -20,6 +22,7 @@
         ["events.manage"] = "/yonetim/etkinlikler",
         ["pricing.manage"] = "/yonetim/fiyatlandirma",
         ["users.manage"] = "/yonetim/kullanicilar",
+        ["salesScope"] = "/yonetim/satis-yetkileri",
     };
 }
 <section class="admin-hero">
@@ -37,22 +40,22 @@
 </section>
 
 <ul class="section-grid">
-    @foreach (var (permission, allowed) in Model.Sections)
+    @foreach (var (key, textPrefix, allowed) in Model.Sections)
     {
         <li class="section-card" data-allowed="@(allowed ? "true" : "false")">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="@icons.GetValueOrDefault(permission, "M4 4h16v16H4z")" /></svg>
-            @if (allowed && links.TryGetValue(permission, out var url))
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="@icons.GetValueOrDefault(key, "M4 4h16v16H4z")" /></svg>
+            @if (allowed && links.TryGetValue(key, out var url))
             {
-                <h2><a class="stretched" href="@url">@T[$"permission.{permission}.name"]</a></h2>
+                <h2><a class="stretched" href="@url">@T[$"{textPrefix}.name"]</a></h2>
             }
             else
             {
-                <h2>@T[$"permission.{permission}.name"]</h2>
+                <h2>@T[$"{textPrefix}.name"]</h2>
             }
-            <p>@T[$"permission.{permission}.description"]</p>
+            <p>@T[$"{textPrefix}.description"]</p>
             <div class="section-card__foot">
                 <span class="pill @(allowed ? "pill-ok" : "pill-locked")">@(allowed ? T["admin.allowed"] : T["admin.locked"])</span>
-                @if (allowed && !links.ContainsKey(permission))
+                @if (allowed && !links.ContainsKey(key))
                 {
                     <span class="pill pill-soft">@T["admin.soon"]</span>
                 }
