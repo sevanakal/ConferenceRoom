@@ -32,6 +32,21 @@ public class SeatMapTests
     }
 
     [Fact]
+    public void Rezervasyon_kategorisinin_fiyati_sifir_saklanir_ve_online_olabilir()
+    {
+        var json = Map().Replace("\"price\": 250.5, \"color\": \"#1d5fbf\", \"protocol\": false", "\"price\": 250.5, \"color\": \"#1d5fbf\", \"protocol\": false, \"reservation\": true");
+
+        var result = SeatMap.Read(json, Seats);
+
+        Assert.True(result.IsValid);
+        var categories = JsonNode.Parse(result.Json!)!["categories"]!;
+        Assert.Equal(0m, categories[0]!["price"]!.GetValue<decimal>());
+        Assert.True(categories[0]!["reservation"]!.GetValue<bool>());
+        Assert.False(categories[1]!["reservation"]!.GetValue<bool>());   // alan yoksa rezervasyon değildir
+        Assert.Equal(1, result.OnlineSeats);
+    }
+
+    [Fact]
     public void Krokide_olmayan_koltuk_reddedilir()
     {
         Assert.Equal("seatMap.unknownSeat", SeatMap.Read(Map(seats: """{ "yok": "c1" }""", online: "[]"), Seats).ErrorKey);

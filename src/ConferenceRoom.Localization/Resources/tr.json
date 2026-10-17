@@ -572,7 +572,9 @@
     "onlineSeats": "Online",
     "potential": "Tamamı satılırsa",
     "settingsNote": "Ayarlar etkinliğin tüm seanslarında geçerlidir.",
-    "protocolTitle": "Protokol koltukları satışa kapalıdır"
+    "protocolTitle": "Protokol koltukları satışa kapalıdır",
+    "reservation": "Rezervasyon",
+    "reservationTitle": "Fiyatsız rezervasyon: fiyat girilmez ve gösterilmez (ör. online rezervasyonda fiyatı göstermek istemiyorsanız)"
   },
   "salesScope": {
     "title": "Satış yetkileri",
@@ -633,6 +635,7 @@
     "categoriesTitle": "Kategoriler",
     "categoryEvent": "Kategorileri gösterilen etkinlik",
     "categoryPreviewNote": "Koltuk renkleri seçilen etkinliğin fiyatlandırmasından gelir; yalnızca görünüm içindir, satış yetkilerini değiştirmez.",
+    "notForSale": "Satışa kapalı",
     "noCategoriesHall": "Bu salonun etkinliklerinde henüz kategori tanımlanmamış; koltuklar gri görünür. Kategoriler Fiyatlandırma ekranında tanımlanır.",
     "noCategoriesEvent": "Bu etkinlikte henüz kategori tanımlanmamış; koltuklar gri görünür. Kategoriler Fiyatlandırma ekranında tanımlanır."
   },

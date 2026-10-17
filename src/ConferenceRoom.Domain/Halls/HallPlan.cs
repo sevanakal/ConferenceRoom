@@ -111,6 +111,29 @@ public static class HallPlan
         }
     }
 
+    /// <summary>
+    /// Koltukları <paramref name="seatPlanJson"/> krokisinden, koltuk dışındaki yapı öğelerini (duvar, kapı, sahne, bölge, sütun,
+    /// yazı) <paramref name="structurePlanJson"/> krokisinden alan birleşik kroki. Katlar: yapı krokisinin katları, ardından
+    /// yalnızca koltuk krokisinde olanlar. Etkinlik ekranları kullanır: etkinlik eski bir kroki sürümüne bağlı olsa da salonun
+    /// güncel duvarları görünür, koltuklar ise bağlı sürümde kalır (satış koltuk kimliğine bağlıdır).
+    /// </summary>
+    public static string WithStructureFrom(string seatPlanJson, string structurePlanJson)
+    {
+        var plan = JsonNode.Parse(seatPlanJson)!.AsObject();
+        var structure = JsonNode.Parse(structurePlanJson)!.AsObject();
+        static bool IsSeat(JsonNode? item) => Text(item?["type"]) == "seat";
+
+        var levels = structure["levels"]!.AsArray().Select(l => l!.DeepClone()).ToList();
+        var levelIds = levels.Select(l => Text(l["id"])).ToHashSet();
+        levels.AddRange(plan["levels"]!.AsArray().Where(l => !levelIds.Contains(Text(l!["id"]))).Select(l => l!.DeepClone()));
+        plan["levels"] = new JsonArray([.. levels]);
+        plan["items"] = new JsonArray([
+            .. plan["items"]!.AsArray().Where(IsSeat).Select(i => i!.DeepClone()),
+            .. structure["items"]!.AsArray().Where(i => !IsSeat(i)).Select(i => i!.DeepClone()),
+        ]);
+        return plan.ToJsonString();
+    }
+
     /// <summary>Henüz krokisi olmayan salon için editörün açılacağı boş kroki (tek kat).</summary>
     public static string Blank(string hallName, string firstLevelName) => new JsonObject
     {

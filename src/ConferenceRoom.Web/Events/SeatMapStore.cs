@@ -8,7 +8,8 @@ namespace ConferenceRoom.Web.Events;
 /// <summary>
 /// Etkinlik koltuk ayarlarını (kategoriler, fiyatlar, koltuk atamaları, online koltuklar) okur ve kaydeder.
 /// Ekranda gösterilen kroki, etkinliğin seanslarının bağlı olduğu en yeni kroki sürümüdür; koltuk kimlikleri sürümler
-/// arasında korunduğu için ayarlar tüm seanslara uygulanır. Kayıt denetiminde seansların bağlı olduğu tüm sürümlerin
+/// arasında korunduğu için ayarlar tüm seanslara uygulanır. Duvar, kapı, sahne gibi yapı öğeleri ise salonun son
+/// sürümünden gelir (<see cref="WithLatestStructureAsync"/>), çünkü bunlar satılmaz ve sonradan çizilenler de görünmeli. Kayıt denetiminde seansların bağlı olduğu tüm sürümlerin
 /// koltukları geçerli sayılır.
 ///
 /// Çakışma kuralı (kroki editöründeki gibi): ekran açıldığında hangi kayda (<c>Revision</c>) dayandığını bilir;
@@ -23,7 +24,7 @@ public static class SeatMapStore
     public sealed record SaveResult(Outcome Outcome, int Revision, string? ErrorKey = null);
 
     /// <summary>Ekranın açılışı için: ayarlar, dayanılan sürüm ve gösterilecek kroki.</summary>
-    /// <param name="PlanJson">Seansların bağlı olduğu en yeni kroki sürümü; seans yoksa null.</param>
+    /// <param name="PlanJson">Seansların bağlı olduğu en yeni kroki sürümü (yapı öğeleri salonun son sürümünden); seans yoksa null.</param>
     /// <param name="PlanVersions">Seansların bağlı olduğu farklı kroki sürüm numaraları (birden çoksa ekranda not çıkar).</param>
     public sealed record Snapshot(string MapJson, int Revision, string? PlanJson, IReadOnlyList<int> PlanVersions);
 
@@ -33,7 +34,8 @@ public static class SeatMapStore
             .Select(m => new { m.MapJson, m.Revision })
             .FirstOrDefaultAsync(cancellationToken);
         var versions = await PlanVersionsAsync(db, eventId, cancellationToken);
-        return new Snapshot(map?.MapJson ?? SeatMap.Empty, map?.Revision ?? 0, versions.LastOrDefault()?.PlanJson, versions.Select(v => v.Version).ToList());
+        var planJson = versions.Count == 0 ? null : await WithLatestStructureAsync(db, versions[^1], cancellationToken);
+        return new Snapshot(map?.MapJson ?? SeatMap.Empty, map?.Revision ?? 0, planJson, versions.Select(v => v.Version).ToList());
     }
 
     public static async Task<SaveResult> SaveAsync(AppDbContext db, Event ev, string json, int baseRevision, int staffUserId, CancellationToken cancellationToken)
@@ -85,5 +87,16 @@ public static class SeatMapStore
     {
         var ids = db.EventSessions.Where(s => s.EventId == eventId).Select(s => s.HallPlanVersionId);
         return await db.HallPlanVersions.Where(v => ids.Contains(v.Id)).OrderBy(v => v.Version).ToListAsync(cancellationToken);
+    }
+
+    /// <summary>
+    /// Bağlı kroki sürümünün koltukları ile salonun son sürümünün yapı öğeleri (duvar, kapı, sahne...). Bağlı sürüm zaten
+    /// en yeniyse olduğu gibi döner (satış yetkileri ekranı da kullanır).
+    /// </summary>
+    internal static async Task<string> WithLatestStructureAsync(AppDbContext db, HallPlanVersion bound, CancellationToken cancellationToken)
+    {
+        var latest = await db.HallPlanVersions.Where(v => v.HallId == bound.HallId && v.Version > bound.Version)
+            .OrderByDescending(v => v.Version).Select(v => v.PlanJson).FirstOrDefaultAsync(cancellationToken);
+        return latest is null ? bound.PlanJson : HallPlan.WithStructureFrom(bound.PlanJson, latest);
     }
 }

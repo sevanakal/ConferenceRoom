@@ -572,7 +572,9 @@
     "onlineSeats": "Online",
     "potential": "If all are sold",
     "settingsNote": "Settings apply to every session of the event.",
-    "protocolTitle": "Protocol seats are not for sale"
+    "protocolTitle": "Protocol seats are not for sale",
+    "reservation": "Reservation",
+    "reservationTitle": "Reservation without a price: no price is entered or shown (e.g. if you don't want to show a price for online reservations)"
   },
   "salesScope": {
     "title": "Sales permissions",
@@ -633,6 +635,7 @@
     "categoriesTitle": "Categories",
     "categoryEvent": "Show categories of",
     "categoryPreviewNote": "Seat colours come from the selected event's pricing. This is only a view and does not change sales permissions.",
+    "notForSale": "Not for sale",
     "noCategoriesHall": "No categories have been defined for this hall's events yet, so seats are grey. Categories are defined on the Pricing screen.",
     "noCategoriesEvent": "No categories have been defined for this event yet, so seats are grey. Categories are defined on the Pricing screen."
   },

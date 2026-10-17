@@ -5,6 +5,8 @@
   satışa açık koltukları seçer. Kroki, seçim, kaydetme ve kısayollar koltuk seçicinin ortak çatısındadır (koltuk-secici.js);
   burada yalnızca bu ekrana özgü olanlar var.
   Düzenlenen veri (#seatData): { schema, categories[], seats{ koltukId: kategoriId }, online[] } (Domain/Events/SeatMap.cs)
+  Kategori: { id, name, price, color, protocol, reservation }; reservation işaretliyse fiyatsızdır (fiyat 0, girişi kapalı;
+  ör. online rezervasyonda fiyat gösterilmek istenmiyorsa).
   Ekran metinleri: tr.json/en.json "seatEditor" bölümü. Atama koltuk kimliğine göredir.
 
   Dosyanın bölümleri: yardımcılar → koltuk görünümü → kategoriler → online → panel → başlangıç
@@ -26,6 +28,8 @@ const CATEGORY_COLORS = ["#1D5FBF", "#0F766E", "#B4531A", "#6D3FC0", "#B0306A", 
 const categoryById = (id) => ed.data.categories.find((c) => c.id === id);
 const categoryOf = (seatId) => categoryById(ed.data.seats[seatId]);
 const onlineSet = () => new Set(ed.data.online);
+/* Fare altında ve özette kategorinin fiyatı: rezervasyon kategorisinde fiyat yerine "Rezervasyon" yazar. */
+const priceText = (c) => (c.reservation ? t("reservation") : money.format(c.price));
 const formatPrice = (v) => v.toLocaleString(locale, { minimumFractionDigits: Number.isInteger(v) ? 0 : 2, maximumFractionDigits: 2, useGrouping: false });
 
 /* ------------------------------------------------------------------
@@ -41,7 +45,7 @@ function seatStyle(it, TC) {
 function seatDot(it) { return ed.data.online.includes(it.id); }
 function hoverParts(it) {
   const c = categoryOf(it.id);
-  return [c ? c.name + (c.protocol ? "" : " · " + money.format(c.price)) : t("noCategory"), onlineSet().has(it.id) ? t("online") : null];
+  return [c ? c.name + (c.protocol ? "" : " · " + priceText(c)) : t("noCategory"), onlineSet().has(it.id) ? t("online") : null];
 }
 
 /* ------------------------------------------------------------------
@@ -50,7 +54,7 @@ function hoverParts(it) {
 ------------------------------------------------------------------ */
 function addCategory() {
   const n = ed.data.categories.length + 1;
-  ed.data.categories.push({ id: uid(), name: t("defaultCategoryName", { n }), price: 0, color: CATEGORY_COLORS[(n - 1) % CATEGORY_COLORS.length], protocol: false });
+  ed.data.categories.push({ id: uid(), name: t("defaultCategoryName", { n }), price: 0, color: CATEGORY_COLORS[(n - 1) % CATEGORY_COLORS.length], protocol: false, reservation: false });
   ed.commit();
   const inputs = document.querySelectorAll("#catList input[data-field=name]");
   inputs[inputs.length - 1]?.select();
@@ -81,7 +85,7 @@ function deleteCategory(categoryId) {
   map.categories = map.categories.filter((x) => x.id !== categoryId);
   ed.commit();
 }
-/* Kategori alanı değişince (ad, fiyat, renk, protokol). Geçersiz fiyat eski değere döner. */
+/* Kategori alanı değişince (ad, fiyat, renk, protokol, rezervasyon). Geçersiz fiyat eski değere döner; rezervasyon fiyatı sıfırlar. */
 function updateCategory(categoryId, field, input) {
   const c = categoryById(categoryId);
   if (field === "name") { const v = input.value.trim().slice(0, 60); if (!v) { input.value = c.name; return; } c.name = v; }
@@ -91,6 +95,7 @@ function updateCategory(categoryId, field, input) {
     c.price = Math.round(v * 100) / 100;
   }
   else if (field === "color") c.color = input.value.toUpperCase();
+  else if (field === "reservation") { c.reservation = input.checked; if (c.reservation) c.price = 0; }
   else if (field === "protocol") {
     c.protocol = input.checked;
     if (c.protocol) dropOnline(Object.keys(ed.data.seats).filter((id) => ed.data.seats[id] === categoryId));
@@ -132,8 +137,11 @@ function renderPanel() {
         <input type="color" data-field="color" value="${esc(c.color)}" aria-label="${esc(t("catColor"))}" title="${esc(t("catColor"))}">
         <input type="text" data-field="name" value="${esc(c.name)}" maxlength="60" aria-label="${esc(t("catName"))}">
         <button class="btn primary" data-act="assign" title="${esc(t("assignTitle"))}">${esc(t("assign"))}</button>
-        <label class="fld price"><span>${esc(t("catPrice"))}</span><input type="text" inputmode="decimal" data-field="price" value="${esc(formatPrice(c.price))}" ${c.protocol ? "disabled" : ""}></label>
-        <label class="check" title="${esc(t("protocolTitle"))}"><input type="checkbox" data-field="protocol" ${c.protocol ? "checked" : ""}><span>${esc(t("protocol"))}</span></label>
+        <label class="fld price"><span>${esc(t("catPrice"))}</span><input type="text" inputmode="decimal" data-field="price" value="${esc(formatPrice(c.price))}" ${c.protocol || c.reservation ? "disabled" : ""}></label>
+        <div class="flags">
+          <label class="check" title="${esc(t("reservationTitle"))}"><input type="checkbox" data-field="reservation" ${c.reservation ? "checked" : ""}><span>${esc(t("reservation"))}</span></label>
+          <label class="check" title="${esc(t("protocolTitle"))}"><input type="checkbox" data-field="protocol" ${c.protocol ? "checked" : ""}><span>${esc(t("protocol"))}</span></label>
+        </div>
         <span class="cnt">${esc(t("seatCount", { n: counts[c.id] || 0 }))}</span>
         <button class="icon-del" data-act="deleteCat" title="${esc(t("deleteCategory"))}" aria-label="${esc(t("deleteCategory"))}"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
       </div>`).join("") : `<p class="note">${esc(t("noCategories"))}</p>`}
