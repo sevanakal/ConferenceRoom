@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using ConferenceRoom.Domain.Events;
 using ConferenceRoom.Domain.Halls;
 using ConferenceRoom.Domain.Organizations;
@@ -71,6 +72,8 @@ public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLoc
             saveUrl = $"/yonetim/satis-yetkileri/{Kind}/{Id}?handler=Save",
             token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken,
             staff = sellers.Select(s => new { id = s.Id, name = s.FullName, restricted = s.SeatsRestricted }),
+            isEvent = IsEvent,
+            categoryEvents = await CategoryEventsAsync(hall.Id, ev?.Id, cancellationToken),
             // Ortak metinler "seatEditor", bu ekrana özgü olanlar "seatScope" bölümünden.
             texts = ScreenData.Texts(catalog, "seatEditor", "seatScope"),
         };
@@ -123,6 +126,24 @@ public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLoc
             return NotFound();
         await SeatScopeStore.ResetEventAsync(db, hall.Id, ev.Id, cancellationToken);
         return Redirect($"/yonetim/satis-yetkileri/{EventKind}/{ev.Id}");
+    }
+
+    /// <summary>
+    /// Koltukların hangi kategori rengiyle gösterileceği: koltuk ayarı (fiyatlandırma) yapılmış etkinlikler, en yenisi önce.
+    /// Salon ekranında salonun iptal edilmemiş etkinlikleri (ekranda biri seçilir, yalnızca görünüm içindir, kaydedilmez),
+    /// etkinlik ekranında yalnızca o etkinlik. Her biri { id, title, map } (map: EventSeatMaps.MapJson, bkz. SeatMap).
+    /// </summary>
+    private async Task<List<object>> CategoryEventsAsync(int hallId, int? eventId, CancellationToken cancellationToken)
+    {
+        var events = eventId is null
+            ? db.Events.Where(e => e.HallId == hallId && e.Status != EventStatus.Cancelled)
+            : db.Events.Where(e => e.Id == eventId);
+        var rows = await (
+            from m in db.EventSeatMaps
+            join e in events on m.EventId equals e.Id
+            orderby e.Id descending
+            select new { e.Id, e.Title, m.MapJson }).ToListAsync(cancellationToken);
+        return [.. rows.Select(r => (object)new { id = r.Id, title = r.Title, map = JsonDocument.Parse(r.MapJson).RootElement })];
     }
 
     /// <summary>Adresteki salon ya da etkinlik (etkinlikte salonu da). Bulunamazsa salon null.</summary>

@@ -6,19 +6,22 @@
   Düzenlenen veri (#seatData): { schema, staff{ personelId: [koltukId...] } } (Domain/Sales/SeatScopeData.cs)
   #editorConfig.staff: satış yetkisi olan personel [{ id, name, restricted }]; restricted=false olan tam yetkilidir,
   tüm koltukları satar ve burada koltuk verilmez.
+  #editorConfig.categoryEvents: koltuk ayarı yapılmış etkinlikler [{ id, title, map }] (map: Domain/Events/SeatMap.cs).
   Ekran metinleri: tr.json/en.json "seatScope" bölümü (ortaklar "seatEditor").
 
-  Krokide: panelde seçili personelin koltukları dolu renkte, başka bir kısıtlı personele verilmiş koltuklar açık renkte,
-  kimseye verilmemiş koltuklar gridir (onları yalnızca tam yetkili personel satar).
+  Krokide: koltuk, panelde seçilen etkinliğin kategori rengindedir (fiyatlandırma ekranındaki gibi; yalnızca görünüm,
+  kaydedilmez). Koltuğu satabilen personel koltuğun üstünde, personelin rengindeki küçük etiketle baş harfleriyle
+  gösterilir; panelde seçili personelinki tam renkli, diğerleri soluktur. Etiketi olmayan koltuğu yalnızca tam yetkili
+  personel satar. Böylece kategori rengi ile personel rengi karışmaz.
 
-  Dosyanın bölümleri: yardımcılar → koltuk görünümü → koltuk verme/alma → panel → başlangıç
+  Dosyanın bölümleri: yardımcılar → kategoriler → koltuk görünümü → koltuk verme/alma → panel → başlangıç
 */
 (() => {
 "use strict";
 
-const hooks = { seatStyle, hoverParts, renderPanel, onAction };
+const hooks = { seatStyle, seatBadge, hoverParts, renderPanel, onAction, onChange };
 const ed = KoltukSecici.create(hooks);
-const { t, esc } = ed;
+const { t, esc, locale } = ed;
 const $ = (id) => document.getElementById(id);
 
 /* ---------- Yardımcılar ---------- */
@@ -26,6 +29,24 @@ const staff = ed.config.staff;
 const restricted = staff.filter((s) => s.restricted);
 const fullAccess = staff.filter((s) => !s.restricted);
 const nameOf = new Map(staff.map((s) => [String(s.id), s.name]));
+/* Personelin rengi: css/koltuk-ayarlari.css başındaki --staff-1..8 değişkenleri, listedeki sırasına göre dönerek. */
+const STAFF_COLORS = 8;
+const colorIndex = new Map(restricted.map((s, i) => [String(s.id), (i % STAFF_COLORS) + 1]));
+const colorVar = (id) => `var(--staff-${colorIndex.get(id)})`;
+let colors = null, colorsFor = null;
+// Kroki için değerleri okunur; tema değişince (yeni TC) yeniden okunur.
+function staffColor(id, TC) {
+  if (colorsFor !== TC) { colors = new Map(); colorsFor = TC; }
+  if (!colors.has(id)) colors.set(id, KrokiCizim.css(`--staff-${colorIndex.get(id)}`));
+  return colors.get(id);
+}
+/* Baş harfler: ilk ve son kelimenin ilk harfi (Ayşe Yılmaz → AY); tek kelimede ilk iki harf. */
+function initials(name) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  const text = words.length > 1 ? words[0][0] + words[words.length - 1][0] : (words[0] ?? "?").slice(0, 2);
+  return text.toLocaleUpperCase(locale);
+}
+const initialsOf = new Map(staff.map((s) => [String(s.id), initials(s.name)]));
 let activeId = restricted.length ? String(restricted[0].id) : null;   // panelde seçili personel (veri değil, kaydedilmez)
 
 const seatsOf = (id) => ed.data.staff[id] ?? [];
@@ -46,27 +67,39 @@ function holdersOf(seatId) {
 }
 
 /* ------------------------------------------------------------------
-   Koltuk görünümü ve fare altı bilgisi (koltuğu satabilenler).
+   Kategoriler: koltuk renkleri seçilen etkinliğin koltuk ayarından gelir (ilki varsayılan). Seçim yalnızca görünüm içindir.
 ------------------------------------------------------------------ */
-// Renkler css/koltuk-ayarlari.css başındaki --scope-* değişkenlerinden; tema değişince (yeni TC) yeniden okunur.
-let colors = null, colorsFor = null;
-function scopeColors(TC) {
-  if (colorsFor !== TC) {
-    const css = KrokiCizim.css;
-    colors = { own: css("--scope-own"), ownText: css("--scope-own-text"), other: css("--scope-other"), otherText: css("--scope-other-text") };
-    colorsFor = TC;
-  }
-  return colors;
+const categoryEvents = ed.config.categoryEvents;
+let categoryEventId = categoryEvents.length ? categoryEvents[0].id : null;
+let categoryMap = null;
+function useCategoryEvent(id) {
+  categoryEventId = id;
+  const map = categoryEvents.find((e) => e.id === id)?.map;
+  categoryMap = map ? { byId: new Map(map.categories.map((c) => [c.id, c])), seats: map.seats } : null;
 }
+useCategoryEvent(categoryEventId);
+const categoryOf = (seatId) => categoryMap?.byId.get(categoryMap.seats[seatId]);
+
+/* ------------------------------------------------------------------
+   Koltuk görünümü: renk kategoriden (kategorisiz gri, protokol kesik kenarlı), üstte satabilen personelin etiketi.
+   Fare altında kategori ve satabilenlerin adları.
+------------------------------------------------------------------ */
 function seatStyle(it, TC) {
-  const h = holdersOf(it.id), c = scopeColors(TC);
-  if (activeId && h.includes(activeId)) return { fill: c.own, text: c.ownText, stroke: "rgba(0,0,0,.35)", strokeWidth: 1.5, dash: null };
-  if (h.length) return { fill: c.other, text: c.otherText, stroke: c.own, strokeWidth: 1.5, dash: null };
-  return { fill: TC.seat, text: TC.ink, stroke: TC.seatStroke, strokeWidth: 1.5, dash: it.kind === "extra" ? [7, 5] : null };
+  const c = categoryOf(it.id);
+  return c
+    ? { fill: c.color, text: "#FFFFFF", stroke: c.protocol ? TC.ink : "rgba(0,0,0,.35)", strokeWidth: c.protocol ? 3 : 1.5, dash: c.protocol ? [6, 4] : null }
+    : { fill: TC.seat, text: TC.ink, stroke: TC.seatStroke, strokeWidth: 1.5, dash: it.kind === "extra" ? [7, 5] : null };
+}
+/* Etiket: seçili personel koltuğu satabiliyorsa onun, yoksa ilk satabilenin baş harfleri; birden çok kişi varsa "+n". */
+function seatBadge(it, TC) {
+  const h = holdersOf(it.id);
+  if (!h.length) return null;
+  const own = activeId && h.includes(activeId), id = own ? activeId : h[0];
+  return { text: initialsOf.get(id) + (h.length > 1 ? `+${h.length - 1}` : ""), color: staffColor(id, TC), faded: !own };
 }
 function hoverParts(it) {
-  const h = holdersOf(it.id);
-  return [h.length ? t("soldBy", { names: h.map((id) => nameOf.get(id)).join(", ") }) : t("onlyFullAccess")];
+  const h = holdersOf(it.id), c = categoryOf(it.id);
+  return [c ? c.name : null, h.length ? t("soldBy", { names: h.map((id) => nameOf.get(id)).join(", ") }) : t("onlyFullAccess")];
 }
 
 /* ------------------------------------------------------------------
@@ -100,13 +133,24 @@ function renderPanel() {
       const id = String(s.id), on = id === activeId;
       return `
       <div class="staff${on ? " on" : ""}" data-staff="${id}">
-        <button class="staff-name" data-act="activate" aria-pressed="${on}">${esc(s.name)}<span>${esc(t("seatCount", { n: seatsOf(id).length }))}</span></button>
+        <button class="staff-name" data-act="activate" aria-pressed="${on}"><i class="swatch" style="background:${colorVar(id)}">${esc(initialsOf.get(id))}</i><b>${esc(s.name)}</b><span>${esc(t("seatCount", { n: seatsOf(id).length }))}</span></button>
         <button class="btn primary" data-act="give" ${hasSel ? "" : "disabled"} title="${esc(t("giveTitle"))}">${esc(t("give"))}</button>
         <button class="btn" data-act="take" ${hasSel ? "" : "disabled"} title="${esc(t("takeTitle"))}">${esc(t("take"))}</button>
       </div>`;
     }).join("")}</div>` : `<p class="note warn">${esc(t("noRestricted"))}</p>`}
     ${fullAccess.length ? `<p class="note"><b>${esc(t("fullAccess"))}:</b> ${esc(fullAccess.map((s) => s.name).join(", "))}</p>` : ""}
     <p class="note">${esc(t("restrictHint"))}</p>`;
+
+  // ---- Kategoriler (görünüm) ----
+  const shown = categoryEvents.find((e) => e.id === categoryEventId);
+  $("catSec").innerHTML = `
+    <h3>${esc(t("categoriesTitle"))}</h3>
+    ${categoryEvents.length > 1 ? `<label class="fld"><span>${esc(t("categoryEvent"))}</span><select data-field="categoryEvent">${categoryEvents.map((e) =>
+      `<option value="${e.id}" ${e.id === categoryEventId ? "selected" : ""}>${esc(e.title)}</option>`).join("")}</select></label>` : ""}
+    ${shown && shown.map.categories.length
+      ? `<div class="legend">${shown.map.categories.map((c) => `<span><i class="${c.protocol ? "proto" : ""}" style="background:${esc(c.color)}"></i>${esc(c.name)}</span>`).join("")}<span><i></i>${esc(t("noCategory"))}</span></div>
+         ${categoryEvents.length > 1 ? `<p class="note">${esc(t("categoryPreviewNote"))}</p>` : ""}`
+      : `<p class="note">${esc(t(ed.config.isEvent ? "noCategoriesEvent" : "noCategoriesHall"))}</p>`}`;
 
   // ---- Özet (tüm katlar) ----
   let given = 0;
@@ -118,10 +162,12 @@ function renderPanel() {
       ${row(t("totalSeats"), ed.seats.size)}
       ${row(t("givenSeats"), given)}
       ${row(t("notGivenSeats"), ed.seats.size - given)}
-    </dl>
-    <div class="legend"><span><i class="own"></i>${esc(t("legendOwn"))}</span><span><i class="other"></i>${esc(t("legendOther"))}</span><span><i></i>${esc(t("legendNone"))}</span></div>`;
+    </dl>`;
 }
 
+function onChange(e) {
+  if (e.target.dataset.field === "categoryEvent") { useCategoryEvent(Number(e.target.value)); ed.render(); }
+}
 function onAction(a, b) {
   const staffId = b.closest("[data-staff]")?.dataset.staff;
   if (a === "activate") activate(staffId);
