@@ -94,8 +94,8 @@ Kroki verisi her sürümde tek bir JSON olarak saklanır (`HallPlanVersions.Plan
 
 | Adres | İçerik |
 | --- | --- |
-| `/` | Ana sayfa (sistem durumu) |
-| `/pano` | Herkese açık etkinlik panosu (giriş gerekmez) |
+| `/`, `/pano` | Ana sayfa: herkese açık etkinlik panosu (giriş gerekmez) |
+| `/bilet/{seansId}` | Seansın bilet sayfası (koltuk seçimi 4. aşamada) |
 | `/giris`, `/kayit` | Bilet alan izleyicinin girişi ve kaydı |
 | `/yonetim/giris` | Yönetim paneli girişi (ayrı sayfa, ayrı çerez) |
 | `/yonetim` | Yönetim paneli: rolün yetkili olduğu bölümler |

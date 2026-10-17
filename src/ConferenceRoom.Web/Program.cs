@@ -31,6 +31,8 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/Yonetim/SatisYetkileri", AuthPolicies.Permission(Permissions.UsersManage));
     // Satış bölümü: satış personeli /giris sayfasından girer (ayrı çerez; panel bu oturumla açılmaz).
     o.Conventions.AuthorizeFolder("/Satis", AuthPolicies.Sales);
+    // Ana sayfa etkinlik panosudur; /pano adresi lobideki ekranlar için kalır.
+    o.Conventions.AddPageRoute("/Pano", "");
 });
 // Türkçe karakterler (ş, ğ, ı...) HTML'de &#x15F; gibi kodlanmadan, olduğu gibi yazılsın.
 builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new TextEncoderSettings(UnicodeRanges.All));

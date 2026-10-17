@@ -3,13 +3,18 @@
 @using System.Globalization
 @using ConferenceRoom.Web.Common
 @using ConferenceRoom.Web.Events
+@inject ConferenceRoom.Localization.LanguageCatalog Catalog
 @*
-    Etkinlik panosu: lobideki ekranda ya da telefonda açılabilen, giriş istemeyen bilgilendirme sayfası.
-    Kendi şablonu vardır (genel menü yok); stil wwwroot/css/pano.css. Sayfa 60 saniyede bir yenilenir.
+    Etkinlik panosu: sitenin ana sayfası (/) ve lobideki ekran için /pano. Giriş istemez.
+    Kendi şablonu vardır (genel menü yok; üstte yalnızca giriş ve dil); stil wwwroot/css/pano.css.
+    Geniş ekranda seanslar kart, telefonda satır olarak dizilir. Online satış/rezervasyon açık seansta "Bilet al" düğmesi,
+    afişe tıklanınca büyük hâli açılır. Sayfa 60 saniyede bir yenilenir (afiş açıkken beklenir).
 *@
 @{
     Layout = null;
     var culture = CultureInfo.CurrentCulture;
+    var currentLanguage = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+    var returnUrl = Request.Path + Request.QueryString;
     string DayTitle(DateOnly date) =>
         date == Model.Today ? T["board.today"]
         : date == Model.Today.AddDays(1) ? T["board.tomorrow"]
@@ -17,11 +22,11 @@
     string Time(DateTime utc) => DisplayTime.ToLocal(utc).ToString("HH:mm", culture);
 }
 <!DOCTYPE html>
-<html lang="@CultureInfo.CurrentUICulture.TwoLetterISOLanguageName">
+<html lang="@currentLanguage">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="refresh" content="60" />
+    <noscript><meta http-equiv="refresh" content="60" /></noscript>
     <title>@T["board.title"] · @T["app.name"]</title>
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/pano.css" asp-append-version="true" />
@@ -30,14 +35,38 @@
     <header class="board-head">
         <a class="board-brand" href="/"><partial name="_BrandMark" /><span>@T["app.name"]</span></a>
         <h1>@T["board.title"]</h1>
-        <div class="board-clock">
-            <time id="clock">@Model.NowLocal.ToString("HH:mm", culture)</time>
-            <span>@Model.Today.ToString("d MMMM yyyy, dddd", culture)</span>
+        <div class="board-side">
+            <div class="board-clock">
+                <time id="clock">@Model.NowLocal.ToString("HH:mm", culture)</time>
+                <span>@Model.Today.ToString("d MMMM yyyy, dddd", culture)</span>
+            </div>
+            @* Giriş ve dil: ana sayfa olduğu için izleyici ve satış personeli buradan giriş sayfasına ulaşır. *@
+            <nav class="board-links" aria-label="@T["nav.language"]">
+                @if (User.Identity?.IsAuthenticated == true)
+                {
+                    <span>@User.Identity.Name</span>
+                    <form method="post" asp-page="/Hesap/Cikis"><button type="submit">@T["nav.logout"]</button></form>
+                }
+                else
+                {
+                    <a href="/giris">@T["nav.login"]</a>
+                }
+                @foreach (var language in Catalog.Languages)
+                {
+                    <a href="/language/@language.Culture?returnUrl=@Uri.EscapeDataString(returnUrl)"
+                       aria-current="@(language.Culture == currentLanguage ? "true" : null)"
+                       lang="@language.Culture">@language.Culture.ToUpperInvariant()</a>
+                }
+            </nav>
         </div>
     </header>
 
     <main class="board-main">
-        @if (Model.Days.Count == 0)
+        @if (!Model.Available)
+        {
+            <p class="board-empty">@T["board.unavailable"]</p>
+        }
+        else if (Model.Days.Count == 0)
         {
             <p class="board-empty">@T["board.empty"]</p>
         }
@@ -49,6 +78,16 @@
                     @foreach (var item in day.Items)
                     {
                         <li class="board-item" data-badge="@item.Badge">
+                            @if (item.PosterFileName is not null)
+                            {
+                                <button type="button" class="board-poster" data-poster="@PosterStore.Url(item.PosterFileName)" title="@T["board.posterOpen"]">
+                                    <img src="@PosterStore.Url(item.PosterFileName)" alt="@T["board.posterAlt", item.Title]" loading="lazy" />
+                                </button>
+                            }
+                            else
+                            {
+                                <div class="board-poster board-poster--empty" aria-hidden="true">@item.Title[..1]</div>
+                            }
                             <div class="board-time">
                                 <strong>@Time(item.StartsAtUtc)</strong>
                                 @if (item.EndsAtUtc is { } end)
@@ -56,14 +95,6 @@
                                     <span>– @Time(end)</span>
                                 }
                             </div>
-                            @if (item.PosterFileName is not null)
-                            {
-                                <img class="board-poster" src="@PosterStore.Url(item.PosterFileName)" alt="" loading="lazy" />
-                            }
-                            else
-                            {
-                                <div class="board-poster board-poster--empty" aria-hidden="true">@item.Title[..1]</div>
-                            }
                             <div class="board-info">
                                 <h3>@item.Title</h3>
                                 <p>@item.TypeName · @item.HallName@(item.Organizer is null ? "" : " · " + item.Organizer)</p>
@@ -72,16 +103,22 @@
                                     <p class="board-doors">@T["board.doorsOpen", Time(doors)]</p>
                                 }
                             </div>
-                            <span class="board-badge">
-                                @if (item.Badge == BoardBadge.SalesSoon)
+                            <div class="board-foot">
+                                <span class="board-badge">
+                                    @if (item.Badge == BoardBadge.SalesSoon)
+                                    {
+                                        @T["board.badgeSalesSoon", DisplayTime.Format(item.SalesStartUtc!.Value)]
+                                    }
+                                    else
+                                    {
+                                        @T[$"board.badge{item.Badge}"]
+                                    }
+                                </span>
+                                @if (BoardQuery.SellsOnline(item.Badge))
                                 {
-                                    @T["board.badgeSalesSoon", DisplayTime.Format(item.SalesStartUtc!.Value)]
+                                    <a class="board-buy" href="/bilet/@item.SessionId">@T[item.Badge == BoardBadge.OnSale ? "board.buy" : "board.reserve"]</a>
                                 }
-                                else
-                                {
-                                    @T[$"board.badge{item.Badge}"]
-                                }
-                            </span>
+                            </div>
                         </li>
                     }
                 </ul>
@@ -89,15 +126,39 @@
         }
     </main>
 
+    @* Afişin büyük hâli: afişe tıklanınca açılır; kapatma düğmesi, Esc ya da dışına tıklama kapatır. *@
+    <dialog class="poster-dialog" id="posterDialog" aria-label="@T["board.posterOpen"]">
+        <img alt="" />
+        <button type="button" class="poster-close" aria-label="@T["board.posterClose"]">×</button>
+    </dialog>
+
     <script>
-        // Saat her 15 saniyede güncellenir (sayfa zaten dakikada bir yenileniyor). Türkiye saati sunucudan gelir; burada yalnızca ilerletilir.
         (function () {
+            // ---- Saat: her 15 saniyede ilerletilir. Türkiye saati sunucudan gelir; burada yalnızca ilerletilir. ----
             var el = document.getElementById("clock"), parts = el.textContent.split(":");
             var start = Date.now(), base = (+parts[0]) * 60 + (+parts[1]);
             setInterval(function () {
                 var m = (base + Math.floor((Date.now() - start) / 60000)) % 1440;
                 el.textContent = String(Math.floor(m / 60)).padStart(2, "0") + ":" + String(m % 60).padStart(2, "0");
             }, 15000);
+
+            // ---- Afiş penceresi ----
+            var dialog = document.getElementById("posterDialog"), big = dialog.querySelector("img");
+            document.querySelectorAll("button[data-poster]").forEach(function (b) {
+                b.addEventListener("click", function () {
+                    big.src = b.dataset.poster;
+                    big.alt = b.querySelector("img").alt;
+                    dialog.showModal();
+                });
+            });
+            dialog.querySelector(".poster-close").addEventListener("click", function () { dialog.close(); });
+            dialog.addEventListener("click", function (e) { if (e.target === dialog) dialog.close(); });   // görselin dışı
+
+            // ---- Yenileme: dakikada bir; afiş açıksa kapanınca yenilenir. ----
+            setInterval(function () {
+                if (dialog.open) dialog.addEventListener("close", function () { location.reload(); }, { once: true });
+                else location.reload();
+            }, 60000);
         })();
     </script>
 </body>

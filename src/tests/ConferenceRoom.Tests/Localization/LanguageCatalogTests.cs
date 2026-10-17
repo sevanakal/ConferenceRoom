@@ -32,13 +32,13 @@ public class LanguageCatalogTests
     }
 
     [Theory]
-    [InlineData("tr", "Hoş geldiniz")]
-    [InlineData("en", "Welcome")]
-    [InlineData("en-GB", "Welcome")]     // üst kültüre (en) düşer
-    [InlineData("de", "Hoş geldiniz")]   // olmayan dil varsayılana (tr) düşer
+    [InlineData("tr", "Etkinlik panosu")]
+    [InlineData("en", "Event board")]
+    [InlineData("en-GB", "Event board")]     // üst kültüre (en) düşer
+    [InlineData("de", "Etkinlik panosu")]   // olmayan dil varsayılana (tr) düşer
     public void Metin_kultur_sirasina_gore_bulunur(string culture, string expected)
     {
-        Assert.Equal(expected, _catalog.Find("home.title", new CultureInfo(culture)));
+        Assert.Equal(expected, _catalog.Find("board.title", new CultureInfo(culture)));
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class LanguageCatalogTests
     public void GetAll_dil_bilgisi_bolumunu_icermez()
     {
         var all = _catalog.GetAll(new CultureInfo("en"));
-        Assert.Equal("Welcome", all["home.title"]);
+        Assert.Equal("Event board", all["board.title"]);
         Assert.DoesNotContain(all.Keys, k => k.StartsWith("_language"));
     }
 }

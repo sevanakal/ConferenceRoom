@@ -7,20 +7,20 @@ namespace ConferenceRoom.Tests.Web;
 public class PageAndApiTests(WebAppFactory factory) : IClassFixture<WebAppFactory>
 {
     [Fact]
-    public async Task Ana_sayfa_varsayilan_olarak_turkce_acilir()
+    public async Task Ana_sayfa_etkinlik_panosu_olarak_varsayilan_turkce_acilir()
     {
         var html = await factory.CreateClient().GetStringAsync("/");
         Assert.Contains("<html lang=\"tr\">", html);
-        Assert.Contains("Hoş geldiniz", html);
-        // Veritabanı yokken sayfa çökmez, durumu gösterir.
-        Assert.Contains("Bağlantı kurulamadı", html);
+        Assert.Contains("Etkinlik panosu", html);
+        // Veritabanı yokken sayfa çökmez, uyarı gösterir.
+        Assert.Contains("Etkinlik bilgilerine şu anda ulaşılamıyor", html);
     }
 
     [Fact]
     public async Task Adres_satirindaki_culture_parametresi_dili_degistirir()
     {
         var html = await factory.CreateClient().GetStringAsync("/?culture=en");
-        Assert.Contains("Welcome", html);
+        Assert.Contains("Event board", html);
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class PageAndApiTests(WebAppFactory factory) : IClassFixture<WebAppFactor
         Assert.Contains(languages!, l => l.Culture == "en" && l.Name == "English");
 
         var strings = await client.GetFromJsonAsync<Dictionary<string, string>>("/api/languages/en");
-        Assert.Equal("Welcome", strings!["home.title"]);
+        Assert.Equal("Event board", strings!["board.title"]);
 
         Assert.Equal(HttpStatusCode.NotFound, (await client.GetAsync("/api/languages/xx")).StatusCode);
     }

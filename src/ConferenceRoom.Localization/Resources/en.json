@@ -11,17 +11,7 @@
     "home": "Home",
     "language": "Language",
     "login": "Sign in",
-    "logout": "Sign out",
-    "board": "Event board"
-  },
-  "home": {
-    "title": "Welcome",
-    "intro": "This is the first skeleton of the conference hall management system. Hall plans, events and bookings will be added step by step.",
-    "statusTitle": "System status",
-    "database": "Database",
-    "databaseOk": "Connected",
-    "databaseFail": "Could not connect",
-    "organization": "Organisation"
+    "logout": "Sign out"
   },
   "error": {
     "title": "Something went wrong",
@@ -481,7 +471,17 @@
     "badgeSalesSoon": "Sales open {0}",
     "badgeSalesClosed": "Sales closed",
     "badgeNow": "Now",
-    "badgeCancelled": "Cancelled"
+    "badgeCancelled": "Cancelled",
+    "unavailable": "Event information is unavailable right now. Please try again shortly.",
+    "buy": "Buy tickets",
+    "reserve": "Reserve",
+    "posterOpen": "Enlarge poster",
+    "posterClose": "Close",
+    "posterAlt": "{0} poster"
+  },
+  "ticket": {
+    "soon": "Online tickets and reservations will open on this page very soon. You will be able to pick your seat from the hall plan.",
+    "back": "Back to events"
   },
   "salesDesk": {
     "title": "Sales",

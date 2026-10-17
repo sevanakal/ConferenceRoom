@@ -53,6 +53,9 @@ public static class BoardQuery
             BadgeOf(r.Status, r.SaleMode, r.OnlineEnabled, r.SalesStartUtc, r.SalesEndUtc, r.StartsAtUtc, nowUtc), r.SalesStartUtc)).ToList();
     }
 
+    /// <summary>Seans internetten satılıyor ya da rezerve ediliyor mu (panodaki "Bilet al" düğmesi).</summary>
+    public static bool SellsOnline(BoardBadge badge) => badge is BoardBadge.OnSale or BoardBadge.ReservationOpen;
+
     /// <summary>Panodaki durum etiketi; öncelik sırası: iptal, şu anda, satış kapalı, satış henüz açılmadı, açık.</summary>
     public static BoardBadge BadgeOf(EventStatus status, SaleMode mode, bool online, DateTime? salesStartUtc, DateTime? salesEndUtc, DateTime startsAtUtc, DateTime nowUtc)
     {

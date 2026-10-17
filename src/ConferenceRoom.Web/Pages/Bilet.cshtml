@@ -1,0 +1,22 @@
+@page "/bilet/{sessionId:int}"
+@model ConferenceRoom.Web.Pages.BiletModel
+@using ConferenceRoom.Web.Common
+@using ConferenceRoom.Web.Events
+@*
+    Seansın bilet sayfası. Şimdilik yalnızca seans bilgisi ve "yakında" notu; koltuk seçimi 4. aşamada eklenecek.
+*@
+@{
+    ViewData["Title"] = Model.Session.Title;
+}
+<section class="card ticket-intro">
+    @if (Model.Session.PosterFileName is not null)
+    {
+        <img class="ticket-poster" src="@PosterStore.Url(Model.Session.PosterFileName)" alt="" />
+    }
+    <div>
+        <h1>@Model.Session.Title</h1>
+        <p class="lead">@DisplayTime.Format(Model.Session.StartsAtUtc) · @Model.Session.HallName</p>
+        <p>@T["ticket.soon"]</p>
+        <p><a href="/">@T["ticket.back"]</a></p>
+    </div>
+</section>
