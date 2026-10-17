@@ -1,5 +1,8 @@
+using ConferenceRoom.Domain.Accounts;
+using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Tests.Database;
+using ConferenceRoom.Web.Auth;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
@@ -15,6 +18,9 @@ namespace ConferenceRoom.Tests.Auth;
 public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
 {
     public const string AdminEmail = "yonetici@test.local", AdminPassword = "Test.Sifre.123";
+
+    /// <summary><see cref="CreateStaffAsync"/> ile açılan personelin şifresi.</summary>
+    public const string StaffPassword = "Satis.Sifre.1";
 
     private readonly string _database = $"conferenceroom_test_{Guid.NewGuid():N}"[..40];
 
@@ -40,6 +46,48 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
         var client = CreateClient();
         var html = await Forms.PostAsync(client, "/yonetim/giris", [new("Input.Email", email), new("Input.Password", password)]);
         Assert.Contains("Hoş geldiniz", html);
+        return client;
+    }
+
+    /// <summary>
+    /// Doğrudan veritabanına verilen yetkileri taşıyan yeni bir rol ve o roldeki "Satış personeli" adlı kullanıcıyı ekler
+    /// (şifre <see cref="StaffPassword"/>); (e-posta, kullanıcı no) döner.
+    /// </summary>
+    public async Task<(string Email, int Id)> CreateStaffAsync(string[] permissions, bool seatsRestricted = false)
+    {
+        var email = $"personel-{Guid.NewGuid():N}@test.local";
+        var id = 0;
+        await WithDbAsync(async db =>
+        {
+            var role = new Role
+            {
+                OrganizationId = Organization.DefaultId,
+                Name = $"Rol {Guid.NewGuid():N}"[..20],
+                Permissions = [.. permissions.Select(p => new RolePermission { Permission = p })],
+            };
+            db.Roles.Add(role);
+            await db.SaveChangesAsync();
+            var user = new StaffUser
+            {
+                OrganizationId = Organization.DefaultId,
+                Email = email,
+                FullName = "Satış personeli",
+                PasswordHash = new PasswordService().Hash(StaffPassword),
+                SeatsRestricted = seatsRestricted,
+                Roles = [new StaffUserRole { RoleId = role.Id }],
+            };
+            db.StaffUsers.Add(user);
+            await db.SaveChangesAsync();
+            id = user.Id;
+        });
+        return (email, id);
+    }
+
+    /// <summary>Genel girişten (/giris) satış bölümüne giriş yapmış bir istemci döner (satış personeli).</summary>
+    public async Task<HttpClient> SignInSellerAsync(string email = AdminEmail, string password = AdminPassword)
+    {
+        var client = CreateClient();
+        await Forms.PostAsync(client, "/giris", [new("Input.Email", email), new("Input.Password", password)]);
         return client;
     }
 

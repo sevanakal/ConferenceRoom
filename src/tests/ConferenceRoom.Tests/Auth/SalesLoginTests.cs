@@ -13,8 +13,6 @@ namespace ConferenceRoom.Tests.Auth;
 [Collection(MySqlCollection.Name)]
 public class SalesLoginTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWebAppFactory>
 {
-    private const string Password = "Satis.Sifre.1";
-
     [MySqlFact]
     public async Task Yalnizca_satis_yapan_personel_genel_giristen_satis_bolumune_girer_panele_giremez()
     {
@@ -74,32 +72,7 @@ public class SalesLoginTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWe
 
     // ---- Yardımcılar ----
 
-    private static Dictionary<string, string> Login(string email) => new() { ["Input.Email"] = email, ["Input.Password"] = Password };
+    private static Dictionary<string, string> Login(string email) => new() { ["Input.Email"] = email, ["Input.Password"] = MySqlWebAppFactory.StaffPassword };
 
-    /// <summary>Verilen yetkileri taşıyan yeni bir rol ve o roldeki "Satış personeli" adlı kullanıcıyı ekler; e-postasını döner.</summary>
-    private async Task<string> CreateSellerAsync(string[] permissions)
-    {
-        var email = $"personel-{Guid.NewGuid():N}@test.local";
-        await factory.WithDbAsync(async db =>
-        {
-            var role = new Role
-            {
-                OrganizationId = Organization.DefaultId,
-                Name = $"Rol {Guid.NewGuid():N}"[..20],
-                Permissions = [.. permissions.Select(p => new RolePermission { Permission = p })],
-            };
-            db.Roles.Add(role);
-            await db.SaveChangesAsync();
-            db.StaffUsers.Add(new StaffUser
-            {
-                OrganizationId = Organization.DefaultId,
-                Email = email,
-                FullName = "Satış personeli",
-                PasswordHash = new PasswordService().Hash(Password),
-                Roles = [new StaffUserRole { RoleId = role.Id }],
-            });
-            await db.SaveChangesAsync();
-        });
-        return email;
-    }
+    private async Task<string> CreateSellerAsync(string[] permissions) => (await factory.CreateStaffAsync(permissions)).Email;
 }
