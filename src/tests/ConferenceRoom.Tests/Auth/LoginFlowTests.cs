@@ -81,17 +81,18 @@ public class LoginFlowTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWeb
     }
 
     [MySqlFact]
-    public async Task Yonetici_bilgileriyle_izleyici_girisi_yapilamaz_ve_panel_acilmaz()
+    public async Task Yonetici_bilgileriyle_genel_giristen_panel_acilmaz()
     {
         var client = factory.CreateClient();
 
-        // İzleyici girişi yalnızca izleyici tablosuna bakar; yönetim kullanıcısının bilgileri burada geçersizdir.
+        // Genel giriş personeli yalnızca satış bölümüne alır (yöneticinin satış yetkisi de var); panel ayrı çerezle,
+        // yalnızca yönetim girişinden açılır. Adresteki dönüş adresi de satış bölümü dışına çıkaramaz.
         var html = await Forms.PostAsync(client, "/giris?returnUrl=%2Fyonetim", new Dictionary<string, string>
         {
             ["Input.Email"] = MySqlWebAppFactory.AdminEmail,
             ["Input.Password"] = MySqlWebAppFactory.AdminPassword,
         });
-        Assert.Contains("E-posta ya da şifre hatalı.", html);
+        Assert.DoesNotContain("admin-subnav", html);
 
         var panel = await client.GetAsync("/yonetim");
         Assert.Contains("/yonetim/giris", panel.RequestMessage!.RequestUri!.ToString());
