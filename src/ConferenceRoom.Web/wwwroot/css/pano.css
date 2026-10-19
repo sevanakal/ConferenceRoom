@@ -33,12 +33,16 @@
 .board-links a:hover, .board-links button:hover { text-decoration: underline; }
 .board-links a[aria-current="true"] { color: var(--board-accent); font-weight: 700; }
 
-/* ---- Günler ve seanslar: geniş ekranda kart ızgarası ---- */
-.board-main { padding: 12px clamp(16px, 4vw, 48px) 48px; display: grid; gap: 28px; }
-.board-empty { color: var(--board-muted); font-size: 1.3rem; text-align: center; padding: 80px 0; }
+/* ---- Günler ve seanslar: geniş ekranda kartlar yan yana akar ----
+   Günler de kartlar da soldan sağa dizilir, satır dolunca alta geçer: tek seanslı günler alt alta yığılmaz.
+   Her gün kendi başlığıyla kartları kadar yer kaplar; kart genişliği --board-card. */
+.board-main { padding: 12px clamp(16px, 4vw, 48px) 48px; display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px 18px; --board-card: 300px; }
+.board-empty { flex: 1; color: var(--board-muted); font-size: 1.3rem; text-align: center; padding: 80px 0; }
+.board-day { max-width: 100%; }
 .board-day h2 { margin: 16px 0 12px; font-size: 1.1rem; text-transform: uppercase; letter-spacing: .08em; color: var(--board-accent); }
-.board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.board-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 18px; }
 .board-item {
+    width: var(--board-card); max-width: 100%;
     display: flex; flex-direction: column; overflow: hidden;
     background: var(--board-surface); border-radius: 12px; border-top: 4px solid var(--board-ok);
 }
@@ -90,8 +94,10 @@
     .board-head { grid-template-columns: 1fr auto; }
     .board-head h1 { grid-column: 1 / -1; grid-row: 2; }
     .board-brand span { display: none; }
-    .board-list { grid-template-columns: 1fr; gap: 10px; }
+    .board-main { display: grid; gap: 28px; }
+    .board-list { display: grid; grid-template-columns: 1fr; gap: 10px; }
     .board-item {
+        width: auto;
         display: grid; grid-template-columns: 64px 1fr; gap: 6px 14px; align-items: center;
         grid-template-areas: "time time" "poster info" "foot foot";
         padding: 14px 18px; border-top: 0; border-left: 4px solid var(--board-ok);
