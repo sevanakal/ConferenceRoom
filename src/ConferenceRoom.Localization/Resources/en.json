@@ -560,7 +560,8 @@
     "unknownSeat": "The settings contain a seat that is not on the floor plan. Reload the page and try again.",
     "onlineNeedsCategory": "Online seats need a category.",
     "onlineProtocol": "Protocol seats cannot be sold online.",
-    "noSessions": "This event has no sessions. Seat settings follow the floor plan a session is tied to; add a session first."
+    "noSessions": "This event has no sessions. Seat settings follow the floor plan a session is tied to; add a session first.",
+    "soldCategoryDeleted": "“{0}” has sold or reserved tickets and cannot be deleted. You can change its price and name."
   },
   "seatEditor": {
     "appName": "Seats and prices",
@@ -634,7 +635,8 @@
     "protocolTitle": "Protocol seats are not for sale",
     "reservation": "Reservation",
     "showOnlinePrice": "Show prices online",
-    "showOnlinePriceHint": "If unticked, people buying or reserving online don't see the price. Prices are still entered here and used for staff sales; you can leave them at 0 (a price of 0 shows as \"Reservation\")."
+    "showOnlinePriceHint": "If unticked, people buying or reserving online don't see the price. Prices are still entered here and used for staff sales; you can leave them at 0 (a price of 0 shows as \"Reservation\").",
+    "deleteCategorySold": "This category has sold or reserved tickets and cannot be deleted. Its price and name can be changed."
   },
   "salesScope": {
     "title": "Sales permissions",

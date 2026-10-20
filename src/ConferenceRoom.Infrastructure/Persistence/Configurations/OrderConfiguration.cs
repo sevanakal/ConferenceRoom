@@ -38,6 +38,7 @@ internal sealed class TicketConfiguration : IEntityTypeConfiguration<Ticket>
         builder.ToTable("Tickets");
         builder.Property(t => t.SeatId).HasMaxLength(Ticket.MaxSeatId).IsRequired();
         builder.Property(t => t.SeatLabel).HasMaxLength(Ticket.MaxSeatLabel).IsRequired();
+        builder.Property(t => t.CategoryId).HasMaxLength(Ticket.MaxCategoryId);
         builder.Property(t => t.CategoryName).HasMaxLength(Ticket.MaxCategoryName).IsRequired();
         builder.Property(t => t.Price).HasPrecision(12, 2);
         builder.HasIndex(t => new { t.EventSessionId, t.SeatId }).IsUnique();

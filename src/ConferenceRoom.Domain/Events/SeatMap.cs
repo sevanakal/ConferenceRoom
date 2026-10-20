@@ -26,6 +26,9 @@ public static partial class SeatMap
 
     public const int MaxNameLength = 60;
 
+    /// <summary>Kategori kimliğinin en büyük uzunluğu (<see cref="IdPattern"/> ile aynı).</summary>
+    public const int MaxCategoryIdLength = 20;
+
     public const decimal MaxPrice = 1_000_000m;
 
     /// <summary>Kabul edilen en büyük veri (bayt). 50.000 koltuğun hepsi atanmış ve online olsa yaklaşık 2 MB tutar.</summary>
@@ -142,13 +145,7 @@ public static partial class SeatMap
     public static IReadOnlyDictionary<string, SeatCategory> SeatCategories(string json)
     {
         var root = JsonNode.Parse(json)!.AsObject();
-        var categories = new Dictionary<string, SeatCategory>(StringComparer.Ordinal);
-        foreach (var node in root["categories"]!.AsArray())
-        {
-            var c = node!.AsObject();
-            categories[Text(c["id"])!] = new SeatCategory(Text(c["id"])!, Text(c["name"])!, c["price"]!.GetValue<decimal>(), Text(c["color"])!,
-                c["protocol"] is JsonValue p && p.GetValueKind() == JsonValueKind.True);
-        }
+        var categories = ReadCategories(root).ToDictionary(c => c.Id, StringComparer.Ordinal);
         var seats = new Dictionary<string, SeatCategory>(StringComparer.Ordinal);
         foreach (var (seatId, value) in root["seats"]!.AsObject())
         {
@@ -157,6 +154,17 @@ public static partial class SeatMap
         }
         return seats;
     }
+
+    /// <summary>Kaydedilmiş (denetlenmiş) ayarlardaki kategoriler, sırasıyla.</summary>
+    public static IReadOnlyList<SeatCategory> Categories(string json) => ReadCategories(JsonNode.Parse(json)!.AsObject());
+
+    private static List<SeatCategory> ReadCategories(JsonObject root) =>
+        root["categories"]!.AsArray().Select(node =>
+        {
+            var c = node!.AsObject();
+            return new SeatCategory(Text(c["id"])!, Text(c["name"])!, c["price"]!.GetValue<decimal>(), Text(c["color"])!,
+                c["protocol"] is JsonValue p && p.GetValueKind() == JsonValueKind.True);
+        }).ToList();
 
     // ---- Yardımcılar: alan yoksa ya da türü farklıysa null ----
 
