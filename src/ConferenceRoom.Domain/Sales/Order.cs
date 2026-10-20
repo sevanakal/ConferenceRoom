@@ -52,10 +52,11 @@ public class Order : Entity, IOrganizationScoped
 /// Satılmış ya da rezerve edilmiş tek koltuk. Koltuk, seansın bağlı olduğu kroki sürümündeki koltuk kimliğiyle
 /// (<see cref="SeatId"/>) tutulur; ekranda okunacak ad (<see cref="SeatLabel"/>, ör. "A-12"), kategori ve fiyat satış anındaki
 /// hâliyle kopyalanır. Aynı seansta bir koltuk bir kez satılır (veritabanında benzersiz indeks).
+/// <see cref="CategoryId"/> satıldığı kategorinin kimliğidir: bileti satılmış kategori koltuk ayarlarından silinemez.
 /// </summary>
 public class Ticket : Entity, IOrganizationScoped
 {
-    public const int MaxSeatId = 100, MaxSeatLabel = 40, MaxCategoryName = SeatMap.MaxNameLength;
+    public const int MaxSeatId = 100, MaxSeatLabel = 40, MaxCategoryName = SeatMap.MaxNameLength, MaxCategoryId = SeatMap.MaxCategoryIdLength;
 
     public int OrganizationId { get; set; }
 
@@ -66,6 +67,9 @@ public class Ticket : Entity, IOrganizationScoped
     public required string SeatId { get; set; }
 
     public required string SeatLabel { get; set; }
+
+    /// <summary>Satıldığı kategorinin kimliği (koltuk ayarlarındaki "id"). Bu alan eklenmeden önce satılmış biletlerde boş.</summary>
+    public string? CategoryId { get; set; }
 
     public required string CategoryName { get; set; }
 

@@ -14,6 +14,9 @@ namespace ConferenceRoom.Web.Events;
 ///
 /// Çakışma kuralı (kroki editöründeki gibi): ekran açıldığında hangi kayda (<c>Revision</c>) dayandığını bilir;
 /// o arada başkası kaydettiyse kayıt reddedilir.
+///
+/// Satılmış ya da rezerve edilmiş bileti olan kategori silinemez (<see cref="SoldCategoryIdsAsync"/>): fiyatı ve adı
+/// değiştirilebilir, satılmış bilet satış anındaki ad ve fiyatı zaten kendinde tutar.
 /// </summary>
 public static class SeatMapStore
 {
@@ -21,7 +24,8 @@ public static class SeatMapStore
 
     /// <param name="Revision">Kayıttan sonra etkinliğin güncel ayar sürümü.</param>
     /// <param name="ErrorKey">Invalid ise hatanın dil anahtarı.</param>
-    public sealed record SaveResult(Outcome Outcome, int Revision, string? ErrorKey = null);
+    /// <param name="ErrorArg">Hata metnindeki {0} (ör. silinemeyen kategorinin adı).</param>
+    public sealed record SaveResult(Outcome Outcome, int Revision, string? ErrorKey = null, string? ErrorArg = null);
 
     /// <summary>Ekranın açılışı için: ayarlar, dayanılan sürüm ve gösterilecek kroki.</summary>
     /// <param name="PlanJson">Seansların bağlı olduğu en yeni kroki sürümü (yapı öğeleri salonun son sürümünden); seans yoksa null.</param>
@@ -56,6 +60,15 @@ public static class SeatMapStore
         if (map?.MapJson == result.Json)
             return new SaveResult(Outcome.Unchanged, revision);
 
+        // ---- Bileti satılmış kategori silinmiş mi ----
+        if (map is not null)
+        {
+            var kept = SeatMap.Categories(result.Json!).Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
+            var sold = await SoldCategoryIdsAsync(db, ev.Id, map.MapJson, cancellationToken);
+            if (SeatMap.Categories(map.MapJson).FirstOrDefault(c => sold.Contains(c.Id) && !kept.Contains(c.Id)) is { } deleted)
+                return new SaveResult(Outcome.Invalid, revision, "seatMap.soldCategoryDeleted", deleted.Name);
+        }
+
         // ---- Kayıt ----
         if (map is null)
         {
@@ -80,6 +93,19 @@ public static class SeatMapStore
             return new SaveResult(Outcome.Conflict, latest);
         }
         return new SaveResult(Outcome.Saved, map.Revision);
+    }
+
+    /// <summary>
+    /// Kayıtlı ayarlardaki kategorilerden en az bir bileti (satış ya da rezervasyon, herhangi bir seansta) olanların kimlikleri.
+    /// Kategori kimliği bilete yazılmadan önce satılmış biletler kategori adıyla eşleştirilir.
+    /// </summary>
+    public static async Task<HashSet<string>> SoldCategoryIdsAsync(AppDbContext db, int eventId, string mapJson, CancellationToken cancellationToken)
+    {
+        var sold = await db.Orders.Where(o => o.EventId == eventId).SelectMany(o => o.Tickets)
+            .Select(t => new { t.CategoryId, t.CategoryName }).Distinct().ToListAsync(cancellationToken);
+        return SeatMap.Categories(mapJson)
+            .Where(c => sold.Any(t => t.CategoryId == c.Id || (t.CategoryId == null && t.CategoryName == c.Name)))
+            .Select(c => c.Id).ToHashSet(StringComparer.Ordinal);
     }
 
     /// <summary>Etkinliğin seanslarının bağlı olduğu kroki sürümleri, eskiden yeniye (satış yetkileri ekranı da kullanır).</summary>

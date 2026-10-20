@@ -58,6 +58,7 @@ public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLoc
             eventTitle = ev.Title,
             revision = snapshot.Revision,
             onlineEnabled = ev.OnlineEnabled,
+            soldCategories = await SeatMapStore.SoldCategoryIdsAsync(db, ev.Id, snapshot.MapJson, cancellationToken),   // silinemez
             culture = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName,
             saveUrl = $"/yonetim/fiyatlandirma/{ev.Id}?handler=Save",
             token = antiforgery.GetAndStoreTokens(HttpContext).RequestToken,
@@ -92,7 +93,7 @@ public class KoltuklarModel(AppDbContext db, LanguageCatalog catalog, IStringLoc
         {
             status = result.Outcome.ToString().ToLowerInvariant(),
             revision = result.Revision,
-            message = result.ErrorKey is null ? null : localizer[result.ErrorKey].Value,
+            message = result.ErrorKey is null ? null : localizer[result.ErrorKey, result.ErrorArg ?? ""].Value,
         })
         {
             StatusCode = result.Outcome switch

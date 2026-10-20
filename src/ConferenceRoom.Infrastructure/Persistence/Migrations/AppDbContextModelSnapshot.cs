@@ -799,6 +799,10 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
 
+                    b.Property<string>("CategoryId")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)");
+
                     b.Property<string>("CategoryName")
                         .IsRequired()
                         .HasMaxLength(60)

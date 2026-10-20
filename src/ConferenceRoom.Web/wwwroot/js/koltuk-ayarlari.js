@@ -76,7 +76,10 @@ function unassign() {
   dropOnline(selected);
   ed.commit();
 }
+/* Bileti satılmış kategori silinemez (sunucu da reddeder); fiyatı ve adı değiştirilebilir. */
+const soldCategories = new Set(ed.config.soldCategories ?? []);
 function deleteCategory(categoryId) {
+  if (soldCategories.has(categoryId)) return ed.toast(t("deleteCategorySold"));
   const map = ed.data, c = categoryById(categoryId);
   const ids = Object.keys(map.seats).filter((id) => map.seats[id] === categoryId);
   if (ids.length && !confirm(t("deleteCategoryConfirm", { name: c.name, n: ids.length }))) return;
@@ -139,7 +142,7 @@ function renderPanel() {
         <label class="fld price"><span>${esc(t("catPrice"))}</span><input type="text" inputmode="decimal" data-field="price" value="${esc(formatPrice(c.price))}" ${c.protocol ? "disabled" : ""}></label>
         <label class="check" title="${esc(t("protocolTitle"))}"><input type="checkbox" data-field="protocol" ${c.protocol ? "checked" : ""}><span>${esc(t("protocol"))}</span></label>
         <span class="cnt">${esc(t("seatCount", { n: counts[c.id] || 0 }))}</span>
-        <button class="icon-del" data-act="deleteCat" title="${esc(t("deleteCategory"))}" aria-label="${esc(t("deleteCategory"))}"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
+        <button class="icon-del" data-act="deleteCat" ${soldCategories.has(c.id) ? `disabled title="${esc(t("deleteCategorySold"))}"` : `title="${esc(t("deleteCategory"))}"`} aria-label="${esc(t("deleteCategory"))}"><svg viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></button>
       </div>`).join("") : `<p class="note">${esc(t("noCategories"))}</p>`}
     </div>
     <div class="btns">
