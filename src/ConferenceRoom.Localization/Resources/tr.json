@@ -28,14 +28,14 @@
     "required": "Bu alan zorunludur.",
     "emailInvalid": "Geçerli bir e-posta adresi yazın.",
     "secure": "Bağlantınız şifrelidir; şifreniz hiçbir yerde açık olarak saklanmaz.",
-    "noPanelAccess": "Bu hesabın yönetim paneline giriş yetkisi yok. Satış için ana sayfadaki Giriş bağlantısını kullanın."
+    "noPanelAccess": "Bu hesabın yönetim paneline giriş yetkisi yok. Satış için ana sayfadaki Giriş bağlantısını kullanın.",
+    "codeSendFailed": "Doğrulama kodu e-postayla gönderilemedi. Lütfen biraz sonra tekrar deneyin ya da yöneticinize başvurun."
   },
   "staffLogin": {
     "badge": "Yönetim paneli",
     "title": "Yönetim girişi",
     "subtitle": "Salonları, etkinlikleri ve satışları yönetmek için kurum hesabınızla giriş yapın.",
     "submit": "Panele giriş yap",
-    "forgot": "Şifrenizi unuttuysanız kurumunuzun yöneticisine başvurun.",
     "visualTitle": "Salonunuzu santimetresine kadar planlayın.",
     "visualText": "Kroki editörü, etkinlikler, fiyatlar ve satışlar tek panelde. Herkes yalnızca yetkili olduğu bölümü görür."
   },
@@ -101,7 +101,8 @@
       }
     },
     "navReport": "Satış raporu",
-    "navNotify": "Bildirimler"
+    "navNotify": "Bildirimler",
+    "navSettings": "Ayarlar"
   },
   "roles": {
     "title": "Roller",
@@ -157,7 +158,11 @@
     "deleted": "Kullanıcı silindi.",
     "adminNoDelete": "Yönetici rolündeki kullanıcı silinemez. Silmek için önce Yönetici rolünü kaldırın.",
     "selfDelete": "Kendi hesabınızı silemezsiniz.",
-    "activeSeller": "Bu kullanıcı devam eden etkinliklerde satış görevlisi: {0}. Silmeden önce Satış yetkileri ekranından koltuklarını alın."
+    "activeSeller": "Bu kullanıcı devam eden etkinliklerde satış görevlisi: {0}. Silmeden önce Satış yetkileri ekranından koltuklarını alın.",
+    "twoFactor": "İki adımlı doğrulama: girişte e-postaya gelen kod da istensin",
+    "twoFactorHint": "Açıksa kullanıcı şifresinden sonra e-posta adresine gönderilen 6 haneli kodu da girer.",
+    "twoFactorNoSmtp": "İki adımlı doğrulama için önce e-posta (SMTP) ayarlarını yapın.",
+    "twoFactorOn": "İki adımlı doğrulama"
   },
   "halls": {
     "title": "Salonlar",
@@ -750,6 +755,12 @@
         "name": "Kullanıcılar ve roller",
         "description": "Yönetim kullanıcıları ekleme, rollere yetki verme."
       }
+    },
+    "settings": {
+      "manage": {
+        "name": "Ayarlar",
+        "description": "E-posta gönderimi (SMTP) ve sitenin adresi."
+      }
     }
   },
   "footer": {
@@ -822,5 +833,78 @@
     "markUnpaid": "Alınmadı olarak geri al",
     "markedPaid": "{0} numaralı işlemin ödemesi alındı olarak işaretlendi.",
     "markedUnpaid": "{0} numaralı işlemin ödemesi alınmadı olarak işaretlendi."
+  },
+  "forgot": {
+    "link": "Şifremi unuttum",
+    "title": "Şifremi unuttum",
+    "subtitle": "Hesabınızın e-posta adresini yazın; şifrenizi yenilemeniz için bir bağlantı gönderelim.",
+    "submit": "Bağlantı gönder",
+    "sent": "Bu adres kayıtlıysa şifre yenileme bağlantısı gönderildi. Bağlantı {0} dakika geçerlidir; e-posta gelmezse istenmeyen klasörüne de bakın.",
+    "back": "Girişe dön",
+    "notConfigured": "E-posta gönderimi henüz ayarlanmamış. Şifrenizi yenilemek için kurumunuzun yöneticisine başvurun."
+  },
+  "reset": {
+    "title": "Yeni şifre belirle",
+    "subtitle": "Hesabınız için yeni bir şifre yazın.",
+    "confirm": "Yeni şifre (tekrar)",
+    "mismatch": "Şifreler aynı değil.",
+    "submit": "Şifreyi değiştir",
+    "done": "Şifreniz değiştirildi. Yeni şifrenizle giriş yapabilirsiniz.",
+    "login": "Giriş yap",
+    "invalid": "Bu bağlantı geçersiz ya da süresi dolmuş. Yeni bir bağlantı isteyebilirsiniz.",
+    "requestNew": "Yeni bağlantı iste"
+  },
+  "twoFactor": {
+    "title": "Doğrulama kodu",
+    "subtitle": "{0} adresine 6 haneli bir kod gönderdik. Girişi tamamlamak için kodu yazın.",
+    "code": "Kod",
+    "hint": "Kod 10 dakika geçerlidir.",
+    "submit": "Doğrula ve giriş yap",
+    "resend": "Kodu yeniden gönder",
+    "resent": "Yeni kod gönderildi. Önceki kod artık geçersiz.",
+    "wrong": "Kod hatalı. Tekrar deneyin.",
+    "expired": "Kodun süresi doldu ya da çok fazla hatalı deneme yapıldı. Yeni kod isteyin.",
+    "back": "Girişe dön"
+  },
+  "email": {
+    "codeSubject": "Giriş kodunuz: {0}",
+    "codeBody": "Merhaba {0},\n\nGiriş için doğrulama kodunuz: {1}\n\nKod {2} dakika geçerlidir. Giriş yapmaya çalışan siz değilseniz bu e-postayı dikkate almayın ve şifrenizi değiştirin.",
+    "resetSubject": "Şifre yenileme",
+    "resetBody": "Merhaba {0},\n\nŞifrenizi yenilemek için aşağıdaki bağlantıyı açın:\n{1}\n\nBağlantı {2} dakika geçerlidir ve yalnızca bir kez kullanılabilir. Bu isteği siz yapmadıysanız bu e-postayı dikkate almayın; şifreniz değişmez.",
+    "testSubject": "Deneme e-postası",
+    "testBody": "Bu e-posta {0} SMTP ayarlarını denemek için gönderildi. Bu iletiyi aldıysanız ayarlar doğru çalışıyor."
+  },
+  "settings": {
+    "title": "Ayarlar",
+    "intro": "E-posta gönderimi ve sitenin adresi. Şifre yenileme bağlantıları ve iki adımlı doğrulama kodları bu ayarlarla gönderilir.",
+    "smtpTitle": "E-posta gönderimi (SMTP)",
+    "smtpHint": "Kurumunuzun e-posta sağlayıcısının giden posta (SMTP) bilgilerini yazın.",
+    "host": "Sunucu",
+    "port": "Port",
+    "portInvalid": "1 ile 65535 arasında bir port yazın.",
+    "security": "Bağlantı güvenliği",
+    "securityNone": "Yok (şifresiz)",
+    "securityStartTls": "STARTTLS (genellikle 587)",
+    "securitySslOnConnect": "SSL/TLS (genellikle 465)",
+    "userName": "Kullanıcı adı",
+    "userNameHint": "Sunucu kimlik doğrulama istemiyorsa boş bırakın.",
+    "password": "Şifre",
+    "passwordKeep": "Kayıtlı bir şifre var. Değiştirmek istemiyorsanız boş bırakın.",
+    "passwordNone": "Şifre şifrelenerek saklanır ve bu ekranda bir daha gösterilmez.",
+    "clearPassword": "Kayıtlı şifreyi kaldır",
+    "fromEmail": "Gönderen adresi",
+    "fromName": "Gönderen adı",
+    "siteTitle": "Site adresi",
+    "publicUrl": "Sitenin adresi",
+    "publicUrlHint": "Ziyaretçilerin siteyi açtığı adres. E-postadaki şifre yenileme bağlantısı bu adresle başlar.",
+    "urlInvalid": "http:// ya da https:// ile başlayan geçerli bir adres yazın.",
+    "saved": "Ayarlar kaydedildi.",
+    "updatedAt": "Son değişiklik: {0}",
+    "testTitle": "Deneme e-postası",
+    "testTo": "Gönderilecek adres",
+    "testSend": "Deneme e-postası gönder",
+    "testSent": "Deneme e-postası {0} adresine gönderildi.",
+    "testFailed": "E-posta gönderilemedi: {0}",
+    "notSaved": "Önce ayarları kaydedin."
   }
 }

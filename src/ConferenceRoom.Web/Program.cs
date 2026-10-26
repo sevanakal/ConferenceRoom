@@ -9,8 +9,10 @@ using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Localization;
 using ConferenceRoom.Web.Api;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Email;
 using ConferenceRoom.Web.Events;
 using ConferenceRoom.Web.Sales;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.WebEncoders;
@@ -32,6 +34,7 @@ builder.Services.AddRazorPages(o =>
     o.Conventions.AuthorizeFolder("/Yonetim/SatisYetkileri", AuthPolicies.Permission(Permissions.UsersManage));
     o.Conventions.AuthorizeFolder("/Yonetim/Satislar", AuthPolicies.Permission(Permissions.SalesView));
     o.Conventions.AuthorizeFolder("/Yonetim/Bildirimler", AuthPolicies.Permission(Permissions.SalesNotify));
+    o.Conventions.AuthorizeFolder("/Yonetim/Ayarlar", AuthPolicies.Permission(Permissions.SettingsManage));
     // Satış bölümü: satış personeli /giris sayfasından girer (ayrı çerez; panel bu oturumla açılmaz).
     o.Conventions.AuthorizeFolder("/Satis", AuthPolicies.Sales);
     // Ana sayfa etkinlik panosudur; /pano adresi lobideki ekranlar için kalır.
@@ -42,6 +45,10 @@ builder.Services.Configure<WebEncoderOptions>(o => o.TextEncoderSettings = new T
 builder.Services.AddJsonLocalization();                       // tüm metinler ConferenceRoom.Localization/Resources/*.json
 builder.Services.AddInfrastructure(builder.Configuration);    // MySQL + EF Core
 builder.Services.AddAppAuthentication(builder.Configuration); // ayrı oturumlar (yönetim / satış / izleyici), yetkiler (bkz. Auth/)
+// Çerezleri ve SMTP şifresini koruyan anahtarlar veritabanında: yeniden başlatınca oturumlar düşmez, şifre çözülebilir.
+builder.Services.AddDataProtection().PersistKeysToDbContext<AppDbContext>().SetApplicationName("ConferenceRoom");
+builder.Services.AddScoped<SmtpSettingsStore>();               // panelden yapılan SMTP ayarları (Email/)
+builder.Services.AddScoped<IEmailSender, SmtpEmailSender>();    // şifre yenileme ve giriş kodu e-postaları
 builder.Services.AddSingleton(TimeProvider.System);            // "şu an" tek yerden gelsin (testlerde değiştirilebilir)
 builder.Services.AddSingleton<PosterStore>();                  // etkinlik afişleri (diskte; Docker'da ayrı birim)
 builder.Services.AddSignalR();                                 // canlı bağlantılar: satış ekranları ve panel bildirimleri (Sales/)

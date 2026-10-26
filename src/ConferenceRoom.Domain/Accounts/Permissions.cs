@@ -40,6 +40,9 @@ public static class Permissions
     /// <summary>Yönetim kullanıcıları ve rolleri.</summary>
     public const string UsersManage = "users.manage";
 
+    /// <summary>Sistem ayarları: e-posta gönderimi (SMTP) ve sitenin adresi.</summary>
+    public const string SettingsManage = "settings.manage";
+
     /// <summary>Tüm yetkiler, panelde gösterilecek sırayla.</summary>
-    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, SalesManage, SalesNotify, UsersManage];
+    public static readonly IReadOnlyList<string> All = [HallsManage, EventsManage, PricingManage, SalesSell, SalesView, SalesManage, SalesNotify, UsersManage, SettingsManage];
 }

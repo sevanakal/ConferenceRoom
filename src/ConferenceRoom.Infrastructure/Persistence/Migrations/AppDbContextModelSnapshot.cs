@@ -19,6 +19,53 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                 .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Accounts.AccountToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("AccountId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("AccountKind")
+                        .HasColumnType("int");
+
+                    b.Property<string>("CodeHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("char(64)")
+                        .IsFixedLength();
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("FailedAttempts")
+                        .HasColumnType("int");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Purpose")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UsedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodeHash");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("AccountKind", "AccountId", "Purpose");
+
+                    b.ToTable("AccountTokens", (string)null);
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Customer", b =>
                 {
                     b.Property<int>("Id")
@@ -193,6 +240,11 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         },
                         new
                         {
+                            RoleId = 1,
+                            Permission = "settings.manage"
+                        },
+                        new
+                        {
                             RoleId = 2,
                             Permission = "halls.manage"
                         },
@@ -269,6 +321,9 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .HasColumnType("varchar(200)");
 
                     b.Property<bool>("SeatsRestricted")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("tinyint(1)");
 
                     b.HasKey("Id");
@@ -849,6 +904,93 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.ToTable("Tickets", (string)null);
                 });
 
+            modelBuilder.Entity("ConferenceRoom.Domain.Settings.SmtpSettings", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("FromEmail")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("varchar(254)");
+
+                    b.Property<string>("FromName")
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("Host")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<int>("OrganizationId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Port")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ProtectedPassword")
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<string>("PublicUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<int>("Security")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("UpdatedByStaffUserId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("UserName")
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId")
+                        .IsUnique();
+
+                    b.HasIndex("UpdatedByStaffUserId");
+
+                    b.ToTable("SmtpSettings", (string)null);
+                });
+
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataProtectionKeys");
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Accounts.AccountToken", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("ConferenceRoom.Domain.Accounts.Customer", b =>
                 {
                     b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
@@ -1114,6 +1256,21 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                     b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
                         .WithMany()
                         .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ConferenceRoom.Domain.Settings.SmtpSettings", b =>
+                {
+                    b.HasOne("ConferenceRoom.Domain.Organizations.Organization", null)
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("ConferenceRoom.Domain.Accounts.StaffUser", null)
+                        .WithMany()
+                        .HasForeignKey("UpdatedByStaffUserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
                 });
