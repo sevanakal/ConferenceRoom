@@ -34,6 +34,12 @@ public class StaffUser : Entity, IOrganizationScoped
     /// </summary>
     public bool SeatsRestricted { get; set; }
 
+    /// <summary>
+    /// İki adımlı doğrulama: true ise şifreden sonra e-postasına gönderilen 6 haneli kod da istenir (yönetim ve satış girişi).
+    /// Kullanıcı başına yönetimden açılır; açmak için SMTP ayarlarının yapılmış olması gerekir.
+    /// </summary>
+    public bool TwoFactorEnabled { get; set; }
+
     public DateTime? LastLoginAtUtc { get; set; }
 
     /// <summary>

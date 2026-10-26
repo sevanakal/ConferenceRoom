@@ -82,6 +82,24 @@
         }
     </div>
 
+    @* İki adımlı doğrulama: girişte şifreden sonra e-postaya gelen kod da istenir (SMTP ayarları gerekir). *@
+    <div class="check-group">
+        <label class="check">
+            <input type="checkbox" name="Input.TwoFactorEnabled" value="true" @(Model.Input.TwoFactorEnabled ? "checked" : null)
+                   aria-invalid="@(Error("TwoFactorEnabled") is null ? null : "true")" />
+            <span>@T["users.twoFactor"]</span>
+        </label>
+        <input type="hidden" name="Input.TwoFactorEnabled" value="false" />
+        @if (Error("TwoFactorEnabled") is { } twoFactorError)
+        {
+            <p class="field-error">@twoFactorError <a href="/yonetim/ayarlar">@T["settings.title"]</a></p>
+        }
+        else
+        {
+            <p class="field-hint">@T["users.twoFactorHint"]</p>
+        }
+    </div>
+
     @* Koltuk kısıtlaması: işaretliyse satış yetkileri ekranında verilen koltuklar dışında satış yapamaz. *@
     <div class="check-group">
         <label class="check">

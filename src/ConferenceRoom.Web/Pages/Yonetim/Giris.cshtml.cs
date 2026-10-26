@@ -1,6 +1,5 @@
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Web.Auth;
-using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.RateLimiting;
@@ -11,10 +10,11 @@ namespace ConferenceRoom.Web.Pages.Yonetim;
 /// <summary>
 /// Yönetim paneli girişi (/yonetim/giris). Yalnızca panel yetkisi olan personel (StaffUsers, satış dışında en az bir
 /// yetki) girebilir; izleyici hesapları burada geçersizdir, yalnızca satış yapan personel /giris sayfasını kullanır.
-/// Başarılı girişte rollerden gelen yetkiler çereze yazılır.
+/// Başarılı girişte rollerden gelen yetkiler çereze yazılır. Kullanıcıda iki adımlı doğrulama açıksa önce e-postasına
+/// kod gönderilir, oturum /dogrulama sayfasında kod girilince açılır (TwoFactorLogin).
 /// </summary>
 [EnableRateLimiting(AuthenticationSetup.LoginRateLimit)]
-public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
+public class GirisModel(AppDbContext db, PasswordService passwords, TwoFactorLogin twoFactor) : PageModel
 {
     [BindProperty]
     public LoginInput Input { get; set; } = new();
@@ -55,11 +55,16 @@ public class GirisModel(AppDbContext db, PasswordService passwords) : PageModel
             return Page();
         }
 
-        user.LastLoginAtUtc = DateTime.UtcNow;
-        await db.SaveChangesAsync(cancellationToken);
+        // İki adımlı doğrulama: kod e-postaya gider, oturum kod girilince açılır.
+        if (twoFactor.IsRequired(user))
+        {
+            if (await twoFactor.BeginAsync(HttpContext, user, AuthSchemes.Staff, Input.RememberMe, ReturnUrl, cancellationToken))
+                return Redirect(TwoFactorLogin.PagePath);
+            ErrorKey = "auth.codeSendFailed";
+            return Page();
+        }
 
-        await HttpContext.SignInAsync(AuthSchemes.Staff, Principals.ForStaff(user),
-            new AuthenticationProperties { IsPersistent = Input.RememberMe });
-        return LocalRedirect(Principals.SafeReturnUrl(ReturnUrl, "/yonetim", area: "/yonetim"));
+        await twoFactor.SignInAsync(HttpContext, user, AuthSchemes.Staff, Input.RememberMe, cancellationToken);
+        return LocalRedirect(TwoFactorLogin.HomeOf(AuthSchemes.Staff, ReturnUrl));
     }
 }

@@ -3,6 +3,7 @@ using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Email;
 using ConferenceRoom.Web.Sales;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
@@ -17,7 +18,7 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Kullanicilar;
 /// satırı kalır, geçmiş satışlarda adı görünür (StaffAccounts.DeleteAsync).
 /// Kayıt ve silme bir veritabanı işlemi içinde yapılır; sonunda kullanıcıları yönetebilen aktif kimse kalmıyorsa geri alınır.
 /// </summary>
-public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvider clock) : PageModel
+public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvider clock, SmtpSettingsStore smtp) : PageModel
 {
     public sealed class UserInput
     {
@@ -26,6 +27,7 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvid
         public string? Password { get; set; }
         public bool IsActive { get; set; } = true;
         public bool SeatsRestricted { get; set; }
+        public bool TwoFactorEnabled { get; set; }
         public List<int> RoleIds { get; set; } = [];
     }
 
@@ -87,6 +89,9 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvid
         // Yeni kullanıcıda şifre zorunlu; düzenlemede boş bırakılırsa değişmez.
         if ((user is null || password.Length > 0) && password.Length < PasswordService.MinimumLength) Errors["Password"] = "users.passwordShort";
         if (IsSelf && !Input.IsActive) Errors["IsActive"] = "users.selfDeactivate";
+        // İki adımlı doğrulama kodu e-postayla gider: SMTP ayarları yokken açılırsa kullanıcı giremez.
+        if (Input.TwoFactorEnabled && user?.TwoFactorEnabled != true && !await smtp.IsConfiguredAsync(cancellationToken))
+            Errors["TwoFactorEnabled"] = "users.twoFactorNoSmtp";
         if (Errors.Count > 0)
             return Page();
 
@@ -96,6 +101,7 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvid
         user.Email = email;
         user.IsActive = Input.IsActive;
         user.SeatsRestricted = Input.SeatsRestricted;
+        user.TwoFactorEnabled = Input.TwoFactorEnabled;
         if (password.Length > 0)
             user.PasswordHash = passwords.Hash(password);
         var selected = Roles.Select(r => r.Id).Where(Input.RoleIds.Contains).ToHashSet();   // yalnızca kurumun rolleri

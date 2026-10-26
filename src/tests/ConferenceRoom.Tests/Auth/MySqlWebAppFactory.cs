@@ -1,23 +1,41 @@
 using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Organizations;
+using ConferenceRoom.Domain.Settings;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Tests.Database;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Email;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace ConferenceRoom.Tests.Auth;
 
 /// <summary>
 /// Uygulamayı gerçek MySQL ile bellekte başlatır: kendine ait geçici bir veritabanı açar, migration'ları
-/// uygular, ilk yönetici hesabını oluşturur; testler bitince veritabanını siler.
+/// uygular, ilk yönetici hesabını oluşturur; testler bitince veritabanını siler. E-postalar gönderilmez, <see cref="Emails"/>
+/// içinde biriktirilir.
 /// Yalnızca CONFERENCEROOM_TEST_MYSQL tanımlıyken kullanılır (bkz. MySqlFactAttribute).
 /// </summary>
 public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
 {
     public const string AdminEmail = "yonetici@test.local", AdminPassword = "Test.Sifre.123";
+
+    /// <summary><see cref="ConfigureSmtpAsync"/> ile yazılan site adresi; e-postadaki bağlantılar bununla başlar.</summary>
+    public const string PublicUrl = "https://bilet.test";
+
+    /// <summary>Uygulamanın "gönderdiği" e-postalar.</summary>
+    public TestEmailSender Emails { get; }
+
+    public MySqlWebAppFactory() => Emails = new TestEmailSender(async () =>
+    {
+        var configured = false;
+        await WithDbAsync(async db => configured = await db.SmtpSettings.AnyAsync());
+        return configured;
+    });
 
     /// <summary><see cref="CreateStaffAsync"/> ile açılan personelin şifresi.</summary>
     public const string StaffPassword = "Satis.Sifre.1";
@@ -38,6 +56,11 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
         builder.UseSetting("Admin:FullName", "Test Yöneticisi");
         builder.UseSetting("Auth:LoginAttemptsPerMinute", "1000");
         builder.UseSetting("Storage:PostersPath", _posters);   // testler aynı "IP"den çok giriş yapar
+        builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<IEmailSender>();
+            services.AddSingleton<IEmailSender>(Emails);
+        });
     }
 
     /// <summary>Yönetim paneline giriş yapmış bir istemci döner (varsayılan: ilk yönetici hesabı).</summary>
@@ -102,6 +125,23 @@ public sealed class MySqlWebAppFactory : WebApplicationFactory<Program>
         await Forms.PostAsync(client, "/giris", [new("Input.Email", email), new("Input.Password", password)]);
         return client;
     }
+
+    /// <summary>SMTP ayarlarını doğrudan veritabanına yazar (yoksa); e-posta gerektiren akışlar için.</summary>
+    public Task ConfigureSmtpAsync() => WithDbAsync(async db =>
+    {
+        if (await db.SmtpSettings.AnyAsync())
+            return;
+        var adminId = await db.StaffUsers.Where(u => u.Email == AdminEmail).Select(u => u.Id).SingleAsync();
+        db.SmtpSettings.Add(new SmtpSettings
+        {
+            OrganizationId = Organization.DefaultId,
+            Host = "smtp.test",
+            FromEmail = "bilet@test.local",
+            PublicUrl = PublicUrl,
+            UpdatedByStaffUserId = adminId,
+        });
+        await db.SaveChangesAsync();
+    });
 
     /// <summary>Testte doğrudan veritabanına kayıt eklemek için.</summary>
     public async Task WithDbAsync(Func<AppDbContext, Task> action)

@@ -3,7 +3,7 @@
     Bu şablonu kullanan sayfalar /yonetim altındadır ve Program.cs'teki kural gereği yalnızca
     yönetim girişi yapmış kullanıcılar tarafından açılabilir (User burada yönetim kullanıcısıdır).
     Üst çubuğun altındaki bölüm menüsü yalnızca kullanıcının yetkili olduğu bölümleri gösterir;
-    sayfa ViewData["AdminNav"] ile hangi bölümde olduğunu söyler ("dashboard", "halls", "events", "pricing", "report", "notify", "users", "roles", "salesScope").
+    sayfa ViewData["AdminNav"] ile hangi bölümde olduğunu söyler ("dashboard", "halls", "events", "pricing", "report", "notify", "users", "roles", "salesScope", "settings").
     "Satış bildirimlerini al" yetkisi olan kullanıcıda üst çubukta okunmamış bildirim sayısıyla zil görünür; yeni bildirim
     canlı gelir ve köşede kısa süre gösterilir (wwwroot/js/bildirimler.js, sunucu tarafı Sales/SalesNotifier.cs).
     Stil: wwwroot/css/admin.css, form alanları forms.css
@@ -30,6 +30,7 @@
         ("users", "/yonetim/kullanicilar", "admin.navUsers", Permissions.UsersManage),
         ("roles", "/yonetim/roller", "admin.navRoles", Permissions.UsersManage),
         ("salesScope", "/yonetim/satis-yetkileri", "admin.navSalesScope", Permissions.UsersManage),
+        ("settings", "/yonetim/ayarlar", "admin.navSettings", Permissions.SettingsManage),
     };
     // Bildirim zili: yalnızca bildirim alan kullanıcıda; canlı istemcinin ayarları ve metinleri JSON olarak sayfada durur.
     var notifies = User.HasClaim(AppClaims.Permission, Permissions.SalesNotify);

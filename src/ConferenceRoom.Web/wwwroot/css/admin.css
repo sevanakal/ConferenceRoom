@@ -129,7 +129,9 @@
 .choice input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--color-accent); flex: none; }
 .choice b { display: block; font-size: .94rem; }
 .choice small { display: block; color: var(--color-muted); font-size: .84rem; line-height: 1.4; margin-top: 2px; }
-.form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+/* Ayarlar: deneme e-postası kutusu ana formun altında */
+.test-mail { margin-top: 20px; }
 .danger-zone {
     display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; max-width: 760px;
     padding: 16px 24px; border: 1px dashed color-mix(in srgb, var(--color-fail) 40%, transparent); border-radius: 12px;
