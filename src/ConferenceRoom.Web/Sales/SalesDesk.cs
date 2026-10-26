@@ -169,6 +169,7 @@ public static class SalesDesk
                 EventSessionId = sessionId,
                 SeatId = id,
                 SeatLabel = Clip(labels[id], Ticket.MaxSeatLabel),
+                CategoryId = categories[id].Id,
                 CategoryName = categories[id].Name,
                 Price = categories[id].Price,
                 CreatedAtUtc = nowUtc,

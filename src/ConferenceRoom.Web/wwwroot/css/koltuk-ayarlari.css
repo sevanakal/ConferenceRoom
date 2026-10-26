@@ -33,6 +33,7 @@
 .cat .cnt { grid-area: cnt; justify-self: end; font-family: var(--font-data); font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
 .icon-del { grid-area: del; border: 0; background: transparent; color: var(--muted); padding: 3px; border-radius: 5px; display: grid; place-items: center; }
 .icon-del:hover { color: var(--accent); background: var(--accent-soft); }
+.icon-del:disabled { opacity: .35; cursor: not-allowed; background: transparent; color: var(--muted); }
 .icon-del svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .btn:disabled { opacity: .45; cursor: default; border-color: var(--line); }
 .note.warn { color: var(--accent); }

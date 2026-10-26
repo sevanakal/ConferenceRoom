@@ -560,7 +560,8 @@
     "unknownSeat": "Ayarlarda krokide olmayan bir koltuk var. Sayfayı yenileyip tekrar deneyin.",
     "onlineNeedsCategory": "Online koltukların bir kategorisi olmalı.",
     "onlineProtocol": "Protokol koltukları online satılamaz.",
-    "noSessions": "Bu etkinliğin seansı yok. Koltuk ayarları seansın bağlı olduğu krokiye göre yapılır; önce etkinliğe seans ekleyin."
+    "noSessions": "Bu etkinliğin seansı yok. Koltuk ayarları seansın bağlı olduğu krokiye göre yapılır; önce etkinliğe seans ekleyin.",
+    "soldCategoryDeleted": "“{0}” kategorisinde satılmış ya da rezerve edilmiş bilet var, silinemez. Fiyatını ve adını değiştirebilirsiniz."
   },
   "seatEditor": {
     "appName": "Koltuk ve fiyatlar",
@@ -634,7 +635,8 @@
     "protocolTitle": "Protokol koltukları satışa kapalıdır",
     "reservation": "Rezervasyon",
     "showOnlinePrice": "Online satışta fiyatı göster",
-    "showOnlinePriceHint": "İşaretli değilse internetten bilet alan ya da yer ayırtan izleyici fiyatı görmez. Fiyatlar yine burada girilir ve personel satışında kullanılır; isterseniz 0 bırakabilirsiniz (0 fiyat ekranlarda \"Rezervasyon\" diye görünür)."
+    "showOnlinePriceHint": "İşaretli değilse internetten bilet alan ya da yer ayırtan izleyici fiyatı görmez. Fiyatlar yine burada girilir ve personel satışında kullanılır; isterseniz 0 bırakabilirsiniz (0 fiyat ekranlarda \"Rezervasyon\" diye görünür).",
+    "deleteCategorySold": "Bu kategoride satılmış ya da rezerve edilmiş bilet var, silinemez. Fiyatı ve adı değiştirilebilir."
   },
   "salesScope": {
     "title": "Satış yetkileri",
