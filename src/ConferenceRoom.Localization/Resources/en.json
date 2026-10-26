@@ -150,7 +150,13 @@
     "emailTaken": "Another user already has this email address.",
     "selfDeactivate": "You cannot deactivate your own account.",
     "seatsRestricted": "Seat restriction: can only sell the seats given to them",
-    "seatsRestrictedHint": "If unchecked, a user who can sell may sell every seat. Seats are given on this screen:"
+    "seatsRestrictedHint": "If unchecked, a user who can sell may sell every seat. Seats are given on this screen:",
+    "delete": "Delete",
+    "deleteConfirm": "Delete {0}? This cannot be undone. The user will no longer be able to sign in and will be removed from the list; their name stays on the sales they made.",
+    "deleteHint": "Deleting a user cannot be undone. The user will no longer be able to sign in and will be removed from the list; their name stays on the sales they made.",
+    "deleted": "User deleted.",
+    "adminNoDelete": "Users with the Administrator role cannot be deleted. Remove the Administrator role first.",
+    "selfDelete": "You cannot delete your own account."
   },
   "halls": {
     "title": "Halls",

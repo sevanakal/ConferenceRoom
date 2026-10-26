@@ -150,7 +150,13 @@
     "emailTaken": "Bu e-posta adresiyle başka bir kullanıcı var.",
     "selfDeactivate": "Kendi hesabınızı pasif yapamazsınız.",
     "seatsRestricted": "Koltuk kısıtlaması: yalnızca kendisine verilen koltukları satabilir",
-    "seatsRestrictedHint": "İşaretli değilse satış yetkisi olan kullanıcı tüm koltukları satar. Koltuklar şu ekrandan verilir:"
+    "seatsRestrictedHint": "İşaretli değilse satış yetkisi olan kullanıcı tüm koltukları satar. Koltuklar şu ekrandan verilir:",
+    "delete": "Sil",
+    "deleteConfirm": "{0} silinsin mi? Bu işlem geri alınamaz. Kullanıcı artık giremez ve listeden kalkar; yaptığı satışlarda adı görünmeye devam eder.",
+    "deleteHint": "Kullanıcıyı silmek geri alınamaz. Kullanıcı artık giremez ve listeden kalkar; yaptığı satışlarda adı görünmeye devam eder.",
+    "deleted": "Kullanıcı silindi.",
+    "adminNoDelete": "Yönetici rolündeki kullanıcı silinemez. Silmek için önce Yönetici rolünü kaldırın.",
+    "selfDelete": "Kendi hesabınızı silemezsiniz."
   },
   "halls": {
     "title": "Salonlar",

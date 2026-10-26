@@ -97,3 +97,16 @@
         <a class="btn-secondary" href="/yonetim/kullanicilar">@T["admin.cancel"]</a>
     </div>
 </form>
+
+@* Silme: onay sorulur (forms.js). Yönetici rolündeki kullanıcı ve kişinin kendisi silinemez. *@
+@if (Model.CanDelete)
+{
+    <form method="post" asp-page-handler="Delete" class="danger-zone" data-confirm="@T["users.deleteConfirm", Model.Input.FullName ?? ""]">
+        <p>@T["users.deleteHint"]</p>
+        <button type="submit" class="btn-danger">@T["users.delete"]</button>
+    </form>
+}
+else if (Model.Id is not null && !Model.IsSelf)
+{
+    <p class="field-hint">@T["users.adminNoDelete"]</p>
+}

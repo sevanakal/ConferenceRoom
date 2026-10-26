@@ -30,6 +30,27 @@ public static class StaffAccounts
         .CountAsync(u => u.OrganizationId == Organization.DefaultId && u.IsActive
             && u.Roles.Any(r => r.Role!.Permissions.Any(p => p.Permission == Permissions.UsersManage)), cancellationToken);
 
+    // ---- Silme ----
+
+    /// <summary>Silinebilir mi: Yönetici rolündeki kullanıcı silinemez (önce rolü kaldırılmalı). Roles yüklenmiş olmalı.</summary>
+    public static bool CanDelete(StaffUser user) => user.Roles.All(r => r.RoleId != Role.AdministratorId);
+
+    /// <summary>
+    /// Kullanıcıyı siler. Satır kalır (<see cref="StaffUser.DeletedAtUtc"/>): satışlar, kroki sürümleri ve etkinlikler ona bağlı,
+    /// adı geçmiş kayıtlarda görünmeye devam eder. Giriş bilgisi, rolleri, panel sırası ve bildirimleri kaldırılır; e-postası
+    /// yeni bir kullanıcıya verilebilsin diye kimliğe bağlı bir adresle değiştirilir. Kayıt çağıranın SaveChanges'ıyla yazılır.
+    /// </summary>
+    public static async Task DeleteAsync(AppDbContext db, StaffUser user, CancellationToken cancellationToken)
+    {
+        user.DeletedAtUtc = DateTime.UtcNow;
+        user.IsActive = false;   // açık oturumları her istekteki denetimle hemen kapanır
+        user.Email = $"silindi-{user.Id}@silinmis.invalid";
+        user.PasswordHash = "";
+        user.DashboardOrder = null;
+        user.Roles.Clear();
+        await db.Notifications.Where(n => n.StaffUserId == user.Id).ExecuteDeleteAsync(cancellationToken);
+    }
+
     // ---- Hangi girişi kullanabilir ----
 
     /// <summary>Kullanıcının rollerinden gelen yetkiler. Roles → Role → Permissions yüklenmiş olmalı.</summary>

@@ -241,6 +241,9 @@ namespace ConferenceRoom.Infrastructure.Persistence.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("varchar(1000)");
 
+                    b.Property<DateTime?>("DeletedAtUtc")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
