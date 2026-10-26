@@ -1,3 +1,4 @@
+using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
@@ -6,10 +7,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ConferenceRoom.Web.Pages.Yonetim.Kullanicilar;
 
-/// <summary>Yönetim kullanıcıları listesi (/yonetim/kullanicilar). "users.manage" yetkisi ister (Program.cs).</summary>
+/// <summary>
+/// Yönetim kullanıcıları listesi (/yonetim/kullanicilar). "users.manage" yetkisi ister (Program.cs). Silinmiş kullanıcılar
+/// listelenmez. Satırdaki "Sil" düğmesi düzenleme sayfasının silme işlemine gider (DuzenleModel.OnPostDeleteAsync).
+/// </summary>
 public class IndexModel(AppDbContext db) : PageModel
 {
-    public sealed record UserRow(int Id, string FullName, string Email, bool IsActive, DateTime? LastLoginAtUtc, IReadOnlyList<string> Roles);
+    /// <summary><paramref name="IsAdministrator"/>: Yönetici rolünde; silinemez.</summary>
+    public sealed record UserRow(int Id, string FullName, string Email, bool IsActive, DateTime? LastLoginAtUtc, IReadOnlyList<string> Roles, bool IsAdministrator);
 
     public IReadOnlyList<UserRow> Users { get; private set; } = [];
 
@@ -19,10 +24,10 @@ public class IndexModel(AppDbContext db) : PageModel
     public async Task OnGetAsync(CancellationToken cancellationToken)
     {
         Users = await db.StaffUsers
-            .Where(u => u.OrganizationId == Organization.DefaultId)
+            .Where(u => u.OrganizationId == Organization.DefaultId && u.DeletedAtUtc == null)
             .OrderByDescending(u => u.IsActive).ThenBy(u => u.FullName)
             .Select(u => new UserRow(u.Id, u.FullName, u.Email, u.IsActive, u.LastLoginAtUtc,
-                u.Roles.Select(r => r.Role!.Name).OrderBy(n => n).ToList()))
+                u.Roles.Select(r => r.Role!.Name).OrderBy(n => n).ToList(), u.Roles.Any(r => r.RoleId == Role.AdministratorId)))
             .ToListAsync(cancellationToken);
     }
 }

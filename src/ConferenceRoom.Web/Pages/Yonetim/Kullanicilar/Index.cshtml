@@ -55,7 +55,17 @@
                     </td>
                     <td><span class="status @(user.IsActive ? "status-on" : "status-off")">@(user.IsActive ? T["users.active"] : T["users.inactive"])</span></td>
                     <td class="muted">@(user.LastLoginAtUtc is { } last ? DisplayTime.Format(last) : T["users.never"])</td>
-                    <td class="actions"><a href="/yonetim/kullanicilar/duzenle/@user.Id">@T["admin.edit"]</a></td>
+                    <td class="actions">
+                        <a href="/yonetim/kullanicilar/duzenle/@user.Id">@T["admin.edit"]</a>
+                        @* Yönetici rolündeki kullanıcı ve kişinin kendisi silinemez; düğme yalnızca silinebilenlerde görünür. *@
+                        @if (!user.IsAdministrator && me != user.Id.ToString())
+                        {
+                            <form method="post" asp-page="/Yonetim/Kullanicilar/Duzenle" asp-route-id="@user.Id" asp-page-handler="Delete"
+                                  class="inline-form" data-confirm="@T["users.deleteConfirm", user.FullName]">
+                                <button type="submit" class="link-danger">@T["users.delete"]</button>
+                            </form>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>

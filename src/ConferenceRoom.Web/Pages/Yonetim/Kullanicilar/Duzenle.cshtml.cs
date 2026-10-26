@@ -3,6 +3,7 @@ using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Sales;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -11,10 +12,12 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Kullanicilar;
 
 /// <summary>
 /// Yönetim kullanıcısı ekleme ve düzenleme (/yonetim/kullanicilar/duzenle/{id?}); id yoksa yeni kullanıcı.
-/// Kullanıcılar silinmez, pasif yapılır (geçmiş kayıtlarda kimin ne yaptığı kaybolmasın).
-/// Kayıt bir veritabanı işlemi içinde yapılır; sonunda kullanıcıları yönetebilen aktif kimse kalmıyorsa geri alınır.
+/// Silme (OnPostDeleteAsync, onay sorulur): Yönetici rolündeki kullanıcı, kişinin kendisi ve devam eden bir etkinlikte
+/// satış görevlisi olan (satış yetkilerinde koltuk verilmiş) kullanıcı silinemez. Silinen kullanıcının
+/// satırı kalır, geçmiş satışlarda adı görünür (StaffAccounts.DeleteAsync).
+/// Kayıt ve silme bir veritabanı işlemi içinde yapılır; sonunda kullanıcıları yönetebilen aktif kimse kalmıyorsa geri alınır.
 /// </summary>
-public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageModel
+public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvider clock) : PageModel
 {
     public sealed class UserInput
     {
@@ -39,8 +42,14 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
     /// <summary>Düzenlenen kullanıcı, giriş yapmış kullanıcının kendisi mi (kendini pasif yapamaz).</summary>
     public bool IsSelf => Id is not null && User.FindFirstValue(ClaimTypes.NameIdentifier) == Id.ToString();
 
+    /// <summary>Düzenlenen kullanıcı silinebilir mi (Yönetici rolünde değil ve kişinin kendisi değil).</summary>
+    public bool CanDelete { get; private set; }
+
     /// <summary>Alan adı ya da "" (formun geneli) → hata metninin dil anahtarı.</summary>
     public Dictionary<string, string> Errors { get; } = [];
+
+    /// <summary>Formun genel hatasına eklenen bilgi (ör. kullanıcının görevli olduğu etkinlikler).</summary>
+    public string? ErrorArg { get; private set; }
 
     [TempData]
     public string? Flash { get; set; }
@@ -52,7 +61,8 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
             var user = await FindAsync(cancellationToken);
             if (user is null)
                 return NotFound();
-            Input = new UserInput { FullName = user.FullName, Email = user.Email, IsActive = user.IsActive, SeatsRestricted = user.SeatsRestricted, RoleIds = user.Roles.Select(r => r.RoleId).ToList() };
+            Input = InputFrom(user);
+            CanDelete = !IsSelf && StaffAccounts.CanDelete(user);
         }
         await LoadRolesAsync(cancellationToken);
         return Page();
@@ -64,6 +74,7 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
         if (Id is not null && user is null)
             return NotFound();
         await LoadRolesAsync(cancellationToken);
+        CanDelete = user is not null && !IsSelf && StaffAccounts.CanDelete(user);
 
         // ---- Doğrulama ----
         var fullName = Input.FullName?.Trim() ?? "";
@@ -115,11 +126,59 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
         return Redirect("/yonetim/kullanicilar");
     }
 
+    // ---- Silme (liste satırındaki ve formun altındaki "Sil" düğmesi; onayı tarayıcı sorar, forms.js) ----
+
+    public async Task<IActionResult> OnPostDeleteAsync(CancellationToken cancellationToken)
+    {
+        var user = Id is null ? null : await FindAsync(cancellationToken);
+        if (user is null)
+            return NotFound();
+        await LoadRolesAsync(cancellationToken);
+        Input = InputFrom(user);   // silinemezse form kullanıcının mevcut hâliyle yeniden gösterilir
+        CanDelete = !IsSelf && StaffAccounts.CanDelete(user);
+        if (IsSelf)
+            Errors[""] = "users.selfDelete";
+        else if (!CanDelete)
+            Errors[""] = "users.adminNoDelete";
+        else if (await SeatScopeStore.ActiveEventsOfAsync(db, user.Id, clock.GetUtcNow().UtcDateTime, cancellationToken) is { Count: > 0 } events)
+        {
+            Errors[""] = "users.activeSeller";
+            ErrorArg = string.Join(", ", events);
+        }
+        if (Errors.Count > 0)
+            return Page();
+
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await StaffAccounts.DeleteAsync(db, user, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        if (await StaffAccounts.CountManagersAsync(db, cancellationToken) == 0)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            db.ChangeTracker.Clear();
+            Errors[""] = "admin.lastManager";
+            return Page();
+        }
+        await transaction.CommitAsync(cancellationToken);
+
+        Flash = "users.deleted";
+        return Redirect("/yonetim/kullanicilar");
+    }
+
     // ---- Yardımcılar ----
 
+    private static UserInput InputFrom(StaffUser user) => new()
+    {
+        FullName = user.FullName,
+        Email = user.Email,
+        IsActive = user.IsActive,
+        SeatsRestricted = user.SeatsRestricted,
+        RoleIds = user.Roles.Select(r => r.RoleId).ToList(),
+    };
+
+    /// <summary>Kurumun silinmemiş kullanıcısı; silinmiş kullanıcının sayfası yoktur (404).</summary>
     private Task<StaffUser?> FindAsync(CancellationToken cancellationToken) => db.StaffUsers
         .Include(u => u.Roles)
-        .FirstOrDefaultAsync(u => u.Id == Id && u.OrganizationId == Organization.DefaultId, cancellationToken);
+        .FirstOrDefaultAsync(u => u.Id == Id && u.OrganizationId == Organization.DefaultId && u.DeletedAtUtc == null, cancellationToken);
 
     private async Task LoadRolesAsync(CancellationToken cancellationToken) => Roles = await db.Roles
         .Where(r => r.OrganizationId == Organization.DefaultId)

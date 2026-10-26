@@ -94,6 +94,10 @@
 .data-table .actions { text-align: right; white-space: nowrap; }
 .data-table .actions a { font-weight: 600; text-decoration: none; }
 .data-table .actions a + a { margin-left: 14px; }
+/* Satırdaki küçük işlem formu (ör. kullanıcı silme): bağlantı gibi görünen düğme */
+.data-table .actions .inline-form { display: inline; margin-left: 14px; }
+.link-danger { border: 0; padding: 0; background: none; font: inherit; font-weight: 600; color: var(--color-fail); cursor: pointer; }
+.link-danger:hover { text-decoration: underline; }
 .row-title { color: var(--color-text); font-weight: 600; text-decoration: none; margin-right: 6px; }
 .row-title:hover { text-decoration: underline; }
 .row-sub { color: var(--color-muted); font-size: .86rem; margin-top: 2px; }

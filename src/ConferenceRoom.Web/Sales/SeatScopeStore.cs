@@ -127,6 +127,34 @@ public static class SeatScopeStore
 
     public sealed record StaffRow(int Id, string FullName, bool SeatsRestricted);
 
+    /// <summary>
+    /// Personelin satış görevlisi olduğu devam eden etkinliklerin adları (kullanıcı silinmeden önce denetlenir).
+    /// Devam eden: yayında ve bitmemiş seansı olan. Görevli: o etkinlikte geçerli kapsam kaydında (etkinliğe özel kayıt
+    /// varsa o, yoksa salonun kaydı) kendisine en az bir koltuk verilmiş.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> ActiveEventsOfAsync(AppDbContext db, int staffUserId, DateTime nowUtc, CancellationToken cancellationToken)
+    {
+        var fallbackStart = nowUtc - BoardQuery.DefaultDuration;
+        var events = await db.Events
+            .Where(e => e.Status == EventStatus.Published
+                && e.Sessions.Any(s => s.EndsAtUtc != null ? s.EndsAtUtc > nowUtc : s.StartsAtUtc > fallbackStart))
+            .OrderBy(e => e.Title)
+            .Select(e => new { e.Id, e.HallId, e.Title })
+            .ToListAsync(cancellationToken);
+        if (events.Count == 0)
+            return [];
+
+        var hallIds = events.Select(e => e.HallId).Distinct().ToList();
+        var scopes = await db.SeatScopes.Where(s => hallIds.Contains(s.HallId))
+            .Select(s => new { s.HallId, s.EventId, s.ScopeJson })
+            .ToListAsync(cancellationToken);
+        return events
+            .Where(e => (scopes.FirstOrDefault(s => s.EventId == e.Id) ?? scopes.FirstOrDefault(s => s.HallId == e.HallId && s.EventId == null))
+                is { } scope && SeatScopeData.SeatsOf(scope.ScopeJson, staffUserId).Count > 0)
+            .Select(e => e.Title)
+            .ToList();
+    }
+
     // ---- Yardımcılar ----
 
     private static Task<SeatScope?> FindAsync(AppDbContext db, int hallId, int? eventId, CancellationToken cancellationToken) =>

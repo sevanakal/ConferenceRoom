@@ -22,6 +22,13 @@ public class StaffUser : Entity, IOrganizationScoped
     public bool IsActive { get; set; } = true;
 
     /// <summary>
+    /// Silinme zamanı; null ise kullanıcı silinmemiştir. Silinen kullanıcının satır kaydı kalır ki geçmiş satışlarda, krokilerde
+    /// ve etkinliklerde kimin ne yaptığı (adı) görünmeye devam etsin; ama listede görünmez, giremez, rolleri ve e-postası
+    /// kaldırılır (e-posta yeni bir kullanıcıya verilebilsin diye). Bkz. StaffAccounts.DeleteAsync.
+    /// </summary>
+    public DateTime? DeletedAtUtc { get; set; }
+
+    /// <summary>
     /// Koltuk kısıtlaması. false: satış yetkisi varsa tüm koltukları satar (tam yetkili). true: yalnızca satış yetkileri
     /// ekranında kendisine verilen koltukları satar (<see cref="Sales.SeatScope"/>); verilmemişse o salonda hiç satamaz.
     /// </summary>
