@@ -16,9 +16,9 @@
     </div>
 </header>
 
-@if (Error("") is { } formError)
+@if (Model.Errors.TryGetValue("", out var formError))
 {
-    <div class="form-alert" role="alert">@formError</div>
+    <div class="form-alert" role="alert">@T[formError, Model.ErrorArg ?? ""]</div>
 }
 
 <form method="post" class="form-card" autocomplete="off" novalidate>

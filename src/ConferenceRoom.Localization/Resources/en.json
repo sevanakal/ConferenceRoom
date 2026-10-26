@@ -156,7 +156,8 @@
     "deleteHint": "Deleting a user cannot be undone. The user will no longer be able to sign in and will be removed from the list; their name stays on the sales they made.",
     "deleted": "User deleted.",
     "adminNoDelete": "Users with the Administrator role cannot be deleted. Remove the Administrator role first.",
-    "selfDelete": "You cannot delete your own account."
+    "selfDelete": "You cannot delete your own account.",
+    "activeSeller": "This user is assigned to sell seats for ongoing events: {0}. Take their seats away on the Sales permissions screen before deleting."
   },
   "halls": {
     "title": "Halls",

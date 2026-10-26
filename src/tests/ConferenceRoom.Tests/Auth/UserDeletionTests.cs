@@ -1,5 +1,7 @@
 using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Events;
+using ConferenceRoom.Domain.Organizations;
+using ConferenceRoom.Domain.Sales;
 using ConferenceRoom.Tests.Database;
 using ConferenceRoom.Tests.Sales;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +11,7 @@ namespace ConferenceRoom.Tests.Auth;
 /// <summary>
 /// Kullanıcı silme (gerçek MySQL; Pages/Yonetim/Kullanicilar, StaffAccounts.DeleteAsync): silinen kullanıcı listeden kalkar,
 /// açık oturumu kapanır, e-postası yeniden kullanılabilir; yaptığı satışlarda adı görünmeye devam eder.
-/// Yönetici rolündeki kullanıcı ve kişinin kendisi silinemez.
+/// Yönetici rolündeki kullanıcı, kişinin kendisi ve devam eden bir etkinlikte satış görevlisi olan kullanıcı silinemez.
 /// </summary>
 [Collection(MySqlCollection.Name)]
 public class UserDeletionTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWebAppFactory>
@@ -73,5 +75,44 @@ public class UserDeletionTests(MySqlWebAppFactory factory) : IClassFixture<MySql
 
         await factory.WithDbAsync(async db =>
             Assert.False(await db.StaffUsers.AnyAsync(u => (u.Id == otherAdminId || u.Id == selfId) && u.DeletedAtUtc != null)));
+    }
+
+    [MySqlFact]
+    public async Task Devam_eden_etkinlikte_koltuk_verilmis_personel_koltuklari_alinmadan_silinemez()
+    {
+        // Yayındaki, seansı bitmemiş etkinliğin salonunda personele koltuk verilir.
+        var sessionId = await SalesTestData.CreateSessionAsync(factory, SaleMode.Sale);
+        var (_, id) = await factory.CreateStaffAsync([Permissions.SalesSell], seatsRestricted: true);
+        var title = $"Görevli etkinlik {Guid.NewGuid():N}"[..28];
+        var hallId = 0;
+        await factory.WithDbAsync(async db =>
+        {
+            var ev = await db.Events.SingleAsync(e => e.Sessions.Any(s => s.Id == sessionId));
+            ev.Title = title;
+            hallId = ev.HallId;
+            db.SeatScopes.Add(new SeatScope
+            {
+                OrganizationId = Organization.DefaultId,
+                HallId = hallId,
+                ScopeJson = $$"""{ "schema": 1, "staff": { "{{id}}": ["s1"] } }""",
+                Revision = 1,
+                UpdatedByStaffUserId = ev.CreatedByStaffUserId,
+            });
+            await db.SaveChangesAsync();
+        });
+
+        var admin = await factory.SignInStaffAsync();
+        var url = $"/yonetim/kullanicilar/duzenle/{id}";
+        var html = await Forms.PostAsync(admin, url, [], postUrl: url + "?handler=Delete");
+        Assert.Contains("devam eden etkinliklerde satış görevlisi", html);
+        Assert.Contains(title, html);
+
+        // Koltukları alınınca silinebilir.
+        await factory.WithDbAsync(async db =>
+        {
+            (await db.SeatScopes.SingleAsync(s => s.HallId == hallId && s.EventId == null)).ScopeJson = """{ "schema": 1, "staff": {} }""";
+            await db.SaveChangesAsync();
+        });
+        Assert.Contains("Kullanıcı silindi.", await Forms.PostAsync(admin, url, [], postUrl: url + "?handler=Delete"));
     }
 }

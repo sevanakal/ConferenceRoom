@@ -3,6 +3,7 @@ using ConferenceRoom.Domain.Accounts;
 using ConferenceRoom.Domain.Organizations;
 using ConferenceRoom.Infrastructure.Persistence;
 using ConferenceRoom.Web.Auth;
+using ConferenceRoom.Web.Sales;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
@@ -11,11 +12,12 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Kullanicilar;
 
 /// <summary>
 /// Yönetim kullanıcısı ekleme ve düzenleme (/yonetim/kullanicilar/duzenle/{id?}); id yoksa yeni kullanıcı.
-/// Silme (OnPostDeleteAsync, onay sorulur): Yönetici rolündeki kullanıcı ve kişinin kendisi silinemez. Silinen kullanıcının
+/// Silme (OnPostDeleteAsync, onay sorulur): Yönetici rolündeki kullanıcı, kişinin kendisi ve devam eden bir etkinlikte
+/// satış görevlisi olan (satış yetkilerinde koltuk verilmiş) kullanıcı silinemez. Silinen kullanıcının
 /// satırı kalır, geçmiş satışlarda adı görünür (StaffAccounts.DeleteAsync).
 /// Kayıt ve silme bir veritabanı işlemi içinde yapılır; sonunda kullanıcıları yönetebilen aktif kimse kalmıyorsa geri alınır.
 /// </summary>
-public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageModel
+public class DuzenleModel(AppDbContext db, PasswordService passwords, TimeProvider clock) : PageModel
 {
     public sealed class UserInput
     {
@@ -45,6 +47,9 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
 
     /// <summary>Alan adı ya da "" (formun geneli) → hata metninin dil anahtarı.</summary>
     public Dictionary<string, string> Errors { get; } = [];
+
+    /// <summary>Formun genel hatasına eklenen bilgi (ör. kullanıcının görevli olduğu etkinlikler).</summary>
+    public string? ErrorArg { get; private set; }
 
     [TempData]
     public string? Flash { get; set; }
@@ -135,6 +140,11 @@ public class DuzenleModel(AppDbContext db, PasswordService passwords) : PageMode
             Errors[""] = "users.selfDelete";
         else if (!CanDelete)
             Errors[""] = "users.adminNoDelete";
+        else if (await SeatScopeStore.ActiveEventsOfAsync(db, user.Id, clock.GetUtcNow().UtcDateTime, cancellationToken) is { Count: > 0 } events)
+        {
+            Errors[""] = "users.activeSeller";
+            ErrorArg = string.Join(", ", events);
+        }
         if (Errors.Count > 0)
             return Page();
 

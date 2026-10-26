@@ -156,7 +156,8 @@
     "deleteHint": "Kullanıcıyı silmek geri alınamaz. Kullanıcı artık giremez ve listeden kalkar; yaptığı satışlarda adı görünmeye devam eder.",
     "deleted": "Kullanıcı silindi.",
     "adminNoDelete": "Yönetici rolündeki kullanıcı silinemez. Silmek için önce Yönetici rolünü kaldırın.",
-    "selfDelete": "Kendi hesabınızı silemezsiniz."
+    "selfDelete": "Kendi hesabınızı silemezsiniz.",
+    "activeSeller": "Bu kullanıcı devam eden etkinliklerde satış görevlisi: {0}. Silmeden önce Satış yetkileri ekranından koltuklarını alın."
   },
   "halls": {
     "title": "Salonlar",
