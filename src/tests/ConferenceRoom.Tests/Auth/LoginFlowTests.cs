@@ -54,7 +54,7 @@ public class LoginFlowTests(MySqlWebAppFactory factory) : IClassFixture<MySqlWeb
         var client = factory.CreateClient();
         var html = await Forms.PostAsync(client, "/yonetim/giris", new Dictionary<string, string> { ["Input.Email"] = email, ["Input.Password"] = "Satis.Sifre.1" });
         Assert.Equal(3, Regex.Count(html, "data-allowed=\"true\""));      // fiyatlar, satış yapma, satışları görme
-        Assert.Equal(6, Regex.Count(html, "data-allowed=\"false\""));     // salonlar, etkinlikler, satış düzeltme, satış bildirimleri, kullanıcılar, satış yetkileri kilitli
+        Assert.Equal(7, Regex.Count(html, "data-allowed=\"false\""));     // salonlar, etkinlikler, satış düzeltme, satış bildirimleri, kullanıcılar, ayarlar, satış yetkileri kilitli
     }
 
     [MySqlFact]

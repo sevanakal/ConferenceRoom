@@ -13,8 +13,8 @@ namespace ConferenceRoom.Web.Pages.Yonetim.Kullanicilar;
 /// </summary>
 public class IndexModel(AppDbContext db) : PageModel
 {
-    /// <summary><paramref name="IsAdministrator"/>: Yönetici rolünde; silinemez.</summary>
-    public sealed record UserRow(int Id, string FullName, string Email, bool IsActive, DateTime? LastLoginAtUtc, IReadOnlyList<string> Roles, bool IsAdministrator);
+    /// <summary><paramref name="IsAdministrator"/>: Yönetici rolünde; silinemez. <paramref name="TwoFactor"/>: iki adımlı doğrulama açık.</summary>
+    public sealed record UserRow(int Id, string FullName, string Email, bool IsActive, DateTime? LastLoginAtUtc, IReadOnlyList<string> Roles, bool IsAdministrator, bool TwoFactor);
 
     public IReadOnlyList<UserRow> Users { get; private set; } = [];
 
@@ -27,7 +27,7 @@ public class IndexModel(AppDbContext db) : PageModel
             .Where(u => u.OrganizationId == Organization.DefaultId && u.DeletedAtUtc == null)
             .OrderByDescending(u => u.IsActive).ThenBy(u => u.FullName)
             .Select(u => new UserRow(u.Id, u.FullName, u.Email, u.IsActive, u.LastLoginAtUtc,
-                u.Roles.Select(r => r.Role!.Name).OrderBy(n => n).ToList(), u.Roles.Any(r => r.RoleId == Role.AdministratorId)))
+                u.Roles.Select(r => r.Role!.Name).OrderBy(n => n).ToList(), u.Roles.Any(r => r.RoleId == Role.AdministratorId), u.TwoFactorEnabled))
             .ToListAsync(cancellationToken);
     }
 }

@@ -22,6 +22,7 @@
         <input id="Input_Email" name="Input.Email" type="email" value="@Model.Input.Email" autocomplete="username" inputmode="email" required autofocus />
     </div>
     <partial name="_PasswordField" model="@(("Input.Password", "current-password", (string?)null, (string?)null))" />
+    <a class="auth-forgot" href="/sifremi-unuttum">@T["forgot.link"]</a>
     <label class="check">
         <input type="checkbox" name="Input.RememberMe" value="true" @(Model.Input.RememberMe ? "checked" : null) />
         <span>@T["auth.rememberMe"]</span>

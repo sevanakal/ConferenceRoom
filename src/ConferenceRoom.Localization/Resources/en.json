@@ -28,14 +28,14 @@
     "required": "This field is required.",
     "emailInvalid": "Enter a valid email address.",
     "secure": "Your connection is encrypted; your password is never stored in plain text.",
-    "noPanelAccess": "This account cannot sign in to the admin panel. Use the Sign in link on the home page for sales."
+    "noPanelAccess": "This account cannot sign in to the admin panel. Use the Sign in link on the home page for sales.",
+    "codeSendFailed": "The verification code could not be emailed. Please try again shortly or contact your administrator."
   },
   "staffLogin": {
     "badge": "Admin panel",
     "title": "Admin sign in",
     "subtitle": "Sign in with your organisation account to manage halls, events and sales.",
     "submit": "Sign in to the panel",
-    "forgot": "If you forgot your password, contact your organisation's administrator.",
     "visualTitle": "Plan your hall down to the centimetre.",
     "visualText": "Floor-plan editor, events, prices and sales in one panel. Everyone sees only the sections they are allowed to."
   },
@@ -101,7 +101,8 @@
       }
     },
     "navReport": "Sales report",
-    "navNotify": "Notifications"
+    "navNotify": "Notifications",
+    "navSettings": "Settings"
   },
   "roles": {
     "title": "Roles",
@@ -157,7 +158,11 @@
     "deleted": "User deleted.",
     "adminNoDelete": "Users with the Administrator role cannot be deleted. Remove the Administrator role first.",
     "selfDelete": "You cannot delete your own account.",
-    "activeSeller": "This user is assigned to sell seats for ongoing events: {0}. Take their seats away on the Sales permissions screen before deleting."
+    "activeSeller": "This user is assigned to sell seats for ongoing events: {0}. Take their seats away on the Sales permissions screen before deleting.",
+    "twoFactor": "Two-step verification: also ask for a code sent by email at sign-in",
+    "twoFactorHint": "When on, the user also enters a 6-digit code sent to their email address after their password.",
+    "twoFactorNoSmtp": "Set up email (SMTP) first to use two-step verification.",
+    "twoFactorOn": "Two-step verification"
   },
   "halls": {
     "title": "Halls",
@@ -750,6 +755,12 @@
         "name": "Users and roles",
         "description": "Add admin users and grant permissions to roles."
       }
+    },
+    "settings": {
+      "manage": {
+        "name": "Settings",
+        "description": "Email sending (SMTP) and the site address."
+      }
     }
   },
   "footer": {
@@ -822,5 +833,78 @@
     "markUnpaid": "Mark as not received",
     "markedPaid": "Order {0} is marked as paid.",
     "markedUnpaid": "Order {0} is marked as not paid."
+  },
+  "forgot": {
+    "link": "Forgot password",
+    "title": "Forgot password",
+    "subtitle": "Enter your account's email address and we'll send you a link to reset your password.",
+    "submit": "Send link",
+    "sent": "If this address is registered, a password reset link has been sent. The link is valid for {0} minutes; if it doesn't arrive, check your spam folder.",
+    "back": "Back to sign in",
+    "notConfigured": "Email sending has not been set up yet. Contact your organization's administrator to reset your password."
+  },
+  "reset": {
+    "title": "Set a new password",
+    "subtitle": "Enter a new password for your account.",
+    "confirm": "New password (again)",
+    "mismatch": "The passwords don't match.",
+    "submit": "Change password",
+    "done": "Your password has been changed. You can sign in with your new password.",
+    "login": "Sign in",
+    "invalid": "This link is invalid or has expired. You can request a new one.",
+    "requestNew": "Request a new link"
+  },
+  "twoFactor": {
+    "title": "Verification code",
+    "subtitle": "We sent a 6-digit code to {0}. Enter it to finish signing in.",
+    "code": "Code",
+    "hint": "The code is valid for 10 minutes.",
+    "submit": "Verify and sign in",
+    "resend": "Send the code again",
+    "resent": "A new code has been sent. The previous code no longer works.",
+    "wrong": "The code is incorrect. Try again.",
+    "expired": "The code has expired or there were too many wrong attempts. Request a new code.",
+    "back": "Back to sign in"
+  },
+  "email": {
+    "codeSubject": "Your sign-in code: {0}",
+    "codeBody": "Hello {0},\n\nYour sign-in verification code is: {1}\n\nThe code is valid for {2} minutes. If you weren't trying to sign in, ignore this email and change your password.",
+    "resetSubject": "Password reset",
+    "resetBody": "Hello {0},\n\nOpen the link below to reset your password:\n{1}\n\nThe link is valid for {2} minutes and can be used only once. If you didn't request this, ignore this email; your password won't change.",
+    "testSubject": "Test email",
+    "testBody": "This email was sent to test the SMTP settings of {0}. If you received it, the settings work."
+  },
+  "settings": {
+    "title": "Settings",
+    "intro": "Email sending and the site address. Password reset links and two-step verification codes are sent with these settings.",
+    "smtpTitle": "Email sending (SMTP)",
+    "smtpHint": "Enter your email provider's outgoing mail (SMTP) details.",
+    "host": "Server",
+    "port": "Port",
+    "portInvalid": "Enter a port between 1 and 65535.",
+    "security": "Connection security",
+    "securityNone": "None (unencrypted)",
+    "securityStartTls": "STARTTLS (usually 587)",
+    "securitySslOnConnect": "SSL/TLS (usually 465)",
+    "userName": "User name",
+    "userNameHint": "Leave empty if the server doesn't require authentication.",
+    "password": "Password",
+    "passwordKeep": "A password is saved. Leave empty to keep it.",
+    "passwordNone": "The password is stored encrypted and is never shown on this screen again.",
+    "clearPassword": "Remove the saved password",
+    "fromEmail": "Sender address",
+    "fromName": "Sender name",
+    "siteTitle": "Site address",
+    "publicUrl": "Site address",
+    "publicUrlHint": "The address visitors use to open the site. Password reset links in emails start with this address.",
+    "urlInvalid": "Enter a valid address starting with http:// or https://.",
+    "saved": "Settings saved.",
+    "updatedAt": "Last changed: {0}",
+    "testTitle": "Test email",
+    "testTo": "Send to",
+    "testSend": "Send test email",
+    "testSent": "A test email was sent to {0}.",
+    "testFailed": "The email could not be sent: {0}",
+    "notSaved": "Save the settings first."
   }
 }

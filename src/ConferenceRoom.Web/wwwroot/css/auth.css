@@ -75,6 +75,15 @@
 .auth-switch, .auth-note { margin: 24px 0 0; text-align: center; color: var(--color-muted); font-size: .92rem; }
 .auth-switch a { font-weight: 600; text-decoration: none; }
 .auth-switch a:hover { text-decoration: underline; }
+/* "Şifremi unuttum" bağlantısı ve doğrulama sayfasındaki "kodu yeniden gönder" düğmesi */
+.auth-forgot { justify-self: end; margin-top: -8px; font-size: .88rem; font-weight: 600; text-decoration: none; }
+.auth-forgot:hover { text-decoration: underline; }
+.auth-inline { margin-top: 16px; text-align: center; }
+.auth-inline .btn-link { border: 0; background: none; padding: 0; font: inherit; font-size: .92rem; font-weight: 600; color: var(--btn-bg, var(--color-accent)); cursor: pointer; }
+.auth-inline .btn-link:hover { text-decoration: underline; }
+/* Bağlantı olarak kullanılan ana düğme (ör. şifre yenilendikten sonra "Giriş yap") */
+a.btn-primary { display: flex; align-items: center; justify-content: center; text-decoration: none; }
+.code-input { font-size: 1.5rem; letter-spacing: .4em; text-align: center; font-variant-numeric: tabular-nums; }
 
 /* ---- Çizim (SVG) parçaları ---- */
 .art-grid-minor { stroke: var(--art-grid-minor); stroke-width: 1; }

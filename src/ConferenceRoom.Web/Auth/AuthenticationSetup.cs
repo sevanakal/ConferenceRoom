@@ -16,8 +16,10 @@ public static class AuthenticationSetup
     public static IServiceCollection AddAppAuthentication(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddSingleton<PasswordService>();
+        services.AddScoped<AccountCodes>();
+        services.AddScoped<TwoFactorLogin>();
 
-        // ---- Çerezler: üç ayrı şema (yönetim, satış personeli, izleyici) ----
+        // ---- Çerezler: üç ayrı oturum (yönetim, satış personeli, izleyici) + iki adımlı doğrulamada bekleyen giriş ----
         // Genel sayfalarda (ana sayfa, bilet ekranı) varsayılan kimlik izleyicinin çerezidir.
         // Yönetim sayfaları kendi kuralında Staff şemasını ister; izleyici çerezi orada geçersizdir.
         services.AddAuthentication(AuthSchemes.Customer)
@@ -53,6 +55,14 @@ public static class AuthenticationSetup
                 o.SlidingExpiration = true;
                 // Pasif yapılan ya da satış yetkisi alınan personelin oturumu hemen kapanır.
                 o.Events.OnValidatePrincipal = StaffAccounts.ValidateSalesPrincipalAsync;
+            })
+            .AddCookie(AuthSchemes.TwoFactor, o =>
+            {
+                o.Cookie.Name = ".konferans.dogrulama";
+                o.Cookie.Path = TwoFactorLogin.PagePath;   // yalnızca doğrulama sayfasına gönderilir
+                o.ExpireTimeSpan = TwoFactorLogin.PendingLifetime;
+                o.SlidingExpiration = false;
+                o.LoginPath = "/giris";
             });
 
         // ---- Kurallar: panele giriş, satış bölümüne giriş + her yetki için bir kural ----

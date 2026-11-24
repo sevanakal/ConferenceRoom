@@ -1,0 +1,37 @@
+@page "/sifremi-unuttum"
+@model ConferenceRoom.Web.Pages.Hesap.SifremiUnuttumModel
+@*
+    Şifremi unuttum: e-posta adresine şifre yenileme bağlantısı gönderilir. Bkz. SifremiUnuttumModel.
+*@
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["forgot.title"];
+    ViewData["AuthVariant"] = Model.Panel ? "staff" : "customer";
+    var back = Model.Panel ? "/yonetim/giris" : "/giris";
+}
+<header class="auth-head">
+    <h1>@T["forgot.title"]</h1>
+    <p>@T["forgot.subtitle"]</p>
+</header>
+
+@if (Model.Sent)
+{
+    <div class="form-info" role="status">@T["forgot.sent", (int)ConferenceRoom.Web.Auth.AccountCodes.ResetLifetime.TotalMinutes]</div>
+}
+else
+{
+    @if (Model.ErrorKey is not null)
+    {
+        <div class="form-alert" role="alert">@T[Model.ErrorKey]</div>
+    }
+    <form method="post" class="auth-form" novalidate>
+        <input type="hidden" name="Panel" value="@(Model.Panel ? "true" : "false")" />
+        <div class="field">
+            <label for="Email">@T["auth.email"]</label>
+            <input id="Email" name="Email" type="email" value="@Model.Email" autocomplete="username" inputmode="email" required autofocus />
+        </div>
+        <button type="submit" class="btn-primary">@T["forgot.submit"]</button>
+    </form>
+}
+
+<p class="auth-switch"><a href="@back">@T["forgot.back"]</a></p>

@@ -1,0 +1,47 @@
+@page "/sifre-yenile"
+@model ConferenceRoom.Web.Pages.Hesap.SifreYenileModel
+@using ConferenceRoom.Web.Auth
+@*
+    E-postadaki bağlantıyla yeni şifre belirleme. Bkz. SifreYenileModel.
+*@
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["reset.title"];
+    ViewData["AuthVariant"] = Model.ForStaff ? "staff" : "customer";
+    string? Error(string field) => Model.Errors.TryGetValue(field, out var key) ? T[key, PasswordService.MinimumLength].Value : null;
+}
+<header class="auth-head">
+    <h1>@T["reset.title"]</h1>
+    @if (Model.Valid && Model.DoneLoginUrl is null)
+    {
+        <p>@T["reset.subtitle"]</p>
+    }
+</header>
+
+@if (Model.DoneLoginUrl is not null)
+{
+    <div class="form-info" role="status">@T["reset.done"]</div>
+    <a class="btn-primary" href="@Model.DoneLoginUrl">@T["reset.login"]</a>
+}
+else if (!Model.Valid)
+{
+    <div class="form-alert" role="alert">@T["reset.invalid"]</div>
+    <p class="auth-switch"><a href="/sifremi-unuttum">@T["reset.requestNew"]</a></p>
+}
+else
+{
+    <form method="post" class="auth-form" novalidate>
+        <input type="hidden" name="kod" value="@Model.Code" />
+        <partial name="_PasswordField" model="@(("Password", "new-password", Error("Password"), T["register.passwordHint", PasswordService.MinimumLength].Value))" />
+        <div class="field">
+            <label for="PasswordConfirm">@T["reset.confirm"]</label>
+            <input id="PasswordConfirm" name="PasswordConfirm" type="password" autocomplete="new-password" required
+                   aria-invalid="@(Error("PasswordConfirm") is null ? null : "true")" />
+            @if (Error("PasswordConfirm") is { } confirmError)
+            {
+                <p class="field-error">@confirmError</p>
+            }
+        </div>
+        <button type="submit" class="btn-primary">@T["reset.submit"]</button>
+    </form>
+}

@@ -6,6 +6,7 @@ namespace ConferenceRoom.Web.Auth;
 ///   Sales:    satış personeli, giriş /giris (izleyiciyle aynı sayfa). Yalnızca "sales.sell" yetkisi olan personel;
 ///             panel açılmaz, çerez yalnızca /satis altına gönderilir.
 ///   Customer: bilet alan izleyici, giriş /giris.
+///   TwoFactor: iki adımlı doğrulamada kodu bekleyen personel (/dogrulama), oturum değildir.
 /// Yönetim çerezi yalnızca /yonetim altına gönderilir; bir girişten alınan oturum diğer bölümde geçmez.
 /// </summary>
 public static class AuthSchemes
@@ -18,6 +19,12 @@ public static class AuthSchemes
 
     /// <summary>Bilet alan izleyici (Customer). Giriş: /giris. Genel sayfalarda varsayılan şema budur.</summary>
     public const string Customer = "Uye";
+
+    /// <summary>
+    /// İki adımlı doğrulamada şifresi doğrulanmış, kodu bekleyen personel (kısa ömürlü; yalnızca /dogrulama sayfası okur).
+    /// Bkz. <see cref="TwoFactorLogin"/>.
+    /// </summary>
+    public const string TwoFactor = "IkiAdim";
 }
 
 /// <summary>Yetkilendirme kuralı (policy) adları.</summary>

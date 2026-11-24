@@ -1,0 +1,39 @@
+@page "/dogrulama"
+@model ConferenceRoom.Web.Pages.Hesap.DogrulamaModel
+@*
+    İki adımlı doğrulama: e-postaya gelen 6 haneli kod. Bkz. DogrulamaModel, Auth/TwoFactorLogin.cs.
+*@
+@{
+    Layout = "_AuthLayout";
+    ViewData["Title"] = T["twoFactor.title"];
+    ViewData["AuthVariant"] = Model.FromPanel ? "staff" : "customer";
+}
+<header class="auth-head">
+    <h1>@T["twoFactor.title"]</h1>
+    <p>@T["twoFactor.subtitle", Model.MaskedEmail]</p>
+</header>
+
+@if (Model.ErrorKey is not null)
+{
+    <div class="form-alert" role="alert">@T[Model.ErrorKey]</div>
+}
+else if (Model.InfoKey is not null)
+{
+    <div class="form-info" role="status">@T[Model.InfoKey]</div>
+}
+
+<form method="post" class="auth-form" novalidate>
+    <div class="field">
+        <label for="Code">@T["twoFactor.code"]</label>
+        <input id="Code" name="Code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="7"
+               pattern="[0-9 ]*" class="code-input" required autofocus />
+        <p class="field-hint">@T["twoFactor.hint"]</p>
+    </div>
+    <button type="submit" class="btn-primary">@T["twoFactor.submit"]</button>
+</form>
+
+<form method="post" asp-page-handler="Resend" class="auth-inline">
+    <button type="submit" class="btn-link">@T["twoFactor.resend"]</button>
+</form>
+
+<p class="auth-switch"><a href="@(Model.FromPanel ? "/yonetim/giris" : "/giris")">@T["twoFactor.back"]</a></p>

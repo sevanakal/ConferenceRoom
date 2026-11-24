@@ -1,0 +1,132 @@
+@page "/yonetim/ayarlar"
+@model ConferenceRoom.Web.Pages.Yonetim.Ayarlar.IndexModel
+@using ConferenceRoom.Domain.Settings
+@using ConferenceRoom.Web.Common
+@*
+    Sistem ayarları: e-posta gönderimi (SMTP) ve site adresi; altta deneme e-postası. Bkz. IndexModel.
+*@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = T["settings.title"];
+    ViewData["AdminNav"] = "settings";
+    string? Error(string field) => Model.Errors.TryGetValue(field, out var key) ? T[key].Value : null;
+    string? Invalid(string field) => Model.Errors.ContainsKey(field) ? "true" : null;
+}
+<header class="page-head">
+    <div>
+        <h1>@T["settings.title"]</h1>
+        <p>@T["settings.intro"]</p>
+    </div>
+</header>
+
+<partial name="_Flash" model="Model.Flash" />
+
+@if (Error("") is { } formError)
+{
+    <div class="form-alert" role="alert">@formError</div>
+}
+
+<form method="post" class="form-card" autocomplete="off" novalidate>
+    <h2 class="form-section-title">@T["settings.smtpTitle"]</h2>
+    <p class="field-hint">@T["settings.smtpHint"]</p>
+    <div class="form-row">
+        <div class="field">
+            <label for="Input_Host">@T["settings.host"]</label>
+            <input id="Input_Host" name="Input.Host" value="@Model.Input.Host" placeholder="smtp.kurum.org" required aria-invalid="@Invalid("Host")" />
+            @if (Error("Host") is { } errHost) { <p class="field-error">@errHost</p> }
+        </div>
+        <div class="field">
+            <label for="Input_Port">@T["settings.port"]</label>
+            <input id="Input_Port" name="Input.Port" type="number" min="1" max="65535" value="@Model.Input.Port" required aria-invalid="@Invalid("Port")" />
+            @if (Error("Port") is { } errPort) { <p class="field-error">@errPort</p> }
+        </div>
+        <div class="field">
+            <label for="Input_Security">@T["settings.security"]</label>
+            <select id="Input_Security" name="Input.Security">
+                @foreach (var option in Enum.GetValues<SmtpSecurity>())
+                {
+                    <option value="@option" selected="@(option == Model.Input.Security)">@T[$"settings.security{option}"]</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="field">
+            <label for="Input_UserName">@T["settings.userName"]</label>
+            <input id="Input_UserName" name="Input.UserName" value="@Model.Input.UserName" autocomplete="off" />
+            <p class="field-hint">@T["settings.userNameHint"]</p>
+        </div>
+        <div class="field">
+            <label for="Input_Password">@T["settings.password"]</label>
+            <input id="Input_Password" name="Input.Password" type="password" autocomplete="new-password" />
+            <p class="field-hint">@T[Model.HasPassword ? "settings.passwordKeep" : "settings.passwordNone"]</p>
+            @if (Model.HasPassword)
+            {
+                <label class="check">
+                    <input type="checkbox" name="Input.ClearPassword" value="true" />
+                    <span>@T["settings.clearPassword"]</span>
+                </label>
+            }
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="field">
+            <label for="Input_FromEmail">@T["settings.fromEmail"]</label>
+            <input id="Input_FromEmail" name="Input.FromEmail" type="email" value="@Model.Input.FromEmail" required aria-invalid="@Invalid("FromEmail")" />
+            @if (Error("FromEmail") is { } errFromEmail) { <p class="field-error">@errFromEmail</p> }
+        </div>
+        <div class="field">
+            <label for="Input_FromName">@T["settings.fromName"]</label>
+            <input id="Input_FromName" name="Input.FromName" value="@Model.Input.FromName" placeholder="@T["app.name"]" />
+        </div>
+    </div>
+
+    <h2 class="form-section-title">@T["settings.siteTitle"]</h2>
+    <div class="field">
+        <label for="Input_PublicUrl">@T["settings.publicUrl"]</label>
+        <input id="Input_PublicUrl" name="Input.PublicUrl" type="url" value="@Model.Input.PublicUrl" placeholder="https://bilet.kurum.org" required aria-invalid="@Invalid("PublicUrl")" />
+        @if (Error("PublicUrl") is { } errPublicUrl)
+        {
+            <p class="field-error">@errPublicUrl</p>
+        }
+        else
+        {
+            <p class="field-hint">@T["settings.publicUrlHint"]</p>
+        }
+    </div>
+
+    <div class="form-actions">
+        <button type="submit" class="btn-primary btn-inline">@T["admin.save"]</button>
+        @if (Model.UpdatedAtUtc is { } updated)
+        {
+            <span class="field-hint">@T["settings.updatedAt", DisplayTime.Format(updated)]</span>
+        }
+    </div>
+</form>
+
+@* Deneme e-postası: kayıtlı ayarlarla gönderilir. *@
+<form method="post" asp-page-handler="Test" class="form-card test-mail" novalidate>
+    <h2 class="form-section-title">@T["settings.testTitle"]</h2>
+    @if (Model.TestSent == true)
+    {
+        <div class="form-info" role="status">@T["settings.testSent", Model.TestTo ?? ""]</div>
+    }
+    else if (Model.TestSent == false)
+    {
+        <div class="form-alert" role="alert">@T["settings.testFailed", Model.TestError ?? ""]</div>
+    }
+    <div class="form-row">
+        <div class="field">
+            <label for="TestTo">@T["settings.testTo"]</label>
+            <input id="TestTo" name="TestTo" type="email" value="@Model.TestTo" aria-invalid="@Invalid("TestTo")" />
+            @if (Error("TestTo") is { } errTestTo) { <p class="field-error">@errTestTo</p> }
+        </div>
+    </div>
+    <div class="form-actions">
+        <button type="submit" class="btn-secondary" disabled="@(!Model.Configured)">@T["settings.testSend"]</button>
+        @if (!Model.Configured)
+        {
+            <span class="field-hint">@T["settings.notSaved"]</span>
+        }
+    </div>
+</form>
